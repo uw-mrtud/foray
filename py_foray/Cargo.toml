@@ -1,0 +1,12 @@
+[package]
+name = "py_foray"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+data_model = { path = "../data_model/" }
+pyo3 = { version = "0.25.0", features = ["auto-initialize"] }
+numpy = "0.25.0"
+
+# [build-dependencies]
+# pyo3-build-config = "0.25.1"

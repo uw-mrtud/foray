@@ -1,0 +1,28 @@
+[package]
+name = "foray_data_model"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+resolver = "3"
+members = ["data_model", "py_foray"]
+
+[[bin]]
+name = "node_check"
+path = "./py_foray/src/main.rs"
+
+[lib]
+name = "foray_data_model"
+path = "./data_model/src/lib.rs"
+
+[dependencies]
+ndarray = { version = "0.16.1", features = ["serde"] }
+relative-path = { version = "2.0.1", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+
+derive_more = { version = "2.0.1", features = ["debug", "display", "error"] }
+pyo3 = { version = "0.25.0", features = ["auto-initialize"] }
+numpy = "0.25.0"
+
+# [build-dependencies]
+# pyo3-build-config = "0.25.1"

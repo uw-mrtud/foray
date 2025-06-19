@@ -1,0 +1,3 @@
+# .cargo/config.toml
+[env]
+PYO3_PYTHON = "/usr/bin/python"
