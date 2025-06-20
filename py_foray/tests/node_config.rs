@@ -8,6 +8,7 @@ use pyo3::{Python, ffi::c_str};
 #[test]
 fn port_enum_string() {
     pyo3::append_to_inittab!(foray);
+    pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
         assert!(
@@ -43,6 +44,7 @@ fn default_test_node() -> NodeTemplate {
 
 #[test]
 fn empty_config() {
+    pyo3::prepare_freethreaded_python();
     assert_eq!(
         //// Expected
         default_test_node(),
@@ -64,6 +66,7 @@ def config():
 }
 #[test]
 fn filled_config() {
+    pyo3::prepare_freethreaded_python();
     assert_eq!(
         //// Expected
         NodeTemplate {
@@ -92,6 +95,7 @@ def config():
 
 #[test]
 fn array_config() {
+    pyo3::prepare_freethreaded_python();
     assert_eq!(
         //// Expected
         NodeTemplate {
@@ -123,6 +127,7 @@ def config():
 
 #[test]
 fn nested_config() {
+    pyo3::prepare_freethreaded_python();
     let inner_type = PortType::Object(
         [
             ("b_b_a".into(), PortType::Primitive(PrimitiveType::Float)),

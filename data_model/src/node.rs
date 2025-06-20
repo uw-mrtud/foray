@@ -4,6 +4,8 @@ use pyo3::prelude::*;
 use relative_path::RelativePathBuf;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf, time::Instant};
+
+use crate::node_spec::GraphNode;
 pub type Dict<K, V> = BTreeMap<K, V>;
 
 pub type Shape = Vec<Option<usize>>;
@@ -57,7 +59,7 @@ impl<'py> FromPyObject<'py> for PortType {
 }
 
 // #[pyclass]
-#[derive(Serialize, Deserialize, Clone, FromPyObject, IntoPyObject)]
+#[derive(Serialize, Deserialize, Clone, FromPyObject, IntoPyObject, Debug)]
 pub enum PrimitiveData {
     Integer(i32),
     Float(f64),
@@ -65,14 +67,14 @@ pub enum PrimitiveData {
     String(String),
 }
 
-#[derive(Clone, Serialize, Deserialize, FromPyObject, IntoPyObject)]
+#[derive(Clone, Serialize, Deserialize, FromPyObject, IntoPyObject, Debug)]
 pub enum PortData {
     Primitve(PrimitiveData),
     Array(PrimitiveArray),
     Object(Dict<String, PortData>),
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum PrimitiveArray {
     Integer(ArrayD<i32>),
     Float(ArrayD<f64>),
@@ -133,6 +135,23 @@ pub struct NodeTemplate {
     pub inputs: Result<Dict<String, PortType>, PortError>,
     pub outputs: Result<Dict<String, PortType>, PortError>,
     pub parameters: Result<Dict<String, UIParameter>, ParameterError>,
+}
+
+impl GraphNode<NodeTemplate, PortType, PortData> for NodeTemplate {
+    fn inputs(&self) -> Dict<crate::node_spec::PortName, PortType> {
+        todo!()
+    }
+
+    fn outputs(&self) -> Dict<crate::node_spec::PortName, PortType> {
+        todo!()
+    }
+
+    fn compute(
+        self,
+        inputs: Dict<crate::node_spec::PortName, crate::node_spec::WireDataContainer<PortData>>,
+    ) -> Result<(Dict<crate::node_spec::PortName, PortData>, NodeTemplate), NodeError> {
+        todo!()
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Error, Display, Debug)]

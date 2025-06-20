@@ -1,11 +1,12 @@
-use data_model::node::{PortData, PortType, PrimitiveArray, PrimitiveData, PrimitiveType};
-use numpy::{IxDyn, ndarray::Shape};
+use data_model::node::{PortData, PrimitiveArray, PrimitiveData};
+use numpy::IxDyn;
 use py_foray::py_module::foray;
 
 use pyo3::{IntoPyObject, Python, py_run};
 #[test]
 fn port_primitive() {
     pyo3::append_to_inittab!(foray);
+    pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
         let port_float = PrimitiveData::Float(1.5).into_pyobject(py).unwrap();
@@ -31,6 +32,7 @@ fn port_primitive() {
 }
 #[test]
 fn port_array() {
+    pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let array_float = PrimitiveArray::Float(
             numpy::ndarray::ArrayD::from_shape_vec(IxDyn(&[3]), vec![1.0, 2.0, 3.0]).unwrap(),
@@ -62,6 +64,7 @@ fn port_array() {
 }
 #[test]
 fn port_object() {
+    pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let r = PortData::Primitve(PrimitiveData::Integer(10));
         let g = PortData::Primitve(PrimitiveData::Integer(20));

@@ -1,6 +1,6 @@
 use numpy::ndarray::array;
 use numpy::pyo3::Python;
-use numpy::{PyArray, PyArrayMethods, ToPyArray};
+use numpy::{PyArrayMethods, ToPyArray};
 use pyo3::ffi::c_str;
 
 fn main() {

@@ -1,13 +1,20 @@
-use crate::node::{Dict, PortData};
+use std::sync::{Arc, RwLock};
 
-//TODO: is this useful/necessary?
-pub trait NodeSpec {
-    // type PortType;
-    // type PortData;
-    // type UIParameter;
+use serde::Deserialize;
 
+use crate::node::{Dict, NodeError, PortData};
+
+pub type PortName = String;
+pub type WireDataContainer<T> = Arc<RwLock<T>>;
+
+pub trait GraphNode<NodeData, PortType, WireData>
+where
+    PortType: Clone,
+{
+    fn inputs(&self) -> Dict<PortName, PortType>;
+    fn outputs(&self) -> Dict<PortName, PortType>;
     fn compute(
-        input_data: Dict<String, PortData>,
-        parameters: Dict<String, PortData>,
-    ) -> Dict<String, PortData>;
+        self,
+        inputs: Dict<PortName, WireDataContainer<WireData>>,
+    ) -> Result<(Dict<PortName, WireData>, NodeData), NodeError>;
 }

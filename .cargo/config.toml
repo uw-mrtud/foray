@@ -1,3 +1,12 @@
-# .cargo/config.toml
 [env]
-PYO3_PYTHON = "/usr/bin/python"
+PYTHONPATH = "/Users/jechristens3/projects/foray_data_model/py_foray/.venv/lib/python3.13/site-packages/"
+#PYO3_PYTHON = "/Users/jechristens3/projects/foray_data_model/py_foray/.venv/bin/python"
+# PYO3_PYTHON = "/Users/jechristens3/projects/foray/nodes/.venv/bin/python"
+# PYO3_PYTHON = "/Users/jechristens3/projects/foray_data_model/py_foray/.venv/bin/python"
+#PYO3_PYTHON = "./nodes/.venv/bin/python"
+
+[build]
+rustflags = ["-Clink-arg=-fuse-ld=lld", "-Zthreads=12"]
+#rustflags = ["-Clink-arg=-fuse-ld=mold", "-Zthreads=8"]
+#rustflags = ["-Clink-arg=-fuse-ld=mold", "-Zthreads=8"]
+#rustflags = ["-Clink-arg=-fuse-ld=lld", "-Zthreads=16"]

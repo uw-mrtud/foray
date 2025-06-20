@@ -5,24 +5,22 @@ edition = "2024"
 
 [workspace]
 resolver = "3"
-members = ["data_model", "py_foray"]
+members = ["data_model", "foray_graph", "py_foray"]
+default-members = ["data_model", "foray_graph", "py_foray"]
 
-[[bin]]
-name = "node_check"
-path = "./py_foray/src/main.rs"
 
-[lib]
-name = "foray_data_model"
-path = "./data_model/src/lib.rs"
+[workspace.dependencies]
 
-[dependencies]
+
 ndarray = { version = "0.16.1", features = ["serde"] }
+itertools = "0.14.0"
+log = "0.4.27"
+
 relative-path = { version = "2.0.1", features = ["serde"] }
-serde = { version = "1.0.219", features = ["derive"] }
 
 derive_more = { version = "2.0.1", features = ["debug", "display", "error"] }
-pyo3 = { version = "0.25.0", features = ["auto-initialize"] }
-numpy = "0.25.0"
+serde = { version = "1.0.219", features = ["derive"] }
+ron = "0.10.1"
 
-# [build-dependencies]
-# pyo3-build-config = "0.25.1"
+pyo3 = "0.25.0"
+numpy = "0.25.0"
