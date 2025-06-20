@@ -1,9 +1,9 @@
 [package]
-name = "py_foray"
+name = "foray_py"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-data_model = { path = "../data_model/" }
+foray_data_model = { path = "../foray_data_model/" }
 pyo3.workspace = true
 numpy.workspace = true

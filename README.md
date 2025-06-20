@@ -3,5 +3,5 @@ In order for pyo3 to work correctly (at least on macos), I needed to make sure t
 in `.cargo/config.toml`
 ```toml
 [env]
-PYTHONPATH = "./py_foray/.venv/lib/python3.13/site-packages/"
+PYTHONPATH = "./foray_py/.venv/lib/python3.13/site-packages/"
 ```

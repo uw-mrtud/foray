@@ -24,18 +24,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "data_model"
-version = "0.1.0"
-dependencies = [
- "derive_more",
- "ndarray",
- "numpy",
- "pyo3",
- "relative-path",
- "serde",
-]
-
-[[package]]
 name = "derive_more"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -63,18 +51,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
+name = "foray"
+version = "0.1.0"
+
+[[package]]
 name = "foray_data_model"
 version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "ndarray",
+ "numpy",
+ "pyo3",
+ "relative-path",
+ "serde",
+]
 
 [[package]]
 name = "foray_graph"
 version = "0.1.0"
 dependencies = [
- "data_model",
+ "foray_data_model",
  "itertools",
  "log",
  "ron",
  "serde",
+]
+
+[[package]]
+name = "foray_py"
+version = "0.1.0"
+dependencies = [
+ "foray_data_model",
+ "numpy",
+ "pyo3",
 ]
 
 [[package]]
@@ -216,15 +225,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "py_foray"
-version = "0.1.0"
-dependencies = [
- "data_model",
- "numpy",
- "pyo3",
 ]
 
 [[package]]

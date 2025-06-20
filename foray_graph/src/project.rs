@@ -1,6 +1,6 @@
 use std::{fs::DirEntry, path::PathBuf};
 
-use data_model::node::NodeTemplate;
+use foray_data_model::node::NodeTemplate;
 
 // use relative_path::PathExt;
 // use strum::IntoEnumIterator;

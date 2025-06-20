@@ -1,8 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use serde::Deserialize;
-
-use crate::node::{Dict, NodeError, PortData};
+use crate::node::{Dict, NodeError};
 
 pub type PortName = String;
 pub type WireDataContainer<T> = Arc<RwLock<T>>;

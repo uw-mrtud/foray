@@ -1,4 +1,4 @@
-use data_model::node::{NodeTemplate, PortData, PortType};
+use foray_data_model::node::{NodeTemplate, PortData, PortType};
 
 use crate::graph::Graph;
 

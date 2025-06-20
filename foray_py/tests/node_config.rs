@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use py_foray::{py_module::foray, py_node::parse_node};
+use foray_py::{py_module::foray, py_node::parse_node};
 
-use data_model::node::{Dict, NodeTemplate, PortType, PrimitiveType};
+use foray_data_model::node::{Dict, NodeTemplate, PortType, PrimitiveType};
 use pyo3::{Python, ffi::c_str};
 
 #[test]

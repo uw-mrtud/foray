@@ -1,6 +1,8 @@
 use std::{ffi::CString, fs, io, path::PathBuf};
 
-use data_model::node::{Dict, NodeTemplate, ParameterError, PortError, PortType, UIParameter};
+use foray_data_model::node::{
+    Dict, NodeTemplate, ParameterError, PortError, PortType, UIParameter,
+};
 use pyo3::{
     Bound, PyAny, PyErr, Python,
     types::{PyAnyMethods, PyModule},

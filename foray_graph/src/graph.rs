@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use data_model::{
+use foray_data_model::{
     node::{Dict, NodeError},
     node_spec::{GraphNode, PortName, WireDataContainer},
 };

@@ -1,12 +1,12 @@
 [package]
-name = "foray_data_model"
+name = "foray"
 version = "0.1.0"
 edition = "2024"
 
 [workspace]
 resolver = "3"
-members = ["data_model", "foray_graph", "py_foray"]
-default-members = ["data_model", "foray_graph", "py_foray"]
+members = ["foray_data_model", "foray_graph", "foray_py"]
+default-members = ["foray_data_model", "foray_graph", "foray_py"]
 
 
 [workspace.dependencies]

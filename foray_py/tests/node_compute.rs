@@ -1,6 +1,6 @@
-use data_model::node::{PortData, PrimitiveArray, PrimitiveData};
+use foray_data_model::node::{PortData, PrimitiveArray, PrimitiveData};
+use foray_py::py_module::foray;
 use numpy::IxDyn;
-use py_foray::py_module::foray;
 
 use pyo3::{IntoPyObject, Python, py_run};
 #[test]

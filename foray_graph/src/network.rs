@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fs::read_to_string, path::PathBuf};
 
-use data_model::node::{NodeTemplate, PortData, PortType};
+use foray_data_model::node::{NodeTemplate, PortData, PortType};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
