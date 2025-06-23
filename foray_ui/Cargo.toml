@@ -1,0 +1,17 @@
+[package]
+name = "foray_ui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+iced = { version = "0.13.1", default-features = false, features = [
+	"wgpu",
+	"auto-detect-theme",
+	"debug",
+	"lazy",
+	"image-without-codecs",
+	"advanced",
+	"canvas",
+	"async-std",
+] }
