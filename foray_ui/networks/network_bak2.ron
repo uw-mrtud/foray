@@ -1,0 +1,360 @@
+(
+    graph: (
+        nodes: {
+            59: (
+                template: PyNode((
+                    name: "Spin",
+                    path: "/Users/jechristens3/projects/gpi_v2/gpi_iced/nodes/Spin.py",
+                    ports: Ok((
+                        inputs: {},
+                        outputs: {
+                            "out": VectorField3d,
+                        },
+                    )),
+                )),
+            ),
+            60: (
+                template: PyNode((
+                    name: "Gradient",
+                    path: "/Users/jechristens3/projects/gpi_v2/gpi_iced/nodes/Gradient.py",
+                    ports: Ok((
+                        inputs: {
+                            "x": Real,
+                            "y": Real,
+                            "z": Real,
+                        },
+                        outputs: {
+                            "out": Real3d,
+                        },
+                    )),
+                )),
+            ),
+            70: (
+                template: RustNode(Constant(-1.0)),
+            ),
+            71: (
+                template: RustNode(Constant(0.6000000000000001)),
+            ),
+            75: (
+                template: RustNode(Constant(0.8)),
+            ),
+            83: (
+                template: PyNode((
+                    name: "Bloch",
+                    path: "/Users/jechristens3/projects/gpi_v2/gpi_iced/nodes/Bloch.py",
+                    ports: Ok((
+                        inputs: {
+                            "a": VectorField3d,
+                            "b": Real3d,
+                            "c": VectorField3d,
+                            "d": Real,
+                        },
+                        outputs: {
+                            "out": VectorField3d,
+                        },
+                    )),
+                )),
+            ),
+            85: (
+                template: RustNode(VectorField((
+                    rect: (
+                        center: (
+                            x: 0.0,
+                            y: 0.0,
+                        ),
+                        width: 10.0,
+                        height: 10.0,
+                    ),
+                    z_index: 0,
+                ))),
+            ),
+            87: (
+                template: RustNode(VectorField((
+                    rect: (
+                        center: (
+                            x: 0.0,
+                            y: 0.0,
+                        ),
+                        width: 10.0,
+                        height: 10.0,
+                    ),
+                    z_index: 0,
+                ))),
+            ),
+            91: (
+                template: RustNode(Plot2D((
+                    rect: (
+                        center: (
+                            x: 0.5,
+                            y: 0.5,
+                        ),
+                        width: 1.0,
+                        height: 1.0,
+                    ),
+                ))),
+            ),
+            92: (
+                template: RustNode(Constant(0.8)),
+            ),
+            93: (
+                template: PyNode((
+                    name: "rf",
+                    path: "/Users/jechristens3/projects/gpi_v2/gpi_iced/nodes/rf.py",
+                    ports: Ok((
+                        inputs: {},
+                        outputs: {
+                            "out": VectorField3d,
+                        },
+                    )),
+                )),
+            ),
+            94: (
+                template: RustNode(VectorField((
+                    rect: (
+                        center: (
+                            x: 0.0,
+                            y: 0.0,
+                        ),
+                        width: 10.0,
+                        height: 10.0,
+                    ),
+                    z_index: 0,
+                ))),
+            ),
+            95: (
+                template: RustNode(VectorField((
+                    rect: (
+                        center: (
+                            x: 0.0,
+                            y: 0.0,
+                        ),
+                        width: 10.0,
+                        height: 10.0,
+                    ),
+                    z_index: 0,
+                ))),
+            ),
+        },
+        edges: [((
+            node: 70,
+            name: "out",
+            io: Out,
+        ), (
+            node: 60,
+            name: "x",
+            io: In,
+        )), ((
+            node: 71,
+            name: "out",
+            io: Out,
+        ), (
+            node: 60,
+            name: "y",
+            io: In,
+        )), ((
+            node: 75,
+            name: "out",
+            io: Out,
+        ), (
+            node: 60,
+            name: "z",
+            io: In,
+        )), ((
+            node: 59,
+            name: "out",
+            io: Out,
+        ), (
+            node: 87,
+            name: "a",
+            io: In,
+        )), ((
+            node: 60,
+            name: "out",
+            io: Out,
+        ), (
+            node: 91,
+            name: "a",
+            io: In,
+        )), ((
+            node: 59,
+            name: "out",
+            io: Out,
+        ), (
+            node: 83,
+            name: "a",
+            io: In,
+        )), ((
+            node: 60,
+            name: "out",
+            io: Out,
+        ), (
+            node: 83,
+            name: "b",
+            io: In,
+        )), ((
+            node: 92,
+            name: "out",
+            io: Out,
+        ), (
+            node: 83,
+            name: "d",
+            io: In,
+        )), ((
+            node: 83,
+            name: "out",
+            io: Out,
+        ), (
+            node: 85,
+            name: "a",
+            io: In,
+        )), ((
+            node: 93,
+            name: "out",
+            io: Out,
+        ), (
+            node: 95,
+            name: "a",
+            io: In,
+        )), ((
+            node: 93,
+            name: "out",
+            io: Out,
+        ), (
+            node: 83,
+            name: "c",
+            io: In,
+        ))],
+        next_id: 96,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: 45.00763,
+                y: 5.9618835,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            85: (
+                x: 420.45636,
+                y: 592.5814,
+            ),
+            95: (
+                x: 712.30945,
+                y: 542.7314,
+            ),
+            93: (
+                x: 582.27,
+                y: 435.68988,
+            ),
+            60: (
+                x: 590.4401,
+                y: 359.54382,
+            ),
+            83: (
+                x: 386.3918,
+                y: 505.60828,
+            ),
+            94: (
+                x: 144.10635,
+                y: 728.3032,
+            ),
+            92: (
+                x: 446.56195,
+                y: 360.7446,
+            ),
+            71: (
+                x: 440.35962,
+                y: 230.24203,
+            ),
+            91: (
+                x: 838.3387,
+                y: 232.72122,
+            ),
+            87: (
+                x: 29.940765,
+                y: 421.366,
+            ),
+            59: (
+                x: 184.3219,
+                y: 324.19382,
+            ),
+            75: (
+                x: 627.59595,
+                y: 216.56702,
+            ),
+            70: (
+                x: 269.64014,
+                y: 227.93517,
+            ),
+        },
+    ),
+    selected_shapes: [],
+    cursor_position: (
+        x: -160.98125,
+        y: 14.753125,
+    ),
+    config: 50.0,
+    app_theme: (
+        background: (
+            base_color: (
+                r: 0.0625,
+                g: 0.125,
+                b: 0.125,
+                a: 1.0,
+            ),
+            weak_modifier: 0.03,
+            strong_modifier: 0.19999999,
+        ),
+        text: (
+            base_color: (
+                r: 0.9375,
+                g: 0.8125,
+                b: 0.75,
+                a: 1.0,
+            ),
+            weak_modifier: 0.1,
+            strong_modifier: 0.4,
+        ),
+        primary: (
+            base_color: (
+                r: 0.5,
+                g: 0.5625,
+                b: 0.3125,
+                a: 1.0,
+            ),
+            weak_modifier: 0.3,
+            strong_modifier: 0.1,
+        ),
+        secondary: (
+            base_color: (
+                r: 0.6875,
+                g: 0.5625,
+                b: 0.4375,
+                a: 1.0,
+            ),
+            weak_modifier: 0.1,
+            strong_modifier: 0.2,
+        ),
+        success: (
+            base_color: (
+                r: 0.4375,
+                g: 0.5,
+                b: 0.875,
+                a: 1.0,
+            ),
+            weak_modifier: 0.1,
+            strong_modifier: 0.2,
+        ),
+        danger: (
+            base_color: (
+                r: 0.6875,
+                g: 0.25,
+                b: 0.25,
+                a: 1.0,
+            ),
+            weak_modifier: 0.1,
+            strong_modifier: 0.2,
+        ),
+    ),
+)

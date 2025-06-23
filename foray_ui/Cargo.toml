@@ -1,10 +1,17 @@
 [package]
 name = "foray_ui"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+
+[package.metadata.bundle]
+name = "Foray"
+identifier = "org.mrtud.foray"
+icon = ["resources/icon*.png"]
+version = "0.1.0"
+category = "Development"
+short_description = "An interactive signal processing toolkit"
 
 [dependencies]
-
 iced = { version = "0.13.1", default-features = false, features = [
 	"wgpu",
 	"auto-detect-theme",
@@ -15,3 +22,39 @@ iced = { version = "0.13.1", default-features = false, features = [
 	"canvas",
 	"async-std",
 ] }
+
+pyo3.workspace=true
+numpy.workspace=true
+ndarray = "0.16.1"
+
+ron = { version = "0.8.1", features = ["indexmap"] }
+indexmap = { version = "2.7.0", features = ["serde"] }
+
+serde = { version = "1.0.217", features = ["serde_derive"] }
+strum = { version = "0.26.3", features = ["derive"] }
+derive_more = { version = "1.0.0", features = [
+	"debug",
+	"display",
+	"add",
+	"mul",
+	"not",
+] }
+float-cmp = "0.10.0"
+notify = { version = "8.0.0", features = ["serde"] }
+notify-debouncer-full = "0.5.0"
+
+env_logger = "0.11.6"
+log = "0.4.22"
+palette = "0.7.6"
+glob = "0.3.2"
+itertools = "0.14.0"
+glam = "0.29.2"
+colorgrad = "0.7.0"
+directories = "6.0.0"
+toml = "0.8.20"
+#rfd ={version =  "0.15.3", default-features = false, features = ["async-std","gtk3"]}
+rfd = "0.15.3"
+relative-path = { version = "1.9.3", features = ["serde"] }
+
+[profile.dev]
+debug = 0

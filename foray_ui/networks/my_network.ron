@@ -1,0 +1,217 @@
+(
+    graph: (
+        nodes: {
+            5: (
+                template: RustNode(Plot2D((
+                    rect: (
+                        center: (
+                            x: 0.5,
+                            y: 0.5,
+                        ),
+                        width: 1.0,
+                        height: 1.0,
+                    ),
+                ))),
+            ),
+            19: (
+                template: RustNode(Plot2D((
+                    rect: (
+                        center: (
+                            x: 0.5,
+                            y: 0.5,
+                        ),
+                        width: 1.0,
+                        height: 1.0,
+                    ),
+                ))),
+            ),
+            20: (
+                template: RustNode(Plot2D((
+                    rect: (
+                        center: (
+                            x: 0.5,
+                            y: 0.5,
+                        ),
+                        width: 1.0,
+                        height: 1.0,
+                    ),
+                ))),
+            ),
+            25: (
+                template: PyNode((
+                    name: "Phantom",
+                    relative_path: "core/Phantom.py",
+                    ports: Ok((
+                        inputs: {},
+                        outputs: {
+                            "out": ArrayReal,
+                        },
+                    )),
+                    parameters: Ok({}),
+                )),
+            ),
+            26: (
+                template: PyNode((
+                    name: "FFT",
+                    relative_path: "core/FFT.py",
+                    ports: Ok((
+                        inputs: {
+                            "a": ArrayComplex,
+                        },
+                        outputs: {
+                            "out": ArrayComplex,
+                        },
+                    )),
+                    parameters: Ok({}),
+                )),
+            ),
+            27: (
+                template: PyNode((
+                    name: "Inverse_FFT",
+                    relative_path: "core/Inverse_FFT.py",
+                    ports: Ok((
+                        inputs: {
+                            "a": ArrayComplex,
+                        },
+                        outputs: {
+                            "out": ArrayComplex,
+                        },
+                    )),
+                    parameters: Ok({}),
+                )),
+            ),
+            28: (
+                template: PyNode((
+                    name: "x",
+                    relative_path: "core/math/x.py",
+                    ports: Ok((
+                        inputs: {
+                            "a": ArrayComplex,
+                            "b": ArrayComplex,
+                        },
+                        outputs: {
+                            "out": ArrayComplex,
+                        },
+                    )),
+                    parameters: Ok({}),
+                )),
+            ),
+            29: (
+                template: PyNode((
+                    name: "Circle_Mask",
+                    relative_path: "core/Circle_Mask.py",
+                    ports: Ok((
+                        inputs: {},
+                        outputs: {
+                            "out": ArrayReal,
+                        },
+                    )),
+                    parameters: Ok({
+                        "radius": Slider(0.33999997),
+                    }),
+                )),
+            ),
+        },
+        edges: [((
+            node: 25,
+            name: "out",
+            io: Out,
+        ), (
+            node: 5,
+            name: "a",
+            io: In,
+        )), ((
+            node: 25,
+            name: "out",
+            io: Out,
+        ), (
+            node: 26,
+            name: "a",
+            io: In,
+        )), ((
+            node: 28,
+            name: "out",
+            io: Out,
+        ), (
+            node: 27,
+            name: "a",
+            io: In,
+        )), ((
+            node: 27,
+            name: "out",
+            io: Out,
+        ), (
+            node: 19,
+            name: "a",
+            io: In,
+        )), ((
+            node: 26,
+            name: "out",
+            io: Out,
+        ), (
+            node: 28,
+            name: "b",
+            io: In,
+        )), ((
+            node: 29,
+            name: "out",
+            io: Out,
+        ), (
+            node: 20,
+            name: "a",
+            io: In,
+        )), ((
+            node: 29,
+            name: "out",
+            io: Out,
+        ), (
+            node: 28,
+            name: "a",
+            io: In,
+        ))],
+        next_id: 30,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: 715.04504,
+                y: 23.212616,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            29: (
+                x: 797.717,
+                y: 166.45009,
+            ),
+            20: (
+                x: 719.8449,
+                y: 449.21826,
+            ),
+            5: (
+                x: 1189.8446,
+                y: 149.39429,
+            ),
+            25: (
+                x: 1003.02026,
+                y: 59.304802,
+            ),
+            26: (
+                x: 1004.1328,
+                y: 163.78607,
+            ),
+            28: (
+                x: 973.3483,
+                y: 260.17044,
+            ),
+            27: (
+                x: 974.24225,
+                y: 352.7517,
+            ),
+            19: (
+                x: 974.80884,
+                y: 447.31866,
+            ),
+        },
+    ),
+)

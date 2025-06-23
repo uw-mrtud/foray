@@ -1,0 +1,434 @@
+(
+    graph: (
+        nodes: {
+            0: Linspace((
+                start: -10.0,
+                stop: 10.0,
+                num: 1000,
+            )),
+            1: Constant(5.0),
+            5: Plot((
+                rect: (
+                    center: (
+                        x: 0.0,
+                        y: 0.0,
+                    ),
+                    width: 20.0,
+                    height: 10.0,
+                ),
+            )),
+            7: Multiply,
+            8: Sinc,
+            11: Multiply,
+            12: Constant(-1.0999999999999996),
+            16: Linspace((
+                start: 0.0,
+                stop: 200.0,
+                num: 2000,
+            )),
+            17: Cos,
+            18: Sin,
+            20: Multiply,
+            21: Constant(-0.09999999999999964),
+            23: Multiply,
+            24: Multiply,
+            29: Multiply,
+            30: Constant(-1.0),
+            31: Multiply,
+            34: Join,
+            35: Join,
+            36: Plot((
+                rect: (
+                    center: (
+                        x: 0.0,
+                        y: 0.0,
+                    ),
+                    width: 20.0,
+                    height: 10.0,
+                ),
+            )),
+            38: Reverse,
+            39: Reverse,
+            40: Identity,
+            41: Identity,
+            43: Plot((
+                rect: (
+                    center: (
+                        x: 0.0,
+                        y: 0.0,
+                    ),
+                    width: 20.0,
+                    height: 10.0,
+                ),
+            )),
+        },
+        edges: [((
+            node: 8,
+            name: "out",
+            io: Out,
+        ), (
+            node: 7,
+            name: "a",
+            io: In,
+        )), ((
+            node: 1,
+            name: "out",
+            io: Out,
+        ), (
+            node: 7,
+            name: "b",
+            io: In,
+        )), ((
+            node: 0,
+            name: "out",
+            io: Out,
+        ), (
+            node: 11,
+            name: "a",
+            io: In,
+        )), ((
+            node: 12,
+            name: "out",
+            io: Out,
+        ), (
+            node: 11,
+            name: "b",
+            io: In,
+        )), ((
+            node: 16,
+            name: "out",
+            io: Out,
+        ), (
+            node: 18,
+            name: "a",
+            io: In,
+        )), ((
+            node: 16,
+            name: "out",
+            io: Out,
+        ), (
+            node: 17,
+            name: "a",
+            io: In,
+        )), ((
+            node: 16,
+            name: "out",
+            io: Out,
+        ), (
+            node: 24,
+            name: "a",
+            io: In,
+        )), ((
+            node: 21,
+            name: "out",
+            io: Out,
+        ), (
+            node: 24,
+            name: "b",
+            io: In,
+        )), ((
+            node: 24,
+            name: "out",
+            io: Out,
+        ), (
+            node: 23,
+            name: "b",
+            io: In,
+        )), ((
+            node: 24,
+            name: "out",
+            io: Out,
+        ), (
+            node: 20,
+            name: "a",
+            io: In,
+        )), ((
+            node: 17,
+            name: "out",
+            io: Out,
+        ), (
+            node: 23,
+            name: "a",
+            io: In,
+        )), ((
+            node: 18,
+            name: "out",
+            io: Out,
+        ), (
+            node: 20,
+            name: "b",
+            io: In,
+        )), ((
+            node: 30,
+            name: "out",
+            io: Out,
+        ), (
+            node: 29,
+            name: "a",
+            io: In,
+        )), ((
+            node: 30,
+            name: "out",
+            io: Out,
+        ), (
+            node: 31,
+            name: "a",
+            io: In,
+        )), ((
+            node: 34,
+            name: "out",
+            io: Out,
+        ), (
+            node: 36,
+            name: "x",
+            io: In,
+        )), ((
+            node: 35,
+            name: "out",
+            io: Out,
+        ), (
+            node: 36,
+            name: "y",
+            io: In,
+        )), ((
+            node: 29,
+            name: "out",
+            io: Out,
+        ), (
+            node: 38,
+            name: "a",
+            io: In,
+        )), ((
+            node: 38,
+            name: "out",
+            io: Out,
+        ), (
+            node: 34,
+            name: "a",
+            io: In,
+        )), ((
+            node: 31,
+            name: "out",
+            io: Out,
+        ), (
+            node: 39,
+            name: "a",
+            io: In,
+        )), ((
+            node: 39,
+            name: "out",
+            io: Out,
+        ), (
+            node: 35,
+            name: "a",
+            io: In,
+        )), ((
+            node: 23,
+            name: "out",
+            io: Out,
+        ), (
+            node: 40,
+            name: "a",
+            io: In,
+        )), ((
+            node: 40,
+            name: "out",
+            io: Out,
+        ), (
+            node: 29,
+            name: "b",
+            io: In,
+        )), ((
+            node: 40,
+            name: "out",
+            io: Out,
+        ), (
+            node: 34,
+            name: "b",
+            io: In,
+        )), ((
+            node: 20,
+            name: "out",
+            io: Out,
+        ), (
+            node: 41,
+            name: "a",
+            io: In,
+        )), ((
+            node: 41,
+            name: "out",
+            io: Out,
+        ), (
+            node: 31,
+            name: "b",
+            io: In,
+        )), ((
+            node: 41,
+            name: "out",
+            io: Out,
+        ), (
+            node: 35,
+            name: "b",
+            io: In,
+        )), ((
+            node: 11,
+            name: "out",
+            io: Out,
+        ), (
+            node: 8,
+            name: "a",
+            io: In,
+        )), ((
+            node: 23,
+            name: "out",
+            io: Out,
+        ), (
+            node: 43,
+            name: "x",
+            io: In,
+        )), ((
+            node: 20,
+            name: "out",
+            io: Out,
+        ), (
+            node: 43,
+            name: "y",
+            io: In,
+        )), ((
+            node: 0,
+            name: "out",
+            io: Out,
+        ), (
+            node: 5,
+            name: "x",
+            io: In,
+        )), ((
+            node: 7,
+            name: "out",
+            io: Out,
+        ), (
+            node: 5,
+            name: "y",
+            io: In,
+        ))],
+        next_id: 46,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: 113.68848,
+                y: -28.640625,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            0: (
+                x: 338.98145,
+                y: 101.190254,
+            ),
+            1: (
+                x: 652.62494,
+                y: 301.50955,
+            ),
+            5: (
+                x: 358.6414,
+                y: 540.4563,
+            ),
+            7: (
+                x: 517.40424,
+                y: 327.24274,
+            ),
+            8: (
+                x: 382.42657,
+                y: 263.8164,
+            ),
+            11: (
+                x: 494.91516,
+                y: 179.2845,
+            ),
+            12: (
+                x: 605.2686,
+                y: 102.05285,
+            ),
+            16: (
+                x: -97.18756,
+                y: 121.11246,
+            ),
+            17: (
+                x: -171.1405,
+                y: 326.60312,
+            ),
+            18: (
+                x: 124.72504,
+                y: 329.2499,
+            ),
+            20: (
+                x: 59.0,
+                y: 425.325,
+            ),
+            21: (
+                x: 7.7781067,
+                y: 239.63742,
+            ),
+            23: (
+                x: -107.471985,
+                y: 427.62494,
+            ),
+            24: (
+                x: -34.206207,
+                y: 323.42188,
+            ),
+            29: (
+                x: -398.66245,
+                y: 652.2751,
+            ),
+            30: (
+                x: -399.2781,
+                y: 471.7437,
+            ),
+            31: (
+                x: -263.51566,
+                y: 653.52185,
+            ),
+            34: (
+                x: -371.41882,
+                y: 848.1625,
+            ),
+            35: (
+                x: -223.20313,
+                y: 850.5281,
+            ),
+            36: (
+                x: -294.46875,
+                y: 953.87195,
+            ),
+            38: (
+                x: -397.8937,
+                y: 743.4281,
+            ),
+            39: (
+                x: -263.3188,
+                y: 741.725,
+            ),
+            40: (
+                x: -335.67807,
+                y: 566.16565,
+            ),
+            41: (
+                x: -189.04681,
+                y: 559.88745,
+            ),
+            43: (
+                x: -6.65625,
+                y: 544.4031,
+            ),
+        },
+    ),
+    selected_shape: None,
+    cursor_position: (
+        x: -67.62813,
+        y: 23.51875,
+    ),
+    config: 50.0,
+    debug: false,
+)

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 32 32"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   sodipodi:docname="Foray_Icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#0f1f1f"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     inkscape:zoom="5.2997656"
+     inkscape:cx="-1.2264693"
+     inkscape:cy="-0.75475036"
+     inkscape:window-width="1312"
+     inkscape:window-height="813"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:62.6962px;font-family:'Courier New';-inkscape-font-specification:'Courier New';fill:#cdab8f;fill-opacity:1;stroke-width:0.807825;stroke-linecap:round;stroke-linejoin:round"
+       x="-2.6357152"
+       y="29.035383"
+       id="text1"
+       transform="scale(0.98910657,1.0110134)"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         x="-2.6357152"
+         y="29.035383"
+         style="stroke-width:0.807825;fill:#cdab8f">o</tspan></text>
+    <circle
+       style="fill:#809050;fill-opacity:1;stroke-width:1.01956;stroke-linecap:round;stroke-linejoin:round"
+       id="path1"
+       cx="25.094221"
+       cy="24.704538"
+       r="4.0355296" />
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: RustNode(Identity),
+            ),
+        },
+        edges: [],
+        next_id: 1,
+),
+    shapes: (
+        camera: (
+            position: (
+                x: 0.0,
+                y: 0.0,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            0: (
+                x: 149.95624,
+                y: 177.2625,
+            ),
+        },
+    ),
+)
