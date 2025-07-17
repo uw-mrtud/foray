@@ -4,20 +4,22 @@ use foray_graph::{
     node_instance::ForayNodeInstance,
 };
 use iced::{
-    border, color,
+    alignment::Horizontal::Right,
+    border,
     widget::{
-        column, container, container::background, mouse_area, rich_text, row, span, text, tooltip,
-        vertical_space, Row,
+        column, container, container::background, mouse_area, row, text, tooltip, vertical_space,
     },
     Alignment::Center,
     Border, Element, Size,
 };
+use itertools::Itertools;
 
 use crate::{
     app::Message,
     math::Point,
-    style::theme::AppTheme,
+    style::{color::Color, theme::AppTheme},
     widget::{custom_button, pin::Pin},
+    CODE_FONT,
 };
 
 use super::node::{NODE_RADIUS, PORT_RADIUS};
@@ -109,43 +111,45 @@ fn port_style(
     app_theme: &AppTheme,
 ) -> custom_button::Style {
     let color_pair = port_color_pair(&port_type, app_theme);
-    let mut style = custom_button::custom(s, color_pair.0, color_pair.1);
+    let mut style = custom_button::custom(s, color_pair.0.into(), color_pair.1.into());
     style.border.radius = border::radius(100.);
     style
 }
 
 /// Get (base, highlight) color pair for port type
-fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (iced::Color, iced::Color) {
+fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (Color, Color) {
     match port_type {
-        //TODO: Put these colors into AppTheme
-        // PortType::Integer => (color!(175, 48, 41), color!(209, 77, 65)), //red
-        // PortType::Real => (
-        //     app_theme.primary.base_color.into(),
-        //     app_theme.primary.weak_color().into(),
-        // ),
-        // PortType::Complex => (color!(102, 128, 11), color!(135, 154, 57)), //green
-        // PortType::ArrayInteger => (color!(175, 48, 41), color!(209, 77, 65)), //red
-        // PortType::ArrayReal => (color!(32, 94, 166), color!(67, 133, 190)), //blue
-        // PortType::ArrayComplex => (color!(36, 131, 123), color!(58, 169, 159)), //cyan
-        // PortType::Dynamic => (color!(175, 125, 41), color!(209, 150, 65)), //orange
-        PortType::Object(_) => (color!(200, 160, 41), color!(229, 180, 65)), //yellow
-        _ => (color!(175, 48, 41), color!(209, 77, 65)),                     //red
+        PortType::Object(_) => app_theme.orange.color_pair(),
+        PortType::Integer => app_theme.red.color_pair(),
+        PortType::Float => app_theme.blue.color_pair(),
+        PortType::Boolean => app_theme.cyan.color_pair(),
+        PortType::String => app_theme.green.color_pair(),
+        PortType::Array(array_port_type, _) => port_color_pair(array_port_type, app_theme),
     }
 }
 
 /// Stylized port text
-fn port_text<'a>(
-    port_name: String,
+fn port_text(port_type: &PortType) -> String {
+    match port_type {
+        PortType::Integer => "Integer",
+        PortType::Float => "Float",
+        PortType::Boolean => "Boolean",
+        PortType::String => "String",
+        PortType::Array(_port_type, _items) => "Array",
+        PortType::Object(_children) => "Object",
+    }
+    .to_owned()
+}
+fn port_type_label<'a>(
+    label: Element<'a, Message>,
     port_type: &PortType,
-    app_theme: &AppTheme,
-) -> Row<'a, Message> {
-    row![
-        text(port_name),
-        rich_text([span("todo_port_name".to_string()) //port_type.to_string())
-            .background(port_color_pair(port_type, app_theme).0)
-            .border(Border::default().rounded(4))
-            .padding([0, 2])])
-    ]
+    app_theme: &'a AppTheme,
+) -> Element<'a, Message> {
+    //text::Rich<'a, Message> {
+    let color = port_color_pair(port_type, app_theme).0.iced_color();
+    container(label)
+        .style(move |_| background(color).border(Border::default().rounded(4)))
+        .into()
 }
 
 /// Display summary of port information
@@ -154,39 +158,72 @@ fn port_tooltip(
     port_type: PortType,
     app_theme: &'_ AppTheme,
 ) -> Element<'_, Message> {
-    port_tooltip_recurse(port_name, port_type, app_theme, true)
+    row![
+        text(port_name),
+        port_tooltip_recurse(port_type, app_theme, true)
+    ]
+    .align_y(Center)
+    .into()
 }
 
+const VERTICAL_SPACING: u16 = 2;
+const NESTED_PADDING: u16 = 2;
+const BORDER_RADIUS: u16 = 4;
+
 fn port_tooltip_recurse(
-    port_name: String,
+    //port_name: String,
     port_type: PortType,
     app_theme: &'_ AppTheme,
     even: bool, // Switch between 2 background colors as objects are nested
 ) -> Element<'_, Message> {
-    let port_type_display = match port_type {
-        // Recursive case
-        PortType::Object(fields) => row![
-            text(port_name),
-            container(
-                column(
-                    fields
-                        .into_iter()
-                        .map(|(k, v)| port_tooltip_recurse(k, v, app_theme, !even))
-                )
-                .spacing(4)
-            )
-            .padding(4)
-            .style(move |_t| background(iced::Color::from(if even {
+    let nested = |inner| {
+        container(column(inner).spacing(VERTICAL_SPACING).align_x(Right)).style(move |_t| {
+            background(iced::Color::from(if even {
                 app_theme.background.weak_color()
             } else {
                 app_theme.background.strong_color()
             }))
-            .border(Border::default().rounded(4)))
-        ]
-        .spacing(4)
-        .align_y(Center),
+            .border(Border::default().rounded(BORDER_RADIUS))
+        })
+    };
+
+    let port_type_display = match &port_type {
+        // Recursive cases
+        PortType::Object(fields) => nested(fields.iter().map(|(k, v)| {
+            row![
+                text(k.clone()),
+                port_tooltip_recurse(v.clone(), app_theme, !even)
+            ]
+            .align_y(Center)
+            .into()
+        }))
+        .padding(NESTED_PADDING)
+        .into(),
+        PortType::Array(array_type, shape) => {
+            let nested_tooltip = port_tooltip_recurse(*array_type.clone(), app_theme, even);
+            let shape_str = format!(
+                "[{}]",
+                shape
+                    .iter()
+                    .map(|v| match v {
+                        Some(v) => v.to_string(),
+                        None => ":".to_string(),
+                    })
+                    .join(",")
+            );
+
+            port_type_label(
+                row![nested_tooltip, text(shape_str).font(CODE_FONT)]
+                    .padding(NESTED_PADDING)
+                    .align_y(Center)
+                    .into(),
+                &port_type,
+                app_theme,
+            )
+        }
+
         // Base case
-        _ => port_text(port_name.clone(), &port_type, app_theme).spacing(8),
+        _ => port_type_label(text(port_text(&port_type)).into(), &port_type, app_theme),
     };
     container(port_type_display).padding([0, 4]).into()
 }

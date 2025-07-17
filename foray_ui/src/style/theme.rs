@@ -17,6 +17,12 @@ pub struct AppTheme {
     pub secondary: GuiColor,
     pub success: GuiColor,
     pub danger: GuiColor,
+    // For Ports
+    pub red: GuiColor,
+    pub orange: GuiColor,
+    pub green: GuiColor,
+    pub cyan: GuiColor,
+    pub blue: GuiColor,
 }
 
 impl Default for AppTheme {
@@ -25,10 +31,14 @@ impl Default for AppTheme {
             background: GuiColor::new(16, 32, 32, 0.03, 0.2),
             text: GuiColor::new(240, 208, 192, 0.1, 0.4),
             primary: GuiColor::new(128, 144, 80, 0.3, 0.1),
-            //secondary: GuiColor::new(203, 97, 32, 0.1, 0.4),
             secondary: GuiColor::new(176, 144, 112, 0.1, 0.2),
             success: GuiColor::new(112, 128, 224, 0.1, 0.2),
             danger: GuiColor::new(176, 64, 64, 0.1, 0.2),
+            red: GuiColor::new(175, 48, 41, 0.1, 0.2),
+            orange: GuiColor::new(175, 125, 41, 0.1, 0.2),
+            green: GuiColor::new(102, 128, 11, 0.1, 0.2),
+            cyan: GuiColor::new(36, 131, 123, 0.1, 0.2),
+            blue: GuiColor::new(32, 94, 166, 0.1, 0.2),
         }
     }
 }
@@ -55,6 +65,7 @@ pub fn extended(_palette: Palette, app_theme: AppTheme) -> Extended {
         secondary,
         success,
         danger,
+        ..
     } = app_theme;
 
     let base = |gui_color: GuiColor| Pair::new(gui_color.base_color.into(), text.base_color.into());

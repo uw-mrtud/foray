@@ -2,14 +2,15 @@ use std::f32::consts::PI;
 use std::time::Instant;
 
 use crate::app::{App, Message};
-use crate::gui_node::{node_view, template_node_size};
 // use crate::gui_node::{GUINode, PortDataContainer};
 // use crate::nodes::NodeData;
 use crate::widget::node_container::NodeContainer;
 use crate::StableMap;
-use foray_data_model::node::PortData;
+use foray_data_model::node::{Dict, PortData};
 use foray_data_model::WireDataContainer;
-use foray_graph::node_instance::{ForayNodeInstance, NodeStatus};
+use foray_graph::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
+use foray_graph::rust_node::RustNodeTemplate;
+use iced::Font;
 use iced::{
     border,
     widget::{column, *},
@@ -123,4 +124,58 @@ pub fn format_node_output<'a>(
         }))
     ])
     .into()
+}
+
+pub fn node_view<'a>(
+    node_instance: &'a ForayNodeInstance,
+    _id: u32,
+    _input_data: Dict<String, WireDataContainer<PortData>>,
+) -> iced::Element<'a, Message> {
+    let operation = |s| {
+        text(s)
+            .font(Font::with_name("DejaVu Math TeX Gyre"))
+            .size(30)
+            .into()
+    };
+    let trig = |s| {
+        text(s)
+            .size(20)
+            .font(Font::with_name("DejaVu Math TeX Gyre"))
+            .into()
+    };
+
+    match &node_instance.template {
+        ForayNodeTemplate::RustNode(rn) => match rn {
+            RustNodeTemplate::Constant(_value) => operation("not_implimented"), //constant::view(id, *value),
+            // RustNode::Linspace(linspace_config) => linspace_config.view(id),
+            // RustNode::Plot(plot) => plot.view(id, input_data),
+            // RustNode::Plot2D(plot) => plot.view(id, input_data),
+            // RustNode::VectorField(vf) => vf.view(id, input_data),
+            RustNodeTemplate::Add => operation("+"),
+            RustNodeTemplate::Subtract => operation("−"),
+            RustNodeTemplate::Multiply => operation("×"),
+            RustNodeTemplate::Divide => operation("÷"),
+            RustNodeTemplate::Cos => trig("cos(α)"),
+            RustNodeTemplate::Sin => trig("sin(α)"),
+            RustNodeTemplate::Sinc => trig("sinc(α)"),
+
+            _ => text(rn.to_string()).into(),
+        },
+        ForayNodeTemplate::PyNode(py_node) => text(py_node.name.clone()).into(),
+    }
+}
+
+pub fn template_node_size(_template: &ForayNodeTemplate) -> iced::Size {
+    default_node_size()
+
+    // match template {
+    //     ForayNodeTemplate::RustNode(rn) => match rn {
+    //         // RustNode::Linspace(_) => Size::new(dft.width * 2., dft.height),
+    //         // RustNode::Plot(_) => dft * 2.,
+    //         // RustNode::Plot2D(_) => (dft.width * 2., dft.width * 2.).into(),
+    //         // RustNode::VectorField(_) => (dft.width * 2., dft.width * 2.).into(),
+    //         _ => dft,
+    //     },
+    //     ForayNodeTemplate::PyNode(_) => dft,
+    // }
 }

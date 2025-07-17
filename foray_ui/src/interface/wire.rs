@@ -1,7 +1,6 @@
 use std::iter::once;
 
 use crate::app::{Action, App};
-use crate::gui_node::template_node_size;
 use crate::math::Point;
 use crate::style::theme::AppTheme;
 use crate::StableMap;
@@ -78,7 +77,7 @@ impl App {
     }
 }
 
-use super::node::{NODE_RADIUS, PORT_RADIUS};
+use super::node::{template_node_size, NODE_RADIUS, PORT_RADIUS};
 use crate::app;
 use iced::Vector;
 

@@ -115,6 +115,12 @@
 # Bugs
 - [ ] Node running while it's deleted, results come back, but node is gone. crash on unwrapping node
 - [ ] Node's are selectable when behind left panel
-- [ ] node src errors cause crash on unwrap 
+- [x] node src errors cause crash on unwrap 
 - [ ] support nodes that need to create an image handle
   - "node update" method that gets called after compute?
+
+- [ ] Nodes save/load absolute/relative position improperly
+
+# In progress
+- [x] Port colors 
+- [x] Port type names 

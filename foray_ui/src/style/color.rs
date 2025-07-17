@@ -20,6 +20,11 @@ pub struct Color {
     pub b: f32,
     pub a: f32,
 }
+impl Color {
+    pub fn iced_color(&self) -> iced::Color {
+        Into::<iced::Color>::into(*self)
+    }
+}
 
 impl From<iced::Color> for Color {
     fn from(v: iced::Color) -> Self {
@@ -56,6 +61,9 @@ impl GuiColor {
     }
     pub fn strong_color(&self) -> Color {
         mix(self.base_color, WHITE, self.strong_modifier)
+    }
+    pub fn color_pair(&self) -> (Color, Color) {
+        (self.base_color, self.strong_color())
     }
 }
 

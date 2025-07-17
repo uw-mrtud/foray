@@ -25,27 +25,6 @@ impl UIParameter {
     }
 }
 
-// #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
-// pub enum PrimitiveType {
-//     Integer,
-//     Float,
-//     Boolean,
-//     String,
-// }
-
-// impl<'py> FromPyObject<'py> for PrimitiveType {
-//     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-//         let string = ob.extract::<String>()?;
-//         Ok(match string.as_str() {
-//             "Integer" => PrimitiveType::Integer,
-//             "Float" => PrimitiveType::Float,
-//             "Boolean" => PrimitiveType::Boolean,
-//             "String" => PrimitiveType::String,
-//             _ => todo!(),
-//         })
-//     }
-// }
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum PortType {
     Integer,
