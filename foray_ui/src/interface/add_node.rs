@@ -1,8 +1,9 @@
-use crate::gui_node::GUINode;
-use crate::nodes::NodeTemplate;
+// use crate::gui_node:
+// use crate::nodes::UINodeTemplate;
 use crate::project::{NodeTree, Project};
 use crate::style::container::rounded_box;
 use crate::{app::Message, style};
+use foray_graph::node_instance::ForayNodeTemplate;
 use iced::padding::left;
 use iced::*;
 use itertools::Itertools;
@@ -41,7 +42,7 @@ pub fn add_node_tree_panel<'b>(
 
 /// Recursively build a nested list
 pub fn node_tree<'b>(
-    node: &NodeTree<NodeTemplate>,
+    node: &NodeTree<ForayNodeTemplate>,
     tree_path: &[String],
     selected_tree_path: &[String],
 ) -> Element<'b, Message> {

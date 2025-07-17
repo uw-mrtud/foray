@@ -1,11 +1,12 @@
 use std::iter::once;
 
 use crate::app::{Action, App};
-use crate::gui_node::GUINode;
+use crate::gui_node::template_node_size;
 use crate::math::Point;
 use crate::style::theme::AppTheme;
 use crate::StableMap;
 use canvas::{Path, Stroke};
+use foray_graph::graph::{PortRef, IO};
 use iced::{widget::*, Size};
 
 impl App {
@@ -15,9 +16,9 @@ impl App {
         points: &StableMap<u32, Point>,
     ) -> Vec<(Path, Stroke<'_>)> {
         let port_position = |port: &PortRef| {
-            let node_size = &self.network.graph.get_node(port.node).template.node_size();
+            let node_size = template_node_size(&self.network.graph.get_node(port.node).template);
             points[&port.node]
-                + find_port_offset(port, self.network.graph.port_index(port), *node_size).into()
+                + find_port_offset(port, self.network.graph.port_index(port), node_size).into()
         };
 
         //// Handle currently active wire
@@ -78,10 +79,7 @@ impl App {
 }
 
 use super::node::{NODE_RADIUS, PORT_RADIUS};
-use crate::{
-    app,
-    graph::{PortRef, IO},
-};
+use crate::app;
 use iced::Vector;
 
 /// Determine where a port should be positioned relative to the origin of the node

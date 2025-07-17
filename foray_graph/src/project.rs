@@ -1,6 +1,6 @@
 use std::{fs::DirEntry, path::PathBuf};
 
-use foray_data_model::node::NodeTemplate;
+use foray_py::py_node::PyNodeTemplate;
 
 // use relative_path::PathExt;
 // use strum::IntoEnumIterator;
@@ -48,7 +48,7 @@ impl<D> Default for NodeTree<D> {
 #[derive(Debug)]
 pub struct Project {
     pub absolute_path: PathBuf,
-    pub node_tree: Vec<NodeTree<NodeTemplate>>,
+    pub node_tree: Vec<NodeTree<PyNodeTemplate>>,
 }
 
 // pub fn python_project(absolute_path: &Path) -> Project {

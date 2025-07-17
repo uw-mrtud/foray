@@ -1,3 +1,4 @@
+use foray_data_model::node::UIParameter;
 use pyo3::prelude::*;
 
 // #[pyclass]
@@ -9,6 +10,10 @@ pub fn foray(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // m.add_function(wrap_pyfunction!(slider, m)?)?;
     // m.add_class::<Ui>()?;
 
+    // let param_submodule = PyModule::new(py, "param")?;
+    // param_submodule.add("Slider", "Slider")?;
+    // m.add_submodule(&param_submodule)?;
+
     let port_submodule = PyModule::new(py, "port")?;
     port_submodule.add("Integer", "Integer")?;
     port_submodule.add("Float", "Float")?;
@@ -16,6 +21,8 @@ pub fn foray(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     port_submodule.add("ArrayReal", "ArrayReal")?;
     port_submodule.add("Dynamic", "Dynamic")?;
     m.add_submodule(&port_submodule)?;
+
+    m.add_class::<UIParameter>()?;
     // let _ = m.add_class::<PrimitiveType>();
 
     Ok(())

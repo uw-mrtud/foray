@@ -3,7 +3,7 @@ use crate::app::Message;
 use crate::gui_node::{PortDataContainer, PortDataReference};
 use crate::interface::node::{INNER_NODE_WIDTH, NODE_BORDER_WIDTH};
 use crate::math::Vector;
-use crate::nodes::NodeTemplate;
+use crate::nodes::UINodeTemplate;
 use crate::StableMap;
 use iced::widget::image::Handle;
 use iced::widget::{button, container, horizontal_space, image, row, text, text_input};
@@ -91,7 +91,7 @@ impl Plot2D {
         let message = move |rect| {
             Message::UpdateNodeTemplate(
                 id,
-                NodeTemplate::RustNode(RustNode::Plot2D(Self {
+                UINodeTemplate::RustNode(RustNode::Plot2D(Self {
                     rect,
                     ..self.clone()
                 })),

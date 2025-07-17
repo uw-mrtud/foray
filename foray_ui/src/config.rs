@@ -7,6 +7,7 @@ use std::{
     process::Command,
 };
 
+use foray_py::py_module::foray;
 use log::{error, info, warn};
 use pyo3::{py_run, types::PyAnyMethods, PyResult, Python};
 use serde::{Deserialize, Serialize};
@@ -133,13 +134,14 @@ impl Config {
                         prepend_env("PYTHONPATH", path.join("site-packages"))
                             .unwrap()
                             .to_str()
-                            .unwrap_or_else(|| panic!("Paths must be valid unicode {:?}", path)),
+                            .unwrap_or_else(|| panic!("Paths must be valid unicode {path:?}")),
                     );
                 });
             }
         }
 
         //// PYO3 init
+        pyo3::append_to_inittab!(foray);
         pyo3::prepare_freethreaded_python();
 
         // Check python is working correctly, and display

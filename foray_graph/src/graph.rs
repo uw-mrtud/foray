@@ -1,13 +1,36 @@
 use std::{collections::HashMap, sync::Arc};
 
-use foray_data_model::{
-    node::{Dict, NodeError},
-    node_spec::{GraphNode, PortName, WireDataContainer},
-};
+use foray_py::err::PyNodeConfigError;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 // use crate::nodes::status::NodeError;
+
+use foray_data_model::{
+    WireDataContainer,
+    node::{Dict, NodeError},
+};
+
+pub type PortName = String;
+
+#[derive(Debug, Clone)]
+pub enum ForayNodeError {
+    PyNodeConifgError(PyNodeConfigError),
+    NodeError(NodeError),
+}
+
+pub trait GraphNode<PortType, WireData>
+where
+    PortType: Clone,
+{
+    fn inputs(&self) -> Dict<PortName, PortType>;
+    fn outputs(&self) -> Dict<PortName, PortType>;
+    fn compute(
+        self,
+        populated_inputs: Dict<PortName, WireDataContainer<WireData>>,
+        // parameters: Dict<PortName, WireData>,
+    ) -> Result<Dict<PortName, WireData>, ForayNodeError>;
+}
 
 pub type NodeIndex = u32;
 
@@ -29,7 +52,7 @@ type Edge = (PortRef, PortRef);
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Graph<NodeData, PortType, WireData>
 where
-    NodeData: GraphNode<NodeData, PortType, WireData>,
+    NodeData: GraphNode<PortType, WireData>,
     PortType: Clone,
     WireData: std::fmt::Debug,
 {
@@ -44,7 +67,7 @@ where
 
 impl<NodeData: Clone, PortType: Clone, WireData> Clone for Graph<NodeData, PortType, WireData>
 where
-    NodeData: GraphNode<NodeData, PortType, WireData>,
+    NodeData: GraphNode<PortType, WireData>,
     PortType: Clone,
     WireData: std::fmt::Debug,
 {
@@ -64,7 +87,7 @@ fn default_wire_data<K, V>() -> HashMap<K, V> {
 }
 impl<NodeData, PortType, WireData> Graph<NodeData, PortType, WireData>
 where
-    NodeData: GraphNode<NodeData, PortType, WireData> + Clone,
+    NodeData: GraphNode<PortType, WireData> + Clone,
     PortType: Clone,
     WireData: std::fmt::Debug,
 {
@@ -355,10 +378,7 @@ where
         nx: NodeIndex,
         node: NodeData,
         input_guarded: Dict<String, WireDataContainer<WireData>>,
-    ) -> (
-        NodeIndex,
-        Result<(Dict<String, WireData>, NodeData), NodeError>,
-    ) {
+    ) -> (NodeIndex, Result<Dict<String, WireData>, ForayNodeError>) {
         let output = { node.compute(input_guarded) };
 
         (nx, output)
@@ -367,10 +387,7 @@ where
         nx: NodeIndex,
         node: NodeData,
         input_guarded: Dict<String, WireDataContainer<WireData>>,
-    ) -> (
-        NodeIndex,
-        Result<(Dict<String, WireData>, NodeData), NodeError>,
-    ) {
+    ) -> (NodeIndex, Result<Dict<String, WireData>, ForayNodeError>) {
         Self::compute_node(nx, node, input_guarded)
     }
 
@@ -386,7 +403,7 @@ where
 
 impl<NodeData, PortType, WireData> Default for Graph<NodeData, PortType, WireData>
 where
-    NodeData: GraphNode<NodeData, PortType, WireData> + Clone,
+    NodeData: GraphNode<PortType, WireData> + Clone,
     PortType: Clone,
     WireData: std::fmt::Debug,
 {
@@ -413,7 +430,7 @@ mod test {
         Constant(ConstantNode),
     }
 
-    impl GraphNode<Node, (), u32> for Node {
+    impl GraphNode<(), u32> for Node {
         fn inputs(&self) -> Dict<String, ()> {
             match self {
                 Node::Identity(_node) => [("in".to_string(), ())].into(),
@@ -431,15 +448,15 @@ mod test {
         fn compute(
             self,
             inputs: Dict<String, WireDataContainer<u32>>,
-        ) -> Result<(Dict<String, u32>, Node), NodeError> {
+        ) -> Result<Dict<String, u32>, ForayNodeError> {
             dbg!(&inputs);
             dbg!(&self);
             Ok(match &self {
-                Node::Identity(_node) => (
-                    [("out".to_string(), *inputs["in"].read().unwrap())].into(),
-                    self,
-                ),
-                Node::Constant(node) => ([("out".to_string(), node.value)].into(), self),
+                Node::Identity(_node) => {
+                    [("out".to_string(), *inputs["in"].read().unwrap())].into()
+                }
+
+                Node::Constant(node) => [("out".to_string(), node.value)].into(),
             })
         }
     }
@@ -484,7 +501,7 @@ mod test {
         for nx in g.topological_sort() {
             let (node, input_guarded) = g.get_compute(nx);
             let (_, output) = Graph::compute_node(nx, node, input_guarded);
-            g.update_wire_data(nx, output.unwrap().0);
+            g.update_wire_data(nx, output.unwrap());
         }
 
         assert_eq!(*g.get_wire_data(&n1, "out").unwrap().read().unwrap(), 7);

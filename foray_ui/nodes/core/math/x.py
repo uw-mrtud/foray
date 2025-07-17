@@ -1,14 +1,12 @@
 import numpy as np
-from foray import port
 
 
 def config():
-    class out:
-        inputs = {"a": port.ArrayComplex, "b": port.ArrayComplex}
-        outputs = {"out": port.ArrayComplex}
-        parameters = {}
-
-    return out
+    return {
+        "inputs": {"a": "Integer", "b": "Integer"},
+        "outputs": {"out": "Integer"},
+        "parameters": {},
+    }
 
 
 def compute(input, _):

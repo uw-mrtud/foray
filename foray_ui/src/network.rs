@@ -1,5 +1,10 @@
 use std::{collections::HashSet, fs::read_to_string, iter::once, path::PathBuf};
 
+use foray_data_model::node::{PortData, PortType};
+use foray_graph::{
+    graph::{Graph, PortRef},
+    node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus},
+};
 use iced::keyboard::Modifiers;
 use indexmap::IndexMap;
 use log::{error, warn};
@@ -7,27 +12,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     app::Action,
-    graph::{Graph, PortRef},
-    gui_node::GuiGraph,
+    // gui_node::GuiGraph,
     math::Point,
-    nodes::{
-        port::{PortData, PortType},
-        status::NodeStatus,
-        NodeData, NodeTemplate,
-    },
+    // nodes::{NodeData, UINodeTemplate},
     project::Project,
     widget::{shapes::ShapeId, workspace},
 };
 
 type UndoStash = Vec<(
-    Graph<NodeData, PortType, PortData>,
+    Graph<ForayNodeInstance, PortType, PortData>,
     IndexMap<ShapeId, Point>,
 )>;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Network {
     //// Persistant data
-    pub graph: GuiGraph,
+    pub graph: Graph<ForayNodeInstance, PortType, PortData>,
     pub shapes: workspace::State,
     //// Runtime data
     #[serde(skip)]
@@ -60,8 +60,8 @@ impl Network {
                 let node_ids = network.graph.nodes_ref();
                 node_ids.into_iter().for_each(|nx| {
                     match &mut network.graph.get_mut_node(nx).template {
-                        NodeTemplate::RustNode(ref _rust_node) => {}
-                        NodeTemplate::PyNode(ref mut py_node) => {
+                        ForayNodeTemplate::RustNode(ref _rust_node) => {}
+                        ForayNodeTemplate::PyNode(ref mut py_node) => {
                             // Resolve the absolute path, given the nodes we know are
                             // accessible.
                             // Currently We just take the first one found, but more complex
@@ -85,7 +85,7 @@ impl Network {
                             if let Some(path) = found_path {
                                 py_node.absolute_path = path.to_path_buf();
                             } else {
-                                error!("Could not find source file for node \n{py_node}");
+                                error!("Could not find source file for node \n{py_node:?}");
                             }
                         }
                     }
@@ -122,7 +122,7 @@ impl Network {
             .filter(|nx| {
                 matches!(
                     graph_snap_shot.get_node(*nx).status,
-                    NodeStatus::Running(..)
+                    NodeStatus::Running { .. }
                 )
             })
             .collect();
@@ -139,7 +139,7 @@ impl Network {
         self.redo_stack.clear();
     }
 
-    pub fn remove_edge(&mut self, port: crate::graph::PortRef) {
+    pub fn remove_edge(&mut self, port: PortRef) {
         self.stash_state();
         self.graph.remove_edge(&port);
     }
@@ -164,7 +164,7 @@ impl Network {
                 .iter()
                 .map(|id| {
                     let pos = self.shapes.shape_positions[id] + [5., 5.].into();
-                    let new_node = self.graph.get_node(*id).template.duplicate().into();
+                    let new_node = self.graph.get_node(*id).template.clone().into();
                     // *Mutably* add new node to graph
                     let new_id = self.graph.node(new_node);
                     // *Mutably* add new position

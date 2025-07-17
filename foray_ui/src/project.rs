@@ -3,13 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use relative_path::PathExt;
+use foray_graph::{node_instance::ForayNodeTemplate, rust_node::RustNodeTemplate};
 use strum::IntoEnumIterator;
 
-use crate::{
-    nodes::{NodeTemplate, RustNode},
-    python::py_node::PyNode,
-};
+use foray_py::py_node::PyNodeTemplate;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone)]
 pub enum NodeTree<T> {
@@ -49,7 +46,7 @@ impl<D> Default for NodeTree<D> {
 #[derive(Debug)]
 pub struct Project {
     pub absolute_path: PathBuf,
-    pub node_tree: Vec<NodeTree<NodeTemplate>>,
+    pub node_tree: Vec<NodeTree<ForayNodeTemplate>>,
 }
 
 pub fn python_project(absolute_path: &Path) -> Project {
@@ -63,8 +60,8 @@ pub fn python_project(absolute_path: &Path) -> Project {
     }
 }
 pub fn rust_project() -> Project {
-    let rust_nodes = RustNode::iter()
-        .map(|n| NodeTree::Leaf(NodeTemplate::RustNode(n)))
+    let rust_nodes = RustNodeTemplate::iter()
+        .map(|n| NodeTree::Leaf(ForayNodeTemplate::RustNode(n)))
         .collect();
     let node_tree = NodeTree::Group("rust".to_string(), rust_nodes);
     Project {
@@ -81,7 +78,7 @@ pub fn not_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-pub fn python_tree<F>(project_path: PathBuf, filter_entries: F) -> Vec<NodeTree<NodeTemplate>>
+pub fn python_tree<F>(project_path: PathBuf, filter_entries: F) -> Vec<NodeTree<ForayNodeTemplate>>
 where
     F: Fn(&DirEntry) -> bool + Copy,
 {
@@ -89,7 +86,7 @@ where
         project_path: PathBuf,
         path: PathBuf,
         filter_entries: F,
-    ) -> Vec<NodeTree<NodeTemplate>>
+    ) -> Vec<NodeTree<ForayNodeTemplate>>
     where
         F: Fn(&DirEntry) -> bool + Copy,
     {
@@ -115,13 +112,15 @@ where
                         ))
                     }
                 } else {
-                    root.push(NodeTree::Leaf(NodeTemplate::PyNode(PyNode::new(
-                        entry.path(),
-                        entry
-                            .path()
-                            .relative_to(project_path.clone())
-                            .expect("node is subpath of project dir"),
-                    ))));
+                    root.push(NodeTree::Leaf(ForayNodeTemplate::PyNode(
+                        PyNodeTemplate::new(
+                            entry.path(),
+                            // entry
+                            //     .path()
+                            //     .relative_to(project_path.clone())
+                            //     .expect("node is subpath of project dir"),
+                        ),
+                    )));
                 }
                 root
             });

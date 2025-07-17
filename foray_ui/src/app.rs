@@ -1,22 +1,21 @@
 use crate::config::Config;
 use crate::file_watch::file_watch_subscription;
-use crate::graph::{Graph, PortRef, IO};
 use crate::interface::add_node::add_node_tree_panel;
-use crate::interface::node_config::NodeUIWidget;
 use crate::interface::theme_config::{AppThemeMessage, GuiColorMessage};
 use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
-use crate::nodes::port::PortData;
-use crate::nodes::status::{NodeError, NodeStatus};
-use crate::nodes::{NodeData, NodeTemplate, RustNode};
 use crate::project::Project;
-use crate::python::py_node::PyNode;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 use crate::widget::shapes::ShapeId;
 use crate::widget::workspace::workspace;
-use crate::StableMap;
+
+use foray_data_model::node::{Dict, PortData};
+use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
+use foray_graph::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
+use foray_graph::rust_node::RustNodeTemplate;
+use foray_py::py_node::{PyConfig, PyNodeTemplate};
 
 use iced::advanced::graphics::core::Element;
 use iced::event::listen_with;
@@ -32,7 +31,6 @@ use log::{debug, error, info, trace, warn};
 use rfd::FileDialog;
 use std::fs::read_to_string;
 use std::iter::once;
-use std::mem::discriminant;
 use std::time::{Duration, Instant};
 
 #[derive(Default, Clone, PartialEq)]
@@ -128,17 +126,17 @@ pub enum Message {
     OnCanvasDown(Option<ShapeId>),
     OnCanvasUp,
     OpenAddNodeUi,
-    AddNode(NodeTemplate),
+    AddNode(ForayNodeTemplate),
     SelectNodeGroup(Vec<String>),
 
-    UpdateNodeTemplate(u32, NodeTemplate),
-    UpdateNodeParameter(u32, String, NodeUIWidget),
+    UpdateNodeTemplate(u32, ForayNodeTemplate),
+    UpdateNodeParameter(u32, String, PortData),
     DeleteSelectedNodes,
 
     QueueCompute(u32),
     ComputeComplete(
         u32,
-        #[debug(skip)] Result<(StableMap<String, PortData>, NodeData), NodeError>,
+        #[debug(skip)] Result<Dict<String, PortData>, ForayNodeError>,
     ),
     ComputeAll,
 
@@ -171,7 +169,7 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::OnMove(_) => {}
-            _ => trace!("---Message--- {:?}", message),
+            _ => trace!("---Message--- {message:?}"),
         }
         match message {
             Message::NOP => {}
@@ -292,15 +290,9 @@ impl App {
             Message::UpdateNodeParameter(id, name, updated_widget) => {
                 //TODO: move into Network
                 self.network.stash_state();
-                let old_template = &mut self.network.graph.get_mut_node(id).template;
-                // TODO: support all node types, not just py_node
-                if let NodeTemplate::PyNode(node) = old_template {
-                    node.parameters
-                        .as_mut()
-                        .expect("parameters must exist if they are being edited")
-                        .insert(name, updated_widget);
-                    return Task::done(Message::QueueCompute(id));
-                }
+                let old_template = &mut self.network.graph.get_mut_node(id);
+                old_template.parameters_values.insert(name, updated_widget);
+                return Task::done(Message::QueueCompute(id));
             }
             Message::OpenAddNodeUi => self.action = Action::AddingNode,
             Message::SelectNodeGroup(selected_tree_path) => match &self.action {
@@ -497,15 +489,25 @@ impl App {
                 {
                     let node = self.network.graph.get_mut_node(nx);
 
+                    // Check if in an error state
+                    if let NodeStatus::Error(e) = &node.status {
+                        trace!(
+                            "Did not compute node in error state {e:?} compute: {:?} #{nx}",
+                            node.template,
+                        );
+                        return Task::none();
+                    }
                     // Re-queue
-                    if let NodeStatus::Running(..) = node.status {
-                        trace!("Re-queue, {} #{nx}", node.template);
+                    if let NodeStatus::Running { .. } = node.status {
+                        // trace!("Re-queue, {} #{nx}", node.template);
                         self.network.queued_nodes.insert(nx);
                         return Task::none();
                     };
 
-                    node.status = NodeStatus::Running(Instant::now());
-                    trace!("Beginning compute: {} #{nx}", node.template,);
+                    node.status = NodeStatus::Running {
+                        start: Instant::now(),
+                    };
+                    trace!("Beginning compute: {:?} #{nx}", node.template,);
                 }
 
                 //// Queue compute
@@ -517,26 +519,38 @@ impl App {
             }
             Message::ComputeComplete(nx, result) => {
                 //TODO: move into Network
+                let node = self.network.graph.get_node(nx);
                 match result {
-                    Ok((output, node)) => {
+                    Ok(output) => {
                         // Assert that status is what is expected
                         let run_time = match &node.status {
                             NodeStatus::Idle => panic!("Node should not be idle here!"),
-                            NodeStatus::Running(start_inst) => Instant::now() - *start_inst,
-                            NodeStatus::Error(_node_error) => panic!("Node should not be Error, compute should have returned an Error result and node.status is set to Error in the match arm below"),
+                            NodeStatus::Running { start: start_inst } => {
+                                Instant::now() - *start_inst
+                            }
+                            NodeStatus::Error(py_node_error) => panic!(
+                                "Node should not be in an error state here!{py_node_error:?}"
+                            ),
                         };
 
-                        trace!("Compute complete: {} #{nx}, {run_time:.1?}", node.template,);
+                        trace!(
+                            "Compute complete: {:?} #{nx}, {run_time:.1?}",
+                            node.template,
+                        );
 
                         //// Update wire
                         self.network.graph.update_wire_data(nx, output);
+                        //TODO: IS this going to cause problems? Haven't totally thought through
+                        //what the consequences are here. just trying to get it to compile...
+                        let node = self.network.graph.get_node(nx);
 
                         //// Update node
                         self.network.graph.set_node_data(
                             nx,
-                            NodeData {
+                            ForayNodeInstance {
                                 status: NodeStatus::Idle,
-                                run_time: Some(run_time),
+                                parameters_values: node.parameters_values.clone(),
+                                // run_time: Some(run_time),
                                 // We *don't* update template here for some nodes
                                 // because that causes stuttery behaviour for
                                 // fast update scenarios like the slider of the 'constant'
@@ -544,13 +558,13 @@ impl App {
                                 // might address this, and may be necessary in the future.
                                 // similar to TODO: below
                                 template: match node.template {
-                                    NodeTemplate::RustNode(RustNode::Constant(_)) => {
+                                    ForayNodeTemplate::RustNode(RustNodeTemplate::Constant(_)) => {
                                         self.network.graph.get_node(nx).template.clone()
                                     }
-                                    NodeTemplate::PyNode(_) => {
+                                    ForayNodeTemplate::PyNode(_) => {
                                         self.network.graph.get_node(nx).template.clone()
                                     }
-                                    _ => node.template,
+                                    _ => node.template.clone(),
                                 },
                             },
                         );
@@ -580,9 +594,9 @@ impl App {
                     Err(node_error) => {
                         //// Update Node
                         let node = self.network.graph.get_mut_node(nx);
-                        warn!("Compute failed {node:?},{}", node_error);
-                        node.status = NodeStatus::Error(node_error);
-                        node.run_time = None;
+                        warn!("Compute failed {node:?},{node_error:?}");
+                        //TODO: set node error!!!!
+                        node.status = NodeStatus::Idle;
 
                         //// Update Wire
                         self.network.graph.update_wire_data(nx, [].into());
@@ -671,55 +685,68 @@ impl App {
         // Update any existing nodes in the graph that could change based on file changes
         self.network.graph.nodes_ref().iter().for_each(|nx| {
             let node = self.network.graph.get_node(*nx).clone();
-            if let NodeTemplate::PyNode(old_py_node) = node.template {
-                let PyNode {
+            if let ForayNodeTemplate::PyNode(old_py_node) = node.template {
+                let PyNodeTemplate {
                     name: _node_name,
-                    relative_path,
+                    relative_path: _,
                     absolute_path,
-                    ports: old_ports,
-                    parameters: old_parameters,
+                    config: old_config,
+                    // ports: old_ports,
+                    // inputs: old_inputs,
+                    // outputs: old_outputs,
+                    // parameters: old_parameters,
                 } = old_py_node;
+
+                let PyConfig {
+                    inputs: old_inputs,
+                    outputs: old_outputs,
+                    parameters: _old_parameters,
+                } = old_config.unwrap_or_default();
+
                 //// Read new node from disk
-                let mut new_py_node = PyNode::new(absolute_path, relative_path);
+                let new_py_node = PyNodeTemplate::new(absolute_path); //, relative_path);
+
+                // TODO: Implement parameter merging
 
                 //// Update Parameters
-                new_py_node.parameters = {
-                    // If Ok, copy old parameters to new parameters
-                    if let (Ok(new_parameters), Ok(old_param)) =
-                        (new_py_node.parameters.clone(), &old_parameters)
-                    {
-                        // Only keep old values that are still present in the new parameters list
-                        Ok(new_parameters
-                            .clone()
-                            .into_iter()
-                            .chain(old_param.clone().into_iter().filter(|(k, v)| {
-                                if let Some(new_v) = new_parameters.get(k) {
-                                    discriminant(v) == discriminant(new_v)
-                                } else {
-                                    false
-                                }
-                            }))
-                            .collect())
-                    } else {
-                        warn!(
-                            "Paramaters not ok, not loading.\nNew: {:?}\nOld: {:?}",
-                            &new_py_node.parameters, &old_parameters
-                        );
-                        new_py_node.parameters
-                    }
-                };
+                // let new_parameters = {
+                //     // If Ok, copy old parameters to new parameters
+                //     if let (Ok(new_parameters), Ok(old_param)) =
+                //         (new_py_node.parameters(), &old_parameters)
+                //     {
+                //         // Only keep old values that are still present in the new parameters list
+                //         Ok(new_parameters
+                //             .clone()
+                //             .into_iter()
+                //             .chain(old_param.clone().into_iter().filter(|(k, v)| {
+                //                 if let Some(new_v) = new_parameters.get(k) {
+                //                     discriminant(v) == discriminant(new_v)
+                //                 } else {
+                //                     false
+                //                 }
+                //             }))
+                //             .collect())
+                //     } else {
+                //         warn!(
+                //             "Paramaters not ok, not loading.\nNew: {:?}\nOld: {:?}",
+                //             &new_py_node.parameters(),
+                //             &old_parameters
+                //         );
+                //         new_py_node.parameters()
+                //     }
+                // };
 
                 //// Update Ports, and Graph Edges
                 {
-                    let new_ports = new_py_node.ports.clone().unwrap_or_default();
+                    // let new_ports = new_py_node.ports.clone().unwrap_or_default();
 
-                    let new_in_ports = new_ports.inputs;
-                    let new_out_ports = new_ports.outputs;
+                    let new_in_ports = new_py_node.inputs().unwrap_or_default();
+                    let new_out_ports = new_py_node.outputs().unwrap_or_default();
 
                     // Get old version's ports
-                    let old_ports = old_ports.unwrap_or_default();
-                    let old_in_ports = old_ports.inputs;
-                    let old_out_ports = old_ports.outputs;
+                    // let old_ports = old_ports.unwrap_or_default();
+                    let old_in_ports = old_inputs.unwrap_or_default();
+                    let old_out_ports = old_outputs.unwrap_or_default();
 
                     // Find any nodes that previously existed, but now doesn't
                     let invalid_in = old_in_ports
@@ -754,7 +781,7 @@ impl App {
                 // Update Graph Node
                 self.network
                     .graph
-                    .set_node_data(*nx, NodeTemplate::PyNode(new_py_node).into());
+                    .set_node_data(*nx, ForayNodeTemplate::PyNode(new_py_node).into());
             }
         });
         // Update list of available nodes
@@ -801,11 +828,11 @@ pub fn subscriptions(state: &App) -> Subscription<Message> {
                     _ => None,
                 }),
                 // Refresh for animation while nodes are actively running
-                if state.network.graph.running_nodes().is_empty() {
-                    Subscription::none()
-                } else {
+                if state.network.graph.any_nodes_running() {
                     iced::time::every(Duration::from_micros(1_000_000 / 16))
                         .map(|_| Message::AnimationTick)
+                } else {
+                    Subscription::none()
                 },
             ]),
     )

@@ -1,6 +1,6 @@
 use super::PortData;
 use crate::gui_node::PortDataReference;
-use crate::nodes::{NodeTemplate, RustNode};
+use crate::nodes::{RustNode, UINodeTemplate};
 use crate::StableMap;
 use crate::{app::Message, math::linspace};
 use iced::{
@@ -84,7 +84,7 @@ impl LinspaceConfig {
             move |value| {
                 Message::UpdateNodeTemplate(
                     id,
-                    NodeTemplate::RustNode(RustNode::Linspace(LinspaceConfig {
+                    UINodeTemplate::RustNode(RustNode::Linspace(LinspaceConfig {
                         start: value.parse().unwrap_or(0.),
                         ..*self
                     })),
@@ -95,7 +95,7 @@ impl LinspaceConfig {
             move |value| {
                 Message::UpdateNodeTemplate(
                     id,
-                    NodeTemplate::RustNode(RustNode::Linspace(LinspaceConfig {
+                    UINodeTemplate::RustNode(RustNode::Linspace(LinspaceConfig {
                         stop: value.parse().unwrap_or(0.),
                         ..*self
                     })),
@@ -106,7 +106,7 @@ impl LinspaceConfig {
             move |value| {
                 Message::UpdateNodeTemplate(
                     id,
-                    NodeTemplate::RustNode(RustNode::Linspace(LinspaceConfig {
+                    UINodeTemplate::RustNode(RustNode::Linspace(LinspaceConfig {
                         num: value.parse().unwrap_or(0),
                         ..*self
                     })),

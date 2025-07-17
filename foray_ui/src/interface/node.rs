@@ -2,11 +2,14 @@ use std::f32::consts::PI;
 use std::time::Instant;
 
 use crate::app::{App, Message};
-use crate::gui_node::{GUINode, PortDataContainer};
-use crate::nodes::status::NodeStatus;
-use crate::nodes::NodeData;
+use crate::gui_node::{node_view, template_node_size};
+// use crate::gui_node::{GUINode, PortDataContainer};
+// use crate::nodes::NodeData;
 use crate::widget::node_container::NodeContainer;
 use crate::StableMap;
+use foray_data_model::node::PortData;
+use foray_data_model::WireDataContainer;
+use foray_graph::node_instance::{ForayNodeInstance, NodeStatus};
 use iced::{
     border,
     widget::{column, *},
@@ -34,19 +37,18 @@ impl App {
         let node = self.network.graph.get_node(id);
         let is_selected = self.network.selected_shapes.contains(&id);
 
-        let node_style = move |node: &NodeData, t: &Theme| {
+        let node_style = move |node: &ForayNodeInstance, t: &Theme| {
             let color = match &node.status {
-                NodeStatus::Idle | NodeStatus::Running(_) => match is_selected {
+                NodeStatus::Idle | NodeStatus::Running { .. } => match is_selected {
                     true => t.extended_palette().primary.strong.color,
                     false => t.extended_palette().secondary.strong.color,
                 },
-                NodeStatus::Error(_node_error) => match is_selected {
-                    true => t.extended_palette().danger.base.color,
-                    false => t.extended_palette().danger.weak.color,
-                },
+                NodeStatus::Error(_py_node_error) => t.extended_palette().danger.strong.color,
             };
             let run_time = match &node.status {
-                NodeStatus::Running(start_inst) => (Instant::now() - *start_inst).as_secs_f32(),
+                NodeStatus::Running { start: start_inst } => {
+                    (Instant::now() - *start_inst).as_secs_f32()
+                }
                 _ => 0.0,
             };
 
@@ -72,8 +74,8 @@ impl App {
 
         //// Node
         let input_data = self.network.graph.get_input_data(&id);
-        let node_size = node.template.node_size();
-        let node_view = node.template.view(id, input_data);
+        let node_size = template_node_size(&node.template);
+        let node_view = node_view(node, id, input_data);
 
         //// Ports
         let port_buttons = port_view(id, node, node_size, &self.app_theme);
@@ -100,20 +102,20 @@ impl App {
 }
 
 pub fn format_node_output<'a>(
-    node: &NodeData,
-    data: &StableMap<String, Option<&PortDataContainer>>,
+    node: &ForayNodeInstance,
+    data: &StableMap<String, Option<&WireDataContainer<PortData>>>,
 ) -> Element<'a, Message> {
     //TODO: Clean this up by iterating straight to text elements?
     let node_output = data.iter().map(|(port_name, d)| {
         (
             port_name.to_string(),
-            d.map(|d| format!("{}", d.read().unwrap()))
+            d.map(|d| format!("{:?}", d.read().unwrap()))
                 .unwrap_or("n/a".to_string()),
         )
     });
 
     container(column![
-        text(format!("{:#?}", node)).size(12.),
+        text(format!("{node:#?}")).size(12.),
         column(node_output.map(|(lbl, val)| {
             row![text(lbl).size(12.), text(val).size(12.)]
                 .spacing(5.0)

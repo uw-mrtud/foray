@@ -3,7 +3,7 @@ use crate::app::Message;
 use crate::gui_node::PortDataContainer;
 use crate::interface::node::{INNER_NODE_HEIGHT, INNER_NODE_WIDTH, NODE_BORDER_WIDTH};
 use crate::math::{linspace_delta, Vector};
-use crate::nodes::NodeTemplate;
+use crate::nodes::UINodeTemplate;
 use crate::StableMap;
 use iced::widget::canvas::{Path, Stroke};
 use iced::widget::{container, horizontal_space, row, text, text_input};
@@ -107,7 +107,7 @@ impl Plot {
         let width = self.rect.width;
         let height = self.rect.height;
         let message = move |rect| {
-            Message::UpdateNodeTemplate(id, NodeTemplate::RustNode(RustNode::Plot(Plot { rect })))
+            Message::UpdateNodeTemplate(id, UINodeTemplate::RustNode(RustNode::Plot(Plot { rect })))
         };
         Some(
             column![

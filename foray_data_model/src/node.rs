@@ -1,55 +1,72 @@
 use derive_more::{Display, Error};
 use numpy::{PyReadwriteArrayDyn, ToPyArray, ndarray::ArrayD};
-use pyo3::prelude::*;
-use relative_path::RelativePathBuf;
+use pyo3::{exceptions::PyTypeError, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, path::PathBuf, time::Instant};
+use std::collections::BTreeMap;
 
-use crate::node_spec::GraphNode;
 pub type Dict<K, V> = BTreeMap<K, V>;
 
 pub type Shape = Vec<Option<usize>>;
 
 #[pyclass]
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, PartialOrd)]
 pub enum UIParameter {
-    NumberField,
-    CheckBox,
-    Slider,
+    NumberField(f64),
+    CheckBox(bool),
+    Slider(f64, f64, f64),
+}
+impl UIParameter {
+    pub fn default_value(&self) -> PortData {
+        match self {
+            UIParameter::NumberField(v) => PortData::Float(*v),
+            UIParameter::CheckBox(v) => PortData::Boolean(*v),
+            UIParameter::Slider(_, _, v) => PortData::Float(*v),
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Copy)]
-pub enum PrimitiveType {
+// #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+// pub enum PrimitiveType {
+//     Integer,
+//     Float,
+//     Boolean,
+//     String,
+// }
+
+// impl<'py> FromPyObject<'py> for PrimitiveType {
+//     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+//         let string = ob.extract::<String>()?;
+//         Ok(match string.as_str() {
+//             "Integer" => PrimitiveType::Integer,
+//             "Float" => PrimitiveType::Float,
+//             "Boolean" => PrimitiveType::Boolean,
+//             "String" => PrimitiveType::String,
+//             _ => todo!(),
+//         })
+//     }
+// }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub enum PortType {
     Integer,
     Float,
     Boolean,
     String,
-}
-
-impl<'py> FromPyObject<'py> for PrimitiveType {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let string = ob.extract::<String>()?;
-        Ok(match string.as_str() {
-            "Integer" => PrimitiveType::Integer,
-            "Float" => PrimitiveType::Float,
-            "Boolean" => PrimitiveType::Boolean,
-            "String" => PrimitiveType::String,
-            _ => todo!(),
-        })
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum PortType {
-    Primitive(PrimitiveType),
     Array(Box<PortType>, Shape),
     Object(Dict<String, PortType>),
 }
 
 impl<'py> FromPyObject<'py> for PortType {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        match ob.extract::<PrimitiveType>() {
-            Ok(p) => Ok(PortType::Primitive(p)),
+        //try to extract String
+        match ob.extract::<&str>() {
+            Ok(s) => Ok(match s {
+                "Integer" => PortType::Integer,
+                "Float" => PortType::Float,
+                "Boolean" => PortType::Boolean,
+                "String" => PortType::String,
+                _ => Err(PyTypeError::new_err(format!("Unsupported data type: {s}")))?,
+            }),
             Err(_) => match ob.extract::<(PortType, Shape)>() {
                 Ok((port_type, shape)) => Ok(PortType::Array(Box::new(port_type), shape)),
                 Err(_) => ob.extract::<Dict<String, PortType>>().map(PortType::Object),
@@ -58,24 +75,29 @@ impl<'py> FromPyObject<'py> for PortType {
     }
 }
 
-// #[pyclass]
-#[derive(Serialize, Deserialize, Clone, FromPyObject, IntoPyObject, Debug)]
-pub enum PrimitiveData {
+// // #[pyclass]
+// #[derive(
+//     Serialize, Deserialize, Clone, FromPyObject, IntoPyObject, Debug, PartialEq, PartialOrd,
+// )]
+// pub enum PrimitiveData {
+//     Integer(i32),
+//     Float(f64),
+//     Boolean(bool),
+//     String(String),
+// }
+
+#[derive(Clone, Serialize, Deserialize, FromPyObject, IntoPyObject, Debug, PartialEq)]
+pub enum PortData {
     Integer(i32),
     Float(f64),
     Boolean(bool),
     String(String),
-}
-
-#[derive(Clone, Serialize, Deserialize, FromPyObject, IntoPyObject, Debug)]
-pub enum PortData {
-    Primitve(PrimitiveData),
-    Array(PrimitiveArray),
+    Array(ForayArray),
     Object(Dict<String, PortData>),
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub enum PrimitiveArray {
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub enum ForayArray {
     Integer(ArrayD<i32>),
     Float(ArrayD<f64>),
     Boolean(ArrayD<bool>),
@@ -86,18 +108,18 @@ pub enum PrimitiveArray {
     Object(ArrayD<PortData>),
 }
 
-impl<'py> FromPyObject<'py> for PrimitiveArray {
+impl<'py> FromPyObject<'py> for ForayArray {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
         match ob.extract::<PyReadwriteArrayDyn<i32>>() {
-            Ok(arr) => Ok(PrimitiveArray::Integer(arr.as_array().to_owned())),
+            Ok(arr) => Ok(ForayArray::Integer(arr.as_array().to_owned())),
             Err(_) => ob
                 .extract::<PyReadwriteArrayDyn<f64>>()
-                .map(|arr| PrimitiveArray::Float(arr.as_array().to_owned())),
+                .map(|arr| ForayArray::Float(arr.as_array().to_owned())),
         }
     }
 }
 
-impl<'py> IntoPyObject<'py> for PrimitiveArray {
+impl<'py> IntoPyObject<'py> for ForayArray {
     type Target = PyAny;
 
     type Output = Bound<'py, Self::Target>;
@@ -125,71 +147,39 @@ impl<'py> IntoPyObject<'py> for PrimitiveArray {
     }
 }
 
-/// Template that will be stored for each available node type
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct NodeTemplate {
-    pub name: String,
-    #[serde(skip)]
-    pub absolute_path: PathBuf,
-    pub relative_path: RelativePathBuf,
-    pub inputs: Result<Dict<String, PortType>, PortError>,
-    pub outputs: Result<Dict<String, PortType>, PortError>,
-    pub parameters: Result<Dict<String, UIParameter>, ParameterError>,
-}
+// impl GraphNode<NodeTemplate, PortType, PortData> for NodeTemplate {
+//     fn inputs(&self) -> Dict<PortName, PortType> {
+//         todo!()
+//     }
+//
+//     fn outputs(&self) -> Dict<PortName, PortType> {
+//         todo!()
+//     }
+//
+//     fn compute(
+//         self,
+//         inputs: Dict<PortName, WireDataContainer<PortData>>,
+//     ) -> Result<(Dict<PortName, PortData>, NodeTemplate), NodeError> {
+//         todo!()
+//     }
+// }
 
-impl GraphNode<NodeTemplate, PortType, PortData> for NodeTemplate {
-    fn inputs(&self) -> Dict<crate::node_spec::PortName, PortType> {
-        todo!()
-    }
-
-    fn outputs(&self) -> Dict<crate::node_spec::PortName, PortType> {
-        todo!()
-    }
-
-    fn compute(
-        self,
-        inputs: Dict<crate::node_spec::PortName, crate::node_spec::WireDataContainer<PortData>>,
-    ) -> Result<(Dict<crate::node_spec::PortName, PortData>, NodeTemplate), NodeError> {
-        todo!()
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Error, Display, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Display, Debug)]
 pub enum NodeError {
+    Input(String),
     Err,
 }
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Error, Display, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Error, Display, Debug)]
 pub enum PortError {
     Err,
     InvalidPortContent,
     NoPortKey,
 }
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Error, Display, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Error, Display, Debug, PartialOrd)]
 pub enum ParameterError {
     Err,
     InvalidParamaterContent,
     NoParameterKey,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum NodeStatus {
-    #[default]
-    Idle,
-    Running {
-        start: Instant,
-    },
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct NodeInstance {
-    // TODO: should this be just an identifier, and keep NodeTemplates
-    // in one spot, refering to them when necessary?
-    pub node_template: NodeTemplate,
-    pub parameters_values: Dict<String, PortData>,
-    #[serde(skip)]
-    // If there are errors for any of NodeDefinition fields, the field will be empty,
-    // The error will be noted in NodeStatus
-    pub node_status: NodeStatus,
 }

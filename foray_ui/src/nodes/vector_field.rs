@@ -5,7 +5,7 @@ use crate::app::Message;
 use crate::gui_node::PortDataContainer;
 use crate::interface::node::{INNER_NODE_WIDTH, NODE_BORDER_WIDTH};
 use crate::math::{linspace_delta, Vector};
-use crate::nodes::NodeTemplate;
+use crate::nodes::UINodeTemplate;
 use crate::StableMap;
 use colorgrad::Gradient;
 use glam::{Mat3, Vec3};
@@ -125,7 +125,7 @@ impl VectorField {
             Message::UpdateNodeTemplate(
                 id,
                 //TODO: handle z_index
-                NodeTemplate::RustNode(RustNode::VectorField(VectorField { rect, z_index: 0 })),
+                UINodeTemplate::RustNode(RustNode::VectorField(VectorField { rect, z_index: 0 })),
             )
         };
         Some(

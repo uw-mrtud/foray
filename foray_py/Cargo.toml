@@ -7,3 +7,6 @@ edition = "2024"
 foray_data_model = { path = "../foray_data_model/" }
 pyo3.workspace = true
 numpy.workspace = true
+serde.workspace = true
+relative-path.workspace = true
+log.workspace = true

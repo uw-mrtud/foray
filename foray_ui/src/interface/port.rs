@@ -1,3 +1,8 @@
+use foray_data_model::node::PortType;
+use foray_graph::{
+    graph::{GraphNode, PortRef, IO},
+    node_instance::ForayNodeInstance,
+};
 use iced::{
     border, color,
     widget::{
@@ -10,9 +15,7 @@ use iced::{
 
 use crate::{
     app::Message,
-    graph::{GraphNode, PortRef, IO},
     math::Point,
-    nodes::{port::PortType, NodeData},
     style::theme::AppTheme,
     widget::{custom_button, pin::Pin},
 };
@@ -21,7 +24,7 @@ use super::node::{NODE_RADIUS, PORT_RADIUS};
 
 pub fn port_view<'a>(
     node_id: u32,
-    node_data: &NodeData,
+    node_data: &ForayNodeInstance,
     node_size: Size,
     app_theme: &'a AppTheme,
 ) -> Vec<Element<'a, Message>> {
@@ -115,17 +118,18 @@ fn port_style(
 fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (iced::Color, iced::Color) {
     match port_type {
         //TODO: Put these colors into AppTheme
-        PortType::Integer => (color!(175, 48, 41), color!(209, 77, 65)), //red
-        PortType::Real => (
-            app_theme.primary.base_color.into(),
-            app_theme.primary.weak_color().into(),
-        ),
-        PortType::Complex => (color!(102, 128, 11), color!(135, 154, 57)), //green
-        PortType::ArrayInteger => (color!(175, 48, 41), color!(209, 77, 65)), //red
-        PortType::ArrayReal => (color!(32, 94, 166), color!(67, 133, 190)), //blue
-        PortType::ArrayComplex => (color!(36, 131, 123), color!(58, 169, 159)), //cyan
-        PortType::Dynamic => (color!(175, 125, 41), color!(209, 150, 65)), //orange
+        // PortType::Integer => (color!(175, 48, 41), color!(209, 77, 65)), //red
+        // PortType::Real => (
+        //     app_theme.primary.base_color.into(),
+        //     app_theme.primary.weak_color().into(),
+        // ),
+        // PortType::Complex => (color!(102, 128, 11), color!(135, 154, 57)), //green
+        // PortType::ArrayInteger => (color!(175, 48, 41), color!(209, 77, 65)), //red
+        // PortType::ArrayReal => (color!(32, 94, 166), color!(67, 133, 190)), //blue
+        // PortType::ArrayComplex => (color!(36, 131, 123), color!(58, 169, 159)), //cyan
+        // PortType::Dynamic => (color!(175, 125, 41), color!(209, 150, 65)), //orange
         PortType::Object(_) => (color!(200, 160, 41), color!(229, 180, 65)), //yellow
+        _ => (color!(175, 48, 41), color!(209, 77, 65)),                     //red
     }
 }
 
@@ -137,7 +141,7 @@ fn port_text<'a>(
 ) -> Row<'a, Message> {
     row![
         text(port_name),
-        rich_text([span(port_type.to_string())
+        rich_text([span("todo_port_name".to_string()) //port_type.to_string())
             .background(port_color_pair(port_type, app_theme).0)
             .border(Border::default().rounded(4))
             .padding([0, 2])])

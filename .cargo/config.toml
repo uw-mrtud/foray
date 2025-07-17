@@ -1,0 +1,3 @@
+[env]
+PYO3_PYTHON = "/home/john/projects/foray_data_model/foray_py/.venv/bin/python"
+PYTHONPATH = "./foray_py/.venv/lib/python3.13/site-packages/"

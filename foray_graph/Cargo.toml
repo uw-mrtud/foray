@@ -5,7 +5,10 @@ edition = "2024"
 
 [dependencies]
 foray_data_model = { path = "../foray_data_model/" }
+foray_py = { path = "../foray_py/" }
 itertools.workspace = true
 serde.workspace = true
 log.workspace = true
 ron.workspace = true
+derive_more.workspace = true
+strum.workspace = true

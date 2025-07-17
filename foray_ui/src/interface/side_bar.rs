@@ -1,6 +1,7 @@
 use crate::app::{App, Message};
-use crate::gui_node::GUINode;
+use crate::gui_node::config_view;
 use crate::interface::node::format_node_output;
+use crate::interface::status::{node_status_icon, node_status_text_element};
 use crate::interface::{debug_format, SEPERATOR};
 use crate::style::button::{primary_icon, secondary_icon};
 use crate::style::icon::icon;
@@ -69,13 +70,16 @@ pub fn side_bar(app: &App) -> Element<'_, Message> {
             column![
                 container(text(node.template.name().clone()).size(20.)).center_x(Fill),
                 horizontal_rule(0),
-                row![node.status.icon(), node.status.text_element().size(12.)]
-                    .align_y(Center)
-                    .spacing(4.0),
+                row![
+                    node_status_icon(&node.status),
+                    node_status_text_element(&node.status).size(12.)
+                ]
+                .align_y(Center)
+                .spacing(8.0),
                 vertical_space().height(10.),
-                node.template
-                    .config_view(*selected_id, input_data)
-                    .unwrap_or(text("...").into()),
+                config_view(node, *selected_id, input_data).unwrap_or(text("...").into()),
+                // node.config_view(*selected_id, input_data)
+                //     .unwrap_or(text("...").into()),
                 vertical_space(),
                 scrollable(out_port_display),
                 row![button(text("delete node"))
