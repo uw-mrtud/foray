@@ -5,7 +5,10 @@ use crate::interface::theme_config::{AppThemeMessage, GuiColorMessage};
 use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
+use crate::node_instance::visualiztion::Visualization;
+use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::project::Project;
+use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 use crate::widget::shapes::ShapeId;
@@ -13,8 +16,6 @@ use crate::widget::workspace::workspace;
 
 use foray_data_model::node::{Dict, PortData};
 use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
-use foray_graph::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
-use foray_graph::rust_node::RustNodeTemplate;
 use foray_py::py_node::{PyConfig, PyNodeTemplate};
 
 use iced::advanced::graphics::core::Element;
@@ -538,18 +539,13 @@ impl App {
                             node.template,
                         );
 
-                        //// Update wire
-                        self.network.graph.update_wire_data(nx, output);
-                        //TODO: IS this going to cause problems? Haven't totally thought through
-                        //what the consequences are here. just trying to get it to compile...
-                        let node = self.network.graph.get_node(nx);
-
                         //// Update node
                         self.network.graph.set_node_data(
                             nx,
                             ForayNodeInstance {
                                 status: NodeStatus::Idle,
                                 parameters_values: node.parameters_values.clone(),
+                                visualization: Visualization::new(node, &output),
                                 // run_time: Some(run_time),
                                 // We *don't* update template here for some nodes
                                 // because that causes stuttery behaviour for
@@ -568,6 +564,8 @@ impl App {
                                 },
                             },
                         );
+                        //// Update wire
+                        self.network.graph.update_wire_data(nx, output);
 
                         //// Queue children for compute
                         let to_queue: Vec<_> = self
@@ -829,7 +827,7 @@ pub fn subscriptions(state: &App) -> Subscription<Message> {
                     _ => None,
                 }),
                 // Refresh for animation while nodes are actively running
-                if state.network.graph.any_nodes_running() {
+                if state.network.any_nodes_running() {
                     iced::time::every(Duration::from_micros(1_000_000 / 16))
                         .map(|_| Message::AnimationTick)
                 } else {

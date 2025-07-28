@@ -1,9 +1,7 @@
-// use crate::gui_node:
-// use crate::nodes::UINodeTemplate;
+use crate::node_instance::ForayNodeTemplate;
 use crate::project::{NodeTree, Project};
 use crate::style::container::rounded_box;
 use crate::{app::Message, style};
-use foray_graph::node_instance::ForayNodeTemplate;
 use iced::padding::left;
 use iced::*;
 use itertools::Itertools;

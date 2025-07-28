@@ -1,8 +1,7 @@
-use foray_graph::node_instance::NodeStatus;
 use iced::widget::{text, Text};
 use itertools::Itertools;
 
-use crate::style::icon::icon;
+use crate::{node_instance::NodeStatus, style::icon::icon};
 
 pub fn node_status_icon(status: &'_ NodeStatus) -> Text<'_> {
     match status {

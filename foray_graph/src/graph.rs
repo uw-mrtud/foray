@@ -2,7 +2,6 @@ use std::{collections::HashMap, sync::Arc};
 
 use foray_py::err::PyNodeConfigError;
 use itertools::Itertools;
-use log::debug;
 use serde::{Deserialize, Serialize};
 
 // use crate::nodes::status::NodeError;
@@ -65,6 +64,8 @@ where
     #[serde(skip)]
     phantom: std::marker::PhantomData<PortType>,
 }
+
+impl<N: GraphNode<P, W>, P: Clone, W: std::fmt::Debug> Graph<N, P, W> {}
 
 impl<NodeData: Clone, PortType: Clone, WireData> Clone for Graph<NodeData, PortType, WireData>
 where

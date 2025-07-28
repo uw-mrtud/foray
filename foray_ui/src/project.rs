@@ -3,11 +3,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use foray_graph::{node_instance::ForayNodeTemplate, rust_node::RustNodeTemplate};
 use relative_path::PathExt;
 use strum::IntoEnumIterator;
 
 use foray_py::py_node::PyNodeTemplate;
+
+use crate::{node_instance::ForayNodeTemplate, rust_nodes::RustNodeTemplate};
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone)]
 pub enum NodeTree<T> {

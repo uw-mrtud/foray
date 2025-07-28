@@ -1,10 +1,7 @@
 use std::{collections::HashSet, fs::read_to_string, iter::once, path::PathBuf};
 
 use foray_data_model::node::{PortData, PortType};
-use foray_graph::{
-    graph::{Graph, PortRef},
-    node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus},
-};
+use foray_graph::graph::{Graph, PortRef};
 use iced::keyboard::Modifiers;
 use indexmap::IndexMap;
 use log::{error, warn};
@@ -12,9 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     app::Action,
-    // gui_node::GuiGraph,
     math::Point,
-    // nodes::{NodeData, UINodeTemplate},
+    node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus},
     project::Project,
     widget::{shapes::ShapeId, workspace},
 };
@@ -209,5 +205,13 @@ impl Network {
         );
         //// Start Drag
         Action::DragNode(offsets)
+    }
+
+    pub fn any_nodes_running(&self) -> bool {
+        self.graph
+            .nodes_ref()
+            .into_iter()
+            .map(|nx| self.graph.get_node(nx))
+            .any(|node| matches!(node.status, NodeStatus::Running { .. }))
     }
 }

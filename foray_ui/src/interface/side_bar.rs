@@ -2,11 +2,11 @@ use crate::app::{App, Message};
 use crate::interface::node::format_node_debug_output;
 use crate::interface::status::{node_status_icon, node_status_text_element};
 use crate::interface::{debug_format, SEPERATOR};
+use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::style::button::{primary_icon, secondary_icon};
 use crate::style::icon::icon;
 use foray_data_model::node::{Dict, PortData, UIParameter};
 use foray_data_model::WireDataContainer;
-use foray_graph::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use iced::*;
 use widget::{column, *};
 
@@ -144,7 +144,7 @@ pub fn config_view<'a>(
                         let message_2 = message.clone();
                         //TODO: make widget type view
                         let widget: Element<Message> = match widget_type {
-                            UIParameter::CheckBox(initial_v) => {
+                            UIParameter::CheckBox(_initial_v) => {
                                 row![
                                     horizontal_space(),
                                     toggler(

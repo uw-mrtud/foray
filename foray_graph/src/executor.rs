@@ -1,8 +1,11 @@
 use foray_data_model::node::{PortData, PortType};
 
-use crate::{graph::Graph, node_instance::ForayNodeInstance};
+use crate::graph::{Graph, GraphNode};
 
-pub fn execute_graph(g: &mut Graph<ForayNodeInstance, PortType, PortData>) {
+pub fn execute_graph<T: GraphNode<PortType, PortData>>(g: &mut Graph<T, PortType, PortData>)
+where
+    T: Clone,
+{
     // Propogate values
     for nx in g.topological_sort() {
         let (node, input_guarded) = g.get_compute(nx);

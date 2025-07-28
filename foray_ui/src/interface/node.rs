@@ -2,15 +2,12 @@ use std::f32::consts::PI;
 use std::time::Instant;
 
 use crate::app::{App, Message};
-// use crate::gui_node::{GUINode, PortDataContainer};
-// use crate::nodes::NodeData;
+use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
+use crate::rust_nodes::RustNodeTemplate;
 use crate::widget::node_container::NodeContainer;
 use crate::StableMap;
-use foray_data_model::node::{Dict, ForayArray, PortData, PortType};
+use foray_data_model::node::{Dict, PortData};
 use foray_data_model::WireDataContainer;
-use foray_graph::graph::GraphNode;
-use foray_graph::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
-use foray_graph::rust_node::RustNodeTemplate;
 
 use iced::Alignment::Center;
 use iced::Font;
@@ -19,11 +16,7 @@ use iced::{
     widget::{column, *},
     Color, Element,
 };
-use log::{debug, error, trace};
-use ndarray::Array3;
-use ndarray::ShapeBuilder; // Needed for .strides() method
 
-use super::image::create_rgb_handle;
 use super::port::port_view;
 
 // TODO: remove hard-coded node sizes, use size specified in node-template,
@@ -82,7 +75,6 @@ impl App {
 
         //// Node
         let input_data = self.network.graph.get_input_data(&id);
-        let ouput_data = self.network.graph.get_output_data(&id);
         let node_size = template_node_size(&node.template);
 
         //// Ports
@@ -96,56 +88,7 @@ impl App {
         //// Secondary Node view (data vis)
         let data_display_size = default_node_size().height * 1.0;
 
-        let image_handle = match node.outputs().iter().next() {
-            Some((name, PortType::Array(port_type, shape))) => match **port_type {
-                PortType::Float => {
-                    //debug!("maybe making handle for {node:?} {name}");
-                    if shape.len() >= 2 {
-                        match ouput_data.get(name) {
-                            Some(Some(port)) => {
-                                // debug!("making image handle for {node:?} {name}");
-                                let data = match &*port.read().unwrap() {
-                                    PortData::Array(ForayArray::Float(a)) => {
-                                        &Array3::<f64>::from_shape_vec(
-                                            (a.shape()[0], a.shape()[1], 3),
-                                            //    .strides((
-                                            //    a.strides()[0] as usize,
-                                            //    a.strides()[1] as usize,
-                                            //    0,
-                                            //)),
-                                            a.indexed_iter()
-                                                .flat_map(|(_, v)| [*v, *v, *v])
-                                                .collect::<Vec<_>>(),
-                                        )
-                                        .expect("square matrix")
-                                    }
-                                    //PortData::ArrayComplex(a) => &Array3::<f64>::from_shape_vec(
-                                    //    (
-                                    //        (a.len() as f32).sqrt() as usize,
-                                    //        (a.len() as f32).sqrt() as usize,
-                                    //        3,
-                                    //    ),
-                                    //    a.iter()
-                                    //        .map(|v| v.norm_sqr().sqrt())
-                                    //        .flat_map(|v| [v, v, v])
-                                    //        .collect::<Vec<_>>(),
-                                    //)
-                                    //.expect("square matrix"),
-                                    _ => panic!("unsuported plot types {:?}", port),
-                                };
-                                Some(create_rgb_handle(data))
-                            }
-                            _ => None, //(None, PortData::ArrayReal(Default::default())),
-                        }
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            },
-            _ => None,
-        };
-        let node_secondary = match image_handle {
+        let node_secondary = match &node.visualization.image_handle {
             Some(h) => container(
                 image(h)
                     .filter_method(image::FilterMethod::Nearest)

@@ -1,8 +1,5 @@
 use foray_data_model::node::PortType;
-use foray_graph::{
-    graph::{GraphNode, PortRef, IO},
-    node_instance::ForayNodeInstance,
-};
+use foray_graph::graph::{GraphNode, PortRef, IO};
 use iced::{
     alignment::Horizontal::Right,
     border,
@@ -17,6 +14,7 @@ use itertools::Itertools;
 use crate::{
     app::Message,
     math::Point,
+    node_instance::ForayNodeInstance,
     style::{color::Color, theme::AppTheme},
     widget::{custom_button, pin::Pin},
     CODE_FONT,
