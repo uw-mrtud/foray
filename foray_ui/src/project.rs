@@ -4,6 +4,7 @@ use std::{
 };
 
 use foray_graph::{node_instance::ForayNodeTemplate, rust_node::RustNodeTemplate};
+use relative_path::PathExt;
 use strum::IntoEnumIterator;
 
 use foray_py::py_node::PyNodeTemplate;
@@ -115,10 +116,10 @@ where
                     root.push(NodeTree::Leaf(ForayNodeTemplate::PyNode(
                         PyNodeTemplate::new(
                             entry.path(),
-                            // entry
-                            //     .path()
-                            //     .relative_to(project_path.clone())
-                            //     .expect("node is subpath of project dir"),
+                            entry
+                                .path()
+                                .relative_to(project_path.clone())
+                                .expect("node is subpath of project dir"),
                         ),
                     )));
                 }

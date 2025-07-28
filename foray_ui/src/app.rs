@@ -52,7 +52,7 @@ pub struct App {
     /// Persitant user data
     pub user_data: UserData,
     /// List of all known Node types, including system and user nodes
-    pub python_projects: Vec<Project>,
+    pub projects: Vec<Project>,
     pub app_theme: AppTheme,
     pub config: Config,
 
@@ -103,7 +103,7 @@ impl Default for App {
             action: Default::default(),
             app_theme,
             modifiers: Default::default(),
-            python_projects: projects,
+            projects,
             user_data,
         }
     }
@@ -652,7 +652,7 @@ impl App {
                 //// Add node modal
                 container(
                     mouse_area(add_node_tree_panel(
-                        &self.python_projects,
+                        &self.projects,
                         self.user_data.get_new_node_path()
                     ))
                     .interaction(mouse::Interaction::Idle)
@@ -688,7 +688,7 @@ impl App {
             if let ForayNodeTemplate::PyNode(old_py_node) = node.template {
                 let PyNodeTemplate {
                     name: _node_name,
-                    relative_path: _,
+                    relative_path,
                     absolute_path,
                     config: old_config,
                     // ports: old_ports,
@@ -704,7 +704,7 @@ impl App {
                 } = old_config.unwrap_or_default();
 
                 //// Read new node from disk
-                let new_py_node = PyNodeTemplate::new(absolute_path); //, relative_path);
+                let new_py_node = PyNodeTemplate::new(absolute_path, relative_path); //, relative_path);
 
                 // TODO: Implement parameter merging
 
@@ -785,7 +785,7 @@ impl App {
             }
         });
         // Update list of available nodes
-        self.python_projects = self.config.read_projects();
+        self.projects = self.config.read_projects();
     }
 }
 
@@ -796,8 +796,9 @@ pub fn theme(state: &App) -> Theme {
 pub fn subscriptions(state: &App) -> Subscription<Message> {
     Subscription::batch(
         state
-            .python_projects
+            .projects
             .iter()
+            .filter(|p| !p.absolute_path.to_string_lossy().is_empty())
             .enumerate()
             .map(|(id, p)| file_watch_subscription(id, p.absolute_path.clone()))
             .chain([

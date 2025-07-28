@@ -43,13 +43,13 @@ impl Default for PyConfig {
 }
 
 impl PyNodeTemplate {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(path: PathBuf, relative_path: RelativePathBuf) -> Self {
         trace!("loading node: {path:?}");
         let config = load_node(path.clone());
         PyNodeTemplate {
             name: path.file_stem().unwrap().to_string_lossy().into(),
             absolute_path: path,
-            relative_path: Default::default(),
+            relative_path,
             config,
         }
     }

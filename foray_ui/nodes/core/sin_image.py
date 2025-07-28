@@ -6,22 +6,19 @@ def config():
     return {
         "outputs": {"out": (port.Float, [None, None])},
         "parameters": {
-            "radius": UIParameter.Slider(0, 1, 1),
+            "frequency": UIParameter.Slider(0.01, 10, 1),
+            "vertical": UIParameter.CheckBox(False),
         },
     }
 
 
 def compute(_, p):
     N = 256
-    x = np.linspace(0, 10, N)
     y = np.linspace(0, 10, N)
 
-    radius = round(float(p["radius"]) * 100) / 10
+    frequency = float(p["frequency"])
 
-    dist = (x[:, None] - 5) ** 2 + (y - 5) ** 2
-    out = np.zeros_like(dist)
-    out = out - 1
-    out[dist < radius] = 1.0
+    out = np.tile(np.sin(y[:, None] * frequency), N)
 
     print(out.shape)
 

@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use foray_py::err::PyNodeConfigError;
 use itertools::Itertools;
+use log::debug;
 use serde::{Deserialize, Serialize};
 
 // use crate::nodes::status::NodeError;
@@ -131,16 +132,16 @@ where
 
     pub fn get_output_data(
         &self,
-        nx: NodeIndex,
+        nx: &NodeIndex,
     ) -> Dict<String, Option<&WireDataContainer<WireData>>> {
-        self.get_node(nx)
+        self.get_node(*nx)
             .outputs()
             .clone()
             .into_keys()
             .map(|port_name| {
                 (
                     port_name.clone(),
-                    self.wire_data.get(&(nx, port_name.clone())),
+                    self.wire_data.get(&(*nx, port_name.clone())),
                 )
             })
             .collect()

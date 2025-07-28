@@ -1,5 +1,5 @@
 use crate::app::{App, Message};
-use crate::interface::node::format_node_output;
+use crate::interface::node::format_node_debug_output;
 use crate::interface::status::{node_status_icon, node_status_text_element};
 use crate::interface::{debug_format, SEPERATOR};
 use crate::style::button::{primary_icon, secondary_icon};
@@ -64,9 +64,9 @@ pub fn side_bar(app: &App) -> Element<'_, Message> {
             let node = app.network.graph.get_node(*selected_id);
             let input_data = app.network.graph.get_input_data(selected_id);
             let out_port_display: Element<Message> = if app.debug {
-                column![format_node_output(
+                column![format_node_debug_output(
                     node,
-                    &app.network.graph.get_output_data(*selected_id)
+                    &app.network.graph.get_output_data(selected_id)
                 )]
                 .into()
             } else {
@@ -144,7 +144,27 @@ pub fn config_view<'a>(
                         let message_2 = message.clone();
                         //TODO: make widget type view
                         let widget: Element<Message> = match widget_type {
-                            UIParameter::CheckBox(_v) => todo!(),
+                            UIParameter::CheckBox(initial_v) => {
+                                row![
+                                    horizontal_space(),
+                                    toggler(
+                                        match node_instance
+                                            .parameters_values
+                                            .get(&name_2)
+                                            .expect("parameter should exist")
+                                        {
+                                            PortData::Boolean(v) => *v,
+                                            _ => panic!("unexpected port type"),
+                                        }
+                                    )
+                                    .on_toggle(
+                                        move |v| message(PortData::Boolean(v)) //, in_progress))
+                                    )
+                                    .width(60.0)
+                                ]
+                                .align_y(Center)
+                                .into()
+                            }
                             UIParameter::NumberField(v) => row![
                                 horizontal_space(),
                                 row![numeric_input::numeric_input(

@@ -3,8 +3,8 @@ import numpy as np
 
 def config():
     return {
-        "inputs": {"a": "Integer", "b": "Integer"},
-        "outputs": {"out": "Integer"},
+        "inputs": {"a": ("Float", [None, None]), "b": ("Float", [None, None])},
+        "outputs": {"out": ("Float", [None, None])},
         "parameters": {},
     }
 

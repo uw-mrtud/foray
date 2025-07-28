@@ -2,23 +2,16 @@ version = 1
 requires-python = ">=3.10"
 
 [[package]]
-name = "foray"
-version = "0.1.0"
-source = { directory = "../foray_python_lib" }
-
-[[package]]
 name = "foray-nodes"
 version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
-    { name = "foray" },
     { name = "numpy" },
     { name = "pillow" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "foray", directory = "../foray_python_lib" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pillow", specifier = ">=11.2.1" },
 ]

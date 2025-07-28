@@ -1,0 +1,183 @@
+(
+    graph: (
+        nodes: {
+            4: (
+                template: PyNode((
+                    name: "Phantom",
+                    relative_path: "core/Phantom.py",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            5: (
+                template: PyNode((
+                    name: "circle_mask",
+                    relative_path: "core/circle_mask.py",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "radius": Slider(0.0, 1.0, 1.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "radius": Float(1.0),
+                },
+            ),
+            8: (
+                template: PyNode((
+                    name: "x",
+                    relative_path: "core/math/x.py",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                            "b": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            9: (
+                template: PyNode((
+                    name: "sin_image",
+                    relative_path: "core/sin_image.py",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "frequency": Slider(0.01, 10.0, 1.0),
+                            "vertical": CheckBox(false),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "frequency": Float(1.88),
+                    "vertical": Boolean(false),
+                },
+            ),
+            10: (
+                template: PyNode((
+                    name: "x",
+                    relative_path: "core/math/x.py",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                            "b": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            11: (
+                template: PyNode((
+                    name: "linspace",
+                    relative_path: "core/linspace.py",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None]),
+                        }),
+                        parameters: Ok({
+                            "num_steps": NumberField(50.0),
+                            "start": NumberField(0.0),
+                            "stop": NumberField(100.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "num_steps": Float(50.0),
+                    "start": Float(0.0),
+                    "stop": Float(100.0),
+                },
+            ),
+        },
+        edges: [((
+            node: 9,
+            name: "out",
+            io: Out,
+        ), (
+            node: 10,
+            name: "a",
+            io: In,
+        )), ((
+            node: 10,
+            name: "out",
+            io: Out,
+        ), (
+            node: 8,
+            name: "a",
+            io: In,
+        )), ((
+            node: 5,
+            name: "out",
+            io: Out,
+        ), (
+            node: 10,
+            name: "b",
+            io: In,
+        )), ((
+            node: 4,
+            name: "out",
+            io: Out,
+        ), (
+            node: 8,
+            name: "b",
+            io: In,
+        ))],
+        next_id: 12,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: 134.15308,
+                y: 168.52936,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            9: (
+                x: 222.68442,
+                y: 257.2168,
+            ),
+            11: (
+                x: 670.58746,
+                y: 360.3075,
+            ),
+            4: (
+                x: 460.46548,
+                y: 510.98444,
+            ),
+            5: (
+                x: 455.6844,
+                y: 258.64996,
+            ),
+            10: (
+                x: 311.70313,
+                y: 397.02002,
+            ),
+            8: (
+                x: 403.0594,
+                y: 621.3138,
+            ),
+        },
+    ),
+)
