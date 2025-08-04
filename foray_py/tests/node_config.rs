@@ -1,35 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use foray_py::{
-    py_module::foray,
-    py_node::{PyConfig, parse_node},
-};
+use foray_py::py_node::{PyConfig, parse_node};
 
 use foray_data_model::node::{Dict, PortType};
-use pyo3::{Python, ffi::c_str};
-
-#[test]
-fn port_enum_string() {
-    pyo3::append_to_inittab!(foray);
-    pyo3::prepare_freethreaded_python();
-
-    Python::with_gil(|py| {
-        assert!(
-            Python::run(
-                py,
-                c_str!(
-                    r#"
-import foray
-assert foray.port.Integer == "Integer";
-                "#
-                ),
-                None,
-                None
-            )
-            .is_ok()
-        )
-    });
-}
 
 fn test_path() -> PathBuf {
     Path::new("/test/my_node.py").to_path_buf()
@@ -81,10 +54,9 @@ fn filled_config() {
         parse_node(
             test_path(),
             r#"
-from foray import port 
 def config():
     return {
-    "inputs": {"a": port.Integer,"b":port.Float},
+    "inputs": {"a": "Integer","b":"Float"},
     }
 "#
             .to_string(),
@@ -110,10 +82,9 @@ fn array_config() {
         parse_node(
             test_path(),
             r#"
-from foray import port 
 def config():
     return {
-    "inputs": {"a": (port.Integer,[1,None,3])},
+    "inputs": {"a": ("Integer",[1,None,3])},
     }
 "#
             .to_string(),
@@ -158,14 +129,13 @@ fn nested_config() {
         parse_node(
             test_path(),
             r#"
-from foray import port
 def config():
     return {
-    "outputs": {"b": {"b_a": port.Integer,
+    "outputs": {"b": {"b_a": "Integer",
         "b_b": (
                 {
-                "b_b_a": port.Float,
-                "b_b_b": (port.Float,[3,4,5]) 
+                "b_b_a": "Float",
+                "b_b_b": ("Float",[3,4,5]) 
                 }
                 ,[1,2,3]
                )

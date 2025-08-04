@@ -1,17 +1,13 @@
 use std::path::{Path, PathBuf};
 
 use foray_data_model::node::{ForayArray, PortData};
-use foray_py::{
-    py_module::foray,
-    py_node::{PyNodeTemplate, parse_node, py_compute_unlocked},
-};
+use foray_py::py_node::{PyNodeTemplate, parse_node, py_compute_unlocked};
 use numpy::IxDyn;
 
 use pyo3::{IntoPyObject, Python, py_run};
 
 #[test]
 fn port_primitive() {
-    pyo3::append_to_inittab!(foray);
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
@@ -48,7 +44,6 @@ fn port_array() {
         )
         .into_pyobject(py)
         .unwrap();
-        // PrimitiveData::Float(1.5).into_pyobject(py).unwrap();
         py_run!(
             py,
             array_float array2,
@@ -76,7 +71,6 @@ fn port_object() {
         let pixel = PortData::Object([("r".into(), r), ("g".into(), g), ("b".into(), b)].into())
             .into_pyobject(py)
             .unwrap();
-        // PrimitiveData::Float(1.5).into_pyobject(py).unwrap();
         py_run!(
             py,
             pixel,
@@ -107,10 +101,9 @@ fn basic_compute() {
     pyo3::prepare_freethreaded_python();
 
     let node_src = r#"
-from foray import port 
 def config():
     return {
-    "inputs": {"a": port.Integer},
+    "inputs": {"a": "integer"},
     }
 
 def compute(inputs,parameters):
@@ -128,12 +121,11 @@ fn array_compute() {
     pyo3::prepare_freethreaded_python();
 
     let node_src = r#"
-from foray import port 
 def config():
     return {
         "inputs": {
-            "a": (port.Integer,[3]),
-            "b": (port.Integer,[3])
+            "a": ("integer",[3]),
+            "b": ("integer",[3])
         },
     }
 
@@ -142,7 +134,6 @@ def compute(inputs,parameters):
 "#
     .to_string();
 
-    // let node = parse_node(test_path(), node_src.clone()).unwrap();
     let node = create_test_node(test_path(), node_src.clone());
     let inputs = [
         (

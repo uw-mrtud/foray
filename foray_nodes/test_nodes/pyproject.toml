@@ -1,0 +1,29 @@
+[project]
+name = "test-nodes"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "foray",
+    "numpy>=2.3.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+foray = { path = "../../foray_py/python" }
+
+
+# To get 'pyright' lsp to reference the projects venv add this:
+# [tool.pyright]
+# venv = ".venv"
+# venvPath = "./"
+
+# or, add  `pyrightconfig.json` file in the project root dir containing:
+# {
+#	"venv": ".venv",
+#  	"venvPath": "./"
+# }

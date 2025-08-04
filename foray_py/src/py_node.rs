@@ -202,7 +202,7 @@ fn load_parameters(
     match config_dict.get("parameters") {
         Some(dict) => dict
             .extract::<Dict<String, UIParameter>>()
-            .map_err(|_| ParameterError::InvalidParamaterContent),
+            .map_err(|_| ParameterError::InvalidParameterContent),
         None => Ok(Dict::new()),
     }
 }

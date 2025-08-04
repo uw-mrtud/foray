@@ -8,7 +8,6 @@ pub type Dict<K, V> = BTreeMap<K, V>;
 
 pub type Shape = Vec<Option<usize>>;
 
-#[pyclass]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, PartialOrd)]
 pub enum UIParameter {
     NumberField(f64),
@@ -21,6 +20,56 @@ impl UIParameter {
             UIParameter::NumberField(v) => PortData::Float(*v),
             UIParameter::CheckBox(v) => PortData::Boolean(*v),
             UIParameter::Slider(_, _, v) => PortData::Float(*v),
+        }
+    }
+}
+impl<'py> FromPyObject<'py> for UIParameter {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+        //try to extract String
+        match ob.extract::<(String, Dict<String, Bound<'py, PyAny>>)>() {
+            Ok((s, o)) => Ok(match s.as_str() {
+                "NumberField" => match o.get("default") {
+                    Some(o) => match o.extract::<f64>() {
+                        Ok(v) => UIParameter::NumberField(v),
+                        Err(_) => Err(PyTypeError::new_err("expected a number value"))?,
+                    },
+                    None => Err(PyTypeError::new_err("expected a 'default' key"))?,
+                },
+                "CheckBox" => match o.get("default") {
+                    Some(o) => match o.extract::<bool>() {
+                        Ok(v) => UIParameter::CheckBox(v),
+                        Err(_) => Err(PyTypeError::new_err("expected a boolean value"))?,
+                    },
+                    None => Err(PyTypeError::new_err("expected a 'default' key"))?,
+                },
+                "Slider" => {
+                    let start = match o.get("start") {
+                        Some(o) => match o.extract::<f64>() {
+                            Ok(v) => v,
+                            Err(_) => Err(PyTypeError::new_err("expected a boolean value"))?,
+                        },
+                        None => Err(PyTypeError::new_err("expected a 'start' key"))?,
+                    };
+                    let stop = match o.get("stop") {
+                        Some(o) => match o.extract::<f64>() {
+                            Ok(v) => v,
+                            Err(_) => Err(PyTypeError::new_err("expected a boolean value"))?,
+                        },
+                        None => Err(PyTypeError::new_err("expected a 'stop' key"))?,
+                    };
+                    let default = match o.get("default") {
+                        Some(o) => match o.extract::<f64>() {
+                            Ok(v) => v,
+                            Err(_) => Err(PyTypeError::new_err("expected a boolean value"))?,
+                        },
+                        None => Err(PyTypeError::new_err("expected a 'default' key"))?,
+                    };
+
+                    UIParameter::Slider(start, stop, default)
+                }
+                _ => Err(PyTypeError::new_err(format!("Unsupported data type: {s}")))?,
+            }),
+            Err(_) => Err(PyTypeError::new_err("Unsupported format for parameter"))?,
         }
     }
 }
@@ -53,17 +102,6 @@ impl<'py> FromPyObject<'py> for PortType {
         }
     }
 }
-
-// // #[pyclass]
-// #[derive(
-//     Serialize, Deserialize, Clone, FromPyObject, IntoPyObject, Debug, PartialEq, PartialOrd,
-// )]
-// pub enum PrimitiveData {
-//     Integer(i32),
-//     Float(f64),
-//     Boolean(bool),
-//     String(String),
-// }
 
 #[derive(Clone, Serialize, Deserialize, FromPyObject, IntoPyObject, Debug, PartialEq)]
 pub enum PortData {
@@ -159,6 +197,6 @@ pub enum PortError {
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Error, Display, Debug, PartialOrd)]
 pub enum ParameterError {
     Err,
-    InvalidParamaterContent,
+    InvalidParameterContent,
     NoParameterKey,
 }

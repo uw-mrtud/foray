@@ -7,7 +7,7 @@ use std::{
     process::Command,
 };
 
-use foray_py::py_module::foray;
+//use foray_py::py_module::foray;
 use log::{error, info, warn};
 use pyo3::{py_run, types::PyAnyMethods, PyResult, Python};
 use serde::{Deserialize, Serialize};
@@ -141,7 +141,6 @@ impl Config {
         }
 
         //// PYO3 init
-        pyo3::append_to_inittab!(foray);
         pyo3::prepare_freethreaded_python();
 
         // Check python is working correctly, and display

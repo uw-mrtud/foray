@@ -29,20 +29,27 @@
   - [ ] Runtime Compute errors which will retry compute
 
 - [ ] rename GPI to foray everywhere
+
+- [x] use foray python module from pyo3
 - [ ] create `foray` python module
-- [ ] use foray python module from pyo3
+- [ ] publish to pypi
 
 - [ ] print statements from a node are viewable from the ui 
 
 ### Declarative UI
 - [x] define parameters/widgets from python
-  - [ ] get auto reloading working well
+  - [x] get auto reloading working well
 
   - [ ] pass data as the expected type (not as str)
   - [ ] Make order of ports match declaration order
 
-  - [ ] specify default values
-  - [ ] customize widgets (start, stop,step for sliders, etc.)
+  - [x] specify default values
+  - [x] customize widgets (start, stop,step for sliders, etc.)
+  - [ ] Define list of all widget types
+  - [ ] implement all widget types
+
+- [ ] Add helper functions for defining node input/output/parameter
+  - [ ] Possible to use node functions definition directly?? This would make calling the node compute function from python much nicer.
 
 ## UI
  - [x] pan
@@ -63,6 +70,9 @@
 
 - [x] select single node
   - [x] select multiple nodes
+
+- [x] Port colors 
+- [x] Port type names 
 
 ## Data Model
 - [x] execution
@@ -94,13 +104,13 @@
     - [ ] Text display of current array shape
     - [ ] semantic shape for array shape/dimension
 
+- [ ] Create either a less strict port type option, or make some nodes (like a multiplication node) have generic inputs that get inferred when they are hooked up.
 - [ ] restrict node connections to only valid ports
   - [?] and convert arrays of data on wires
 
 - [x] display editable node config
   - [x] Specify config UI from python
 
-- [ ] 
 
 
 ## On Canvas Ad-Hoc Visualization 
@@ -110,36 +120,13 @@
 
 - [ ] Visualization methods for different node output types
   - [ ] Output type -> available visualization methods mapping
-  - [ ] Show visualization method by default when availble
+  - [x] Show visualization method by default when availble
   - [ ] UI to selecect from available methods
-  - [ ] Plot node auto-detects what type of plot to use.
+  - [x] Plot node auto-detects what type of plot to use.
 
 - [ ] image display manipulation
   - [ ] floor window level contrast
   - [ ] complex phase vis
-
-## C interface
-- [ ] compilation process
-
-
-## Primary Visualization/Output
-- [?] compose widgets from multiple nodes together
-
-# Bugs
-- [ ] Node running while it's deleted, results come back, but node is gone. crash on unwrapping node
-- [ ] Node's are selectable when behind left panel
-- [x] node src errors cause crash on unwrap 
-- [ ] support nodes that need to create an image handle
-  - "node update" method that gets called after compute?
-
-- [ ] Nodes save/load absolute/relative position improperly
-  - [ ] relative path is not saved
-
-- [ ] Loading a network from UI differs from load on start. Load on start dosn't crash if there's an error with nodes, Load from UI does crash.
-
-# In progress
-- [x] Port colors 
-- [x] Port type names 
 
 - [ ] Visualization Methods enum
   - [ ] render method
@@ -148,3 +135,42 @@
 - [ ] Node data model render cache
 - [ ] Trigger cache-clear/re-render on compute complete
 - [ ] Node widget toggle
+
+## C interface
+- [ ] test c interface works well
+
+## Primary Visualization/Output
+- [?] compose widgets from multiple nodes together
+
+# Bugs
+- [ ] Node running while it's deleted, results come back, but node is gone. crash on unwrapping node
+- [ ] Node's are selectable when behind left panel
+- [x] node src errors cause crash on unwrap 
+- [x] support nodes that need to create an image handle
+
+- [x] Nodes save/load absolute/relative position improperly
+  - [x] relative path is not saved
+
+- [ ] Loading a network from UI differs from load on start. Load on start dosn't crash if there's an error with nodes, Load from UI does crash.
+- [ ] Visualization of transposed arrays doesn't take into account the changed strides
+
+
+# Before alpha release
+- [ ] Python helper API
+  - [x] input, output, parameters functions
+  - [x] port types
+  - [x] parameter types
+  - [ ] test as a module
+
+- [ ] parameter types aren't always strings
+
+- [ ] complex data type
+
+- [ ] default project location
+- [ ] minimal documentation on installation, writing nodes, etc.
+
+- [ ] functional testing
+  - [ ] config errors
+  - [ ] compute errors
+  - [ ] compute return type errors
+
