@@ -18,9 +18,9 @@ pub fn add_node_tree_panel<'b>(
     let node_list = column(
         projects
             .iter()
-            .flat_map(|prj| &prj.node_tree)
-            .sorted_by(|a, b| a.partial_cmp(b).unwrap())
-            .map(|tree| node_tree(tree, &[], selected_tree_path)),
+            .flat_map(|prj| &prj.node_tree.children)
+            .sorted_by(|a, b| a.0.partial_cmp(b.0).unwrap()) // sort by key
+            .map(|(_, tree)| node_tree(tree, &[], selected_tree_path)),
     );
 
     container(column![
@@ -55,16 +55,17 @@ pub fn node_tree<'b>(
                 .style(style::button::list)
         ]
     };
-    match node {
+    match &node.data {
         // Base case, File Row
-        NodeTree::Leaf(node) => tree_row(text(node.name()), Message::AddNode(node.clone()))
+        Some(data) => tree_row(text(node.name.clone()), Message::AddNode(data.clone()))
             .align_y(Center)
             .into(),
         // Folder Row
-        NodeTree::Group(name, node_trees) => {
-            let next_path = &[tree_path, &[name.to_owned()]].concat();
+        None => {
+            // NodeTree::Group(name, node_trees) => {
+            let next_path = &[tree_path, &[node.name.to_owned()]].concat();
             let folder_row = tree_row(
-                text(name.to_string()).style(text::primary),
+                text(node.name.to_string()).style(text::primary),
                 Message::SelectNodeGroup(next_path.to_vec()),
             );
             // Is this folder selected?
@@ -72,11 +73,11 @@ pub fn node_tree<'b>(
                 true => column![
                     folder_row,
                     // Recurse
-                    column(
-                        node_trees
-                            .iter()
-                            .map(|n| node_tree(n, next_path, selected_tree_path)),
-                    )
+                    column(node.children.values().map(|v| node_tree(
+                        v,
+                        next_path,
+                        selected_tree_path
+                    )),)
                 ]
                 .into(),
                 false => folder_row.into(),

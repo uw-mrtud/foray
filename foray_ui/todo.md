@@ -156,21 +156,36 @@
 
 
 # Before alpha release
-- [ ] Python helper API
+- [x] Python helper API
   - [x] input, output, parameters functions
   - [x] port types
   - [x] parameter types
-  - [ ] test as a module
+  - [x] test as a module
+
+- [x] parse available nodes from python runtime
+  - [x] iterate over modules, finding any modules with a `foray` submodule
+  - [x] account for submodules of `foray`
+  - [x] add paths to list of folders that need to be watched for changes
+  - [x] call node functions (compute, config) from python runtime environment directly, rather than from src file
+  - [x] test that hot-reloading works well
+  - [x] node tree display should not show "foray" directories
 
 - [ ] parameter types aren't always strings
 
 - [ ] complex data type
 
-- [ ] default project location
+- [ ] design/implement how a virtual environment is chosen.
+  - [ ] relative to the network location?
+  - [ ] set from ui?
+
 - [ ] minimal documentation on installation, writing nodes, etc.
 
-- [ ] functional testing
-  - [ ] config errors
-  - [ ] compute errors
-  - [ ] compute return type errors
+##  functional testing
+- error handling 
+    - [ ] config errors
+    - [ ] compute errors
+    - [ ] compute return type errors
+    - [ ] filter out any invalid nodes
+- hot reloading
+    - [ ] changes to virtual env (e.g. adding/removing dependencies) should trigger reload
 

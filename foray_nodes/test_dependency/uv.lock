@@ -5,7 +5,7 @@ requires-python = ">=3.13"
 [[package]]
 name = "foray"
 version = "0.1.0"
-source = { editable = "../../foray_py/python" }
+source = { directory = "../../foray_py/python" }
 
 [[package]]
 name = "numpy"
@@ -60,9 +60,9 @@ wheels = [
 ]
 
 [[package]]
-name = "test-dependency"
+name = "test-nodes"
 version = "0.1.0"
-source = { editable = "../test_dependency" }
+source = { editable = "." }
 dependencies = [
     { name = "foray" },
     { name = "numpy" },
@@ -72,21 +72,4 @@ dependencies = [
 requires-dist = [
     { name = "foray", directory = "../../foray_py/python" },
     { name = "numpy", specifier = ">=2.3.2" },
-]
-
-[[package]]
-name = "test-nodes"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "foray" },
-    { name = "numpy" },
-    { name = "test-dependency" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "foray", editable = "../../foray_py/python" },
-    { name = "numpy", specifier = ">=2.3.2" },
-    { name = "test-dependency", editable = "../test_dependency" },
 ]

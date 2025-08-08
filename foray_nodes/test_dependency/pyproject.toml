@@ -1,5 +1,5 @@
 [project]
-name = "test-nodes"
+name = "test-dependency"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -7,20 +7,18 @@ requires-python = ">=3.13"
 dependencies = [
     "foray",
     "numpy>=2.3.2",
-    "test-dependency"
 ]
 
 
 [project.entry-points."foray"]
-nodes_module = "test_nodes.foray"
+nodes_module = "test_dependency.foray"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-foray = { path = "../../foray_py/python" ,editable=true}
-test-dependency = { path = "../test_dependency/" ,editable=true}
+foray = { path = "../../foray_py/python" }
 
 
 # To get 'pyright' lsp to reference the projects venv add this:

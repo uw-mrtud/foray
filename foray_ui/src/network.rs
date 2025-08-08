@@ -4,14 +4,13 @@ use foray_data_model::node::{PortData, PortType};
 use foray_graph::graph::{Graph, PortRef};
 use iced::keyboard::Modifiers;
 use indexmap::IndexMap;
-use log::{error, warn};
+use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     app::Action,
     math::Point,
-    node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus},
-    project::Project,
+    node_instance::{ForayNodeInstance, NodeStatus},
     widget::{shapes::ShapeId, workspace},
 };
 
@@ -49,43 +48,10 @@ pub enum NetworkLoadError {
 }
 
 impl Network {
-    pub fn load_network(path: &PathBuf, projects: &[Project]) -> Result<Self, NetworkLoadError> {
+    pub fn load_network(path: &PathBuf) -> Result<Self, NetworkLoadError> {
         match read_to_string(path).map(|s| ron::from_str::<Network>(&s)) {
             Ok(Ok(mut network)) => {
                 network.file = Some(path.clone());
-                let node_ids = network.graph.nodes_ref();
-                node_ids.into_iter().for_each(|nx| {
-                    match &mut network.graph.get_mut_node(nx).template {
-                        ForayNodeTemplate::RustNode(ref _rust_node) => {}
-                        ForayNodeTemplate::PyNode(ref mut py_node) => {
-                            // Resolve the absolute path, given the nodes we know are
-                            // accessible.
-                            // Currently We just take the first one found, but more complex
-                            // resolution could be added
-                            let found_path = projects
-                                .iter()
-                                // Calculate potential node source path
-                                .map(|project| {
-                                    py_node
-                                        .relative_path
-                                        .to_logical_path(project.absolute_path.clone())
-                                })
-                                // Pick the first path that exists
-                                .find_map(|path| {
-                                    if path.is_file() {
-                                        Some(path.clone())
-                                    } else {
-                                        None
-                                    }
-                                });
-                            if let Some(path) = found_path {
-                                py_node.absolute_path = path.to_path_buf();
-                            } else {
-                                error!("Could not find source file for node \n{py_node:?}");
-                            }
-                        }
-                    }
-                });
                 Ok(network)
             }
             Ok(Err(e)) => {

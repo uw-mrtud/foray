@@ -83,7 +83,7 @@ impl Default for App {
         let mut user_data = UserData::read_user_data();
 
         let network = match user_data.get_recent_network_file() {
-            Some(recent_network) => match Network::load_network(recent_network, &projects) {
+            Some(recent_network) => match Network::load_network(recent_network) {
                 Ok(n) => n,
                 Err(_) => {
                     user_data.set_recent_network_file(None); // Recent network failed to load,
@@ -170,7 +170,7 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::OnMove(_) => {}
-            _ => trace!("---Message--- {message:?}"),
+            _ => trace!("---Message--- {message:?} {:?}", Instant::now()),
         }
         match message {
             Message::NOP => {}
@@ -679,6 +679,8 @@ impl App {
 
     /// Read node definitions from disk, and copies node configuration (parameters and port connections) forward.
     /// *Does not trigger the compute function of any nodes.*
+    /// TODO: This has been edited several times as the data model has changed. This may be
+    /// able to be cleaned up significantly
     fn reload_nodes(&mut self) {
         // Update any existing nodes in the graph that could change based on file changes
         self.network.graph.nodes_ref().iter().for_each(|nx| {
@@ -686,13 +688,8 @@ impl App {
             if let ForayNodeTemplate::PyNode(old_py_node) = node.template {
                 let PyNodeTemplate {
                     name: _node_name,
-                    relative_path,
-                    absolute_path,
+                    py_path,
                     config: old_config,
-                    // ports: old_ports,
-                    // inputs: old_inputs,
-                    // outputs: old_outputs,
-                    // parameters: old_parameters,
                 } = old_py_node;
 
                 let PyConfig {
@@ -702,7 +699,7 @@ impl App {
                 } = old_config.unwrap_or_default();
 
                 //// Read new node from disk
-                let new_py_node = PyNodeTemplate::new(absolute_path, relative_path); //, relative_path);
+                let new_py_node = PyNodeTemplate::new(py_path);
 
                 // TODO: Implement parameter merging
 
@@ -736,13 +733,10 @@ impl App {
 
                 //// Update Ports, and Graph Edges
                 {
-                    // let new_ports = new_py_node.ports.clone().unwrap_or_default();
-
                     let new_in_ports = new_py_node.inputs().unwrap_or_default();
                     let new_out_ports = new_py_node.outputs().unwrap_or_default();
 
                     // Get old version's ports
-                    // let old_ports = old_ports.unwrap_or_default();
                     let old_in_ports = old_inputs.unwrap_or_default();
                     let old_out_ports = old_outputs.unwrap_or_default();
 

@@ -1,134 +1,72 @@
-use std::{
-    fs::{self, DirEntry},
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, iter::once, path::PathBuf};
 
-use relative_path::PathExt;
-use strum::IntoEnumIterator;
+use foray_py::{discover::RawNodePackageInfo, py_node::PyNodeTemplate};
 
-use foray_py::py_node::PyNodeTemplate;
+use crate::node_instance::ForayNodeTemplate;
 
-use crate::{node_instance::ForayNodeTemplate, rust_nodes::RustNodeTemplate};
-
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone)]
-pub enum NodeTree<T> {
-    Group(String, Vec<NodeTree<T>>),
-    Leaf(T),
+#[derive(Debug)]
+pub struct NodeTree<T> {
+    pub name: String,
+    pub children: HashMap<String, NodeTree<T>>,
+    pub data: Option<T>,
 }
 
 impl<D> NodeTree<D> {
-    pub fn new() -> Self {
-        NodeTree::Group("".into(), vec![])
-    }
-}
-
-impl<D> NodeTree<D>
-where
-    D: Clone + PartialOrd,
-{
-    pub fn sort(&self) -> Self {
-        match self {
-            NodeTree::Group(v, node_trees) => {
-                let mut sorted = node_trees.clone();
-                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-                NodeTree::Group(v.clone(), sorted)
-            }
-            NodeTree::Leaf(v) => NodeTree::Leaf(v.clone()),
+    pub fn new(root_name: String) -> Self {
+        Self {
+            name: root_name,
+            children: HashMap::new(),
+            data: None,
         }
     }
-}
+    pub fn insert(&mut self, key: Vec<&str>, data: D) {
+        let mut current_node = self;
 
-impl<D> Default for NodeTree<D> {
-    fn default() -> Self {
-        Self::new()
+        for k in key.iter() {
+            current_node = current_node
+                .children
+                .entry(k.to_string())
+                .or_insert_with(|| NodeTree {
+                    name: k.to_string(),
+                    children: Default::default(),
+                    data: None,
+                });
+        }
+        current_node.data = Some(data);
     }
 }
 
 #[derive(Debug)]
 pub struct Project {
     pub absolute_path: PathBuf,
-    pub node_tree: Vec<NodeTree<ForayNodeTemplate>>,
+    pub node_tree: NodeTree<ForayNodeTemplate>,
 }
 
-pub fn python_project(absolute_path: &Path) -> Project {
-    let node_tree = python_tree(absolute_path.to_path_buf(), |dir| {
-        (dir.path().extension().map(|os| os.to_str()) == Some(Some("py")) || dir.path().is_dir())
-            && not_hidden(dir)
+pub fn python_project(package_info: RawNodePackageInfo) -> Project {
+    let mut tree = NodeTree::new(package_info.package_name.clone());
+
+    let entry_point_modules: Vec<&str> = package_info.entry_point.split(".").collect();
+
+    package_info.node_py_paths.iter().for_each(|py_path| {
+        // Format the python path for display in a tree selection,
+        // Always start with the package name, and omit the entry_point path
+        let display_path: Vec<&str> = once(package_info.package_name.as_str())
+            .chain(py_path.split(".").filter(|module| {
+                dbg!(module);
+                dbg!(!entry_point_modules
+                    .iter()
+                    .any(|em| dbg!(em) == dbg!(module)))
+            }))
+            .collect();
+
+        tree.insert(
+            dbg!(display_path.clone()),
+            ForayNodeTemplate::PyNode(PyNodeTemplate::new(py_path.to_string())),
+        )
     });
+
     Project {
-        absolute_path: absolute_path.to_path_buf(),
-        node_tree,
+        absolute_path: package_info.abs_path,
+        node_tree: tree,
     }
-}
-pub fn rust_project() -> Project {
-    let rust_nodes = RustNodeTemplate::iter()
-        .map(|n| NodeTree::Leaf(ForayNodeTemplate::RustNode(n)))
-        .collect();
-    let node_tree = NodeTree::Group("rust".to_string(), rust_nodes);
-    Project {
-        absolute_path: Default::default(),
-        node_tree: vec![node_tree],
-    }
-}
-
-pub fn not_hidden(entry: &DirEntry) -> bool {
-    !entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with("."))
-        .unwrap_or(false)
-}
-
-pub fn python_tree<F>(project_path: PathBuf, filter_entries: F) -> Vec<NodeTree<ForayNodeTemplate>>
-where
-    F: Fn(&DirEntry) -> bool + Copy,
-{
-    fn inner<F>(
-        project_path: PathBuf,
-        path: PathBuf,
-        filter_entries: F,
-    ) -> Vec<NodeTree<ForayNodeTemplate>>
-    where
-        F: Fn(&DirEntry) -> bool + Copy,
-    {
-        let mut result = fs::read_dir(&path)
-            .unwrap_or_else(|e| {
-                panic!("Directory should exist:{e:?}, and user should have permission")
-            })
-            .filter_map(|e| e.ok())
-            .filter(filter_entries)
-            .fold(vec![], move |mut root, entry| {
-                let dir = entry.metadata().unwrap();
-                if dir.is_dir() {
-                    let entries = inner(project_path.clone(), entry.path(), filter_entries);
-                    if !entries.is_empty() {
-                        root.push(NodeTree::Group(
-                            entry
-                                .path()
-                                .file_stem()
-                                .map(|os| os.to_str().unwrap_or(""))
-                                .unwrap_or("COULD NOT PARSE NODE NAME")
-                                .to_string(),
-                            entries,
-                        ))
-                    }
-                } else {
-                    root.push(NodeTree::Leaf(ForayNodeTemplate::PyNode(
-                        PyNodeTemplate::new(
-                            entry.path(),
-                            entry
-                                .path()
-                                .relative_to(project_path.clone())
-                                .expect("node is subpath of project dir"),
-                        ),
-                    )));
-                }
-                root
-            });
-        result.sort_by(|a, b| a.partial_cmp(b).expect("nodes should be comparable"));
-        result
-    }
-
-    inner(project_path.clone(), project_path, filter_entries)
 }

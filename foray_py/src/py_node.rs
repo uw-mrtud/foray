@@ -1,5 +1,3 @@
-use std::{ffi::CString, fs, path::PathBuf};
-
 use foray_data_model::{
     WireDataContainer,
     node::{Dict, ParameterError, PortData, PortError, PortType, UIParameter},
@@ -11,7 +9,6 @@ use pyo3::{
     types::{PyAnyMethods, PyModule},
 };
 
-use relative_path::RelativePathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::err::{PyNodeConfigError, py_err_traceback};
@@ -20,9 +17,7 @@ use crate::err::{PyNodeConfigError, py_err_traceback};
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub struct PyNodeTemplate {
     pub name: String,
-    #[serde(skip)]
-    pub absolute_path: PathBuf,
-    pub relative_path: RelativePathBuf,
+    pub py_path: String,
     pub config: Result<PyConfig, PyNodeConfigError>,
 }
 
@@ -43,13 +38,16 @@ impl Default for PyConfig {
 }
 
 impl PyNodeTemplate {
-    pub fn new(path: PathBuf, relative_path: RelativePathBuf) -> Self {
-        trace!("loading node: {path:?}");
-        let config = load_node(path.clone());
+    pub fn new(py_path: String) -> Self {
+        trace!("loading node: {py_path:?}");
+        let config = load_node(&py_path);
         PyNodeTemplate {
-            name: path.file_stem().unwrap().to_string_lossy().into(),
-            absolute_path: path,
-            relative_path,
+            name: py_path
+                .split(".")
+                .last()
+                .unwrap_or("EMPTY_PY_PATH")
+                .to_string(),
+            py_path,
             config,
         }
     }
@@ -101,37 +99,20 @@ pub fn py_compute(
     populated_inputs: Dict<String, WireDataContainer<PortData>>,
     populated_parameters: Dict<String, PortData>,
 ) -> Result<Dict<String, PortData>, PyNodeConfigError> {
-    let path = &template.absolute_path;
-    let node_src = fs::read_to_string(path)?;
     let py_inputs: Dict<String, PortData> = populated_inputs
         .into_iter()
         .map(|(k, v)| (k.clone(), v.read().unwrap().clone()))
         .collect();
-    py_compute_unlocked(template, node_src, py_inputs, populated_parameters)
+    py_compute_unlocked(template, py_inputs, populated_parameters)
 }
 
 pub fn py_compute_unlocked(
     template: &PyNodeTemplate,
-    node_src: String,
     populated_inputs: Dict<String, PortData>,
     populated_parameters: Dict<String, PortData>,
 ) -> Result<Dict<String, PortData>, PyNodeConfigError> {
-    let path = &template.absolute_path;
-    let node_name = path
-        .file_stem()
-        .expect("node path should be a file")
-        .to_string_lossy()
-        .to_string();
     Python::with_gil(|py| {
-        let node_module = PyModule::from_code(
-            py,
-            &CString::new(node_src).expect("node src should not have malformed text"),
-            &CString::new(format!("{node_name}.py"))
-                .expect("node name should not have malformed text"),
-            &CString::new(node_name.clone()).expect("node name should not have malformed text"),
-        )
-        .map_err(|py_err| PyNodeConfigError::Runtime(py_err_traceback(py_err)))?;
-
+        let node_module = PyModule::import(py, &template.py_path)?;
         node_module
             .getattr("compute")?
             .call((populated_inputs, populated_parameters), None)?
@@ -140,27 +121,13 @@ pub fn py_compute_unlocked(
     })
 }
 
-fn load_node(path: PathBuf) -> Result<PyConfig, PyNodeConfigError> {
-    let node_src = fs::read_to_string(&path)?;
-    parse_node(path, node_src)
-}
-
-pub fn parse_node(path: PathBuf, node_src: String) -> Result<PyConfig, PyNodeConfigError> {
-    let node_name = path
-        .file_stem()
-        .expect("node path should be a file")
-        .to_string_lossy()
-        .to_string();
-
+fn load_node(py_path: &str) -> Result<PyConfig, PyNodeConfigError> {
     Python::with_gil(|py| {
-        let node_module = PyModule::from_code(
-            py,
-            &CString::new(node_src).expect("node src should not have malformed text"),
-            &CString::new(format!("{node_name}.py"))
-                .expect("node name should not have malformed text"),
-            &CString::new(node_name.clone()).expect("node name should not have malformed text"),
-        )
-        .map_err(|py_err| PyNodeConfigError::Runtime(py_err_traceback(py_err)))?;
+        let node_module = PyModule::import(py, py_path)?;
+
+        // Reload module to make sure we are up to date
+        let import_mod = PyModule::import(py, "importlib")?;
+        let _ = import_mod.getattr("reload").unwrap().call1((&node_module,));
 
         let config_dict = node_module
             .getattr("config")

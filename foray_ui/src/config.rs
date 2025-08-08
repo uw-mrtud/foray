@@ -1,27 +1,24 @@
 use std::{
     env,
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     fs::{self, read_to_string},
     iter,
     path::{Path, PathBuf},
     process::Command,
+    str::FromStr,
 };
 
-//use foray_py::py_module::foray;
-use log::{error, info, warn};
+use foray_py::discover;
+use log::{debug, error, info, warn};
 use pyo3::{py_run, types::PyAnyMethods, PyResult, Python};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    project::{python_project, rust_project},
-    style::theme::AppTheme,
-};
+use crate::{project::python_project, style::theme::AppTheme};
 
 /// User configuration data that is saved/loaded from a config.toml file
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     venv_dir: PathBuf,
-    python_nodes_dir: Vec<PathBuf>,
 }
 
 impl Config {
@@ -40,6 +37,7 @@ impl Config {
                 panic!("Error reading config {config_file:?}:\n{e}");
             }
             _ => {
+                //// Could not read config, creating a default...
                 // TODO: Prompt for venv path
                 // TEMP: create default node location
                 let nodes_dir = user_dirs.home_dir().join("gpi_default");
@@ -61,10 +59,7 @@ impl Config {
                 }
 
                 println!("Creating default config file");
-                let config = Config {
-                    venv_dir,
-                    python_nodes_dir: vec![nodes_dir],
-                };
+                let config = Config { venv_dir };
                 let _ = std::fs::create_dir(config_dir);
                 std::fs::write(
                     &config_file,
@@ -79,11 +74,8 @@ impl Config {
     }
 
     pub(crate) fn read_projects(&self) -> Vec<crate::project::Project> {
-        self.nodes_dir()
-            .iter()
-            .map(|dir| python_project(dir))
-            .chain([rust_project()])
-            .collect()
+        let raw = discover::get_foray_py_packages();
+        raw.into_iter().map(python_project).collect()
     }
 }
 
@@ -128,10 +120,43 @@ impl Config {
                 if paths.len() > 1 {
                     warn!("Multiple python versions detected in venv {:?}, this has not been tested. Unexpected results may occur",self.venv_dir)
                 }
-                paths.into_iter().for_each(|path| {
+                let paths_to_add: Vec<PathBuf> = paths
+                    .into_iter()
+                    .map(|path| path.join("site-packages"))
+                    .flat_map(|path| {
+                        // When a package is installed as "editable"
+                        // a *.pth file is used to point to where the source code actually lives.
+                        // we find all these *.pth files and add them to path
+                        let editable_paths: Vec<PathBuf> =
+                            glob::glob(path.join("*.pth").to_str().unwrap())
+                                .unwrap()
+                                .filter_map(|p| p.ok())
+                                .filter(|path| {
+                                    path.file_name() != Some(OsStr::new("_virtualenv.pth"))
+                                })
+                                .filter_map(|path| {
+                                    let contents = fs::read_to_string(&path).unwrap();
+                                    match PathBuf::from_str(&contents) {
+                                        Ok(p) => Some(p),
+                                        Err(_) => {
+                                            warn!(
+                                        "Unexpected `.pth` file contents in {path:?}: {contents}"
+                                    );
+                                            None
+                                        }
+                                    }
+                                })
+                                .collect();
+
+                        [path].into_iter().chain(editable_paths).collect::<Vec<_>>()
+                    })
+                    .collect();
+                debug!("Adding paths to PYTHONPATH {paths_to_add:#?}");
+
+                paths_to_add.iter().for_each(|path| {
                     env::set_var(
                         "PYTHONPATH",
-                        prepend_env("PYTHONPATH", path.join("site-packages"))
+                        prepend_env("PYTHONPATH", path)
                             .unwrap()
                             .to_str()
                             .unwrap_or_else(|| panic!("Paths must be valid unicode {path:?}")),
@@ -152,7 +177,7 @@ impl Config {
                 list,
                 r#"
 import sys
-print("Using python virtual environment:",sys.path[0])
+print("Using python virtual environment:",sys.path)
 "#
             );
         });
@@ -166,10 +191,6 @@ print("Using python virtual environment:",sys.path[0])
                 .call1((signal.getattr("SIGINT")?, signal.getattr("SIG_DFL")?))?;
             Ok(())
         });
-    }
-
-    pub fn nodes_dir(&self) -> &[PathBuf] {
-        &self.python_nodes_dir
     }
 }
 
