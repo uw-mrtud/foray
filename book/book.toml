@@ -1,0 +1,5 @@
+[book]
+authors = ["John Christensen"]
+language = "en"
+src = "src"
+title = "foray"
