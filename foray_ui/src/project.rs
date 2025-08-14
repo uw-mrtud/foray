@@ -51,16 +51,15 @@ pub fn python_project(package_info: RawNodePackageInfo) -> Project {
         // Format the python path for display in a tree selection,
         // Always start with the package name, and omit the entry_point path
         let display_path: Vec<&str> = once(package_info.package_name.as_str())
-            .chain(py_path.split(".").filter(|module| {
-                dbg!(module);
-                dbg!(!entry_point_modules
-                    .iter()
-                    .any(|em| dbg!(em) == dbg!(module)))
-            }))
+            .chain(
+                py_path
+                    .split(".")
+                    .filter(|module| !entry_point_modules.iter().any(|em| em == module)),
+            )
             .collect();
 
         tree.insert(
-            dbg!(display_path.clone()),
+            display_path.clone(),
             ForayNodeTemplate::PyNode(PyNodeTemplate::new(py_path.to_string())),
         )
     });

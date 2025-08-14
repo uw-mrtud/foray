@@ -62,7 +62,6 @@ pub fn node_tree<'b>(
             .into(),
         // Folder Row
         None => {
-            // NodeTree::Group(name, node_trees) => {
             let next_path = &[tree_path, &[node.name.to_owned()]].concat();
             let folder_row = tree_row(
                 text(node.name.to_string()).style(text::primary),
