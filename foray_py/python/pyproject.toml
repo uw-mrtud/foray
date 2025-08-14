@@ -3,18 +3,18 @@ name = "foray"
 authors = [{ name = "John Christensen", email = "jechristens3@wisc.edu" }]
 requires-python = ">=3.8"
 version = "0.1.0"
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+description = "An interactive and visualize signal processeing toolkit"
 
+[project.urls]
+Homepage = "https://github.com/uw-mrtud/foray"
+Issues = "https://github.com/uw-mrtud/foray/issues"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# [tool.maturin]
-# python-source = "python"
-# # module-name = "foray._rust_interface"
-# features = ["pyo3/extension-module"]
-#
-#
-# [build-system]
-# requires = ["maturin>=1.8,<2.0"]
-# build-backend = "maturin"
