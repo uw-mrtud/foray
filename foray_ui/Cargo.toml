@@ -60,3 +60,4 @@ toml = "0.8.20"
 rfd = "0.15.3"
 relative-path.workspace = true # = { version = "1.9.3", features = ["serde"] }
 iced_aw = { version = "0.12.2", features = ["typed_input"] }
+clap = { version = "4.5.45", features = ["derive"] }

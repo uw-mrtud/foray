@@ -32,6 +32,7 @@ use log::{debug, error, info, trace, warn};
 use rfd::FileDialog;
 use std::fs::read_to_string;
 use std::iter::once;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 #[derive(Default, Clone, PartialEq)]
@@ -66,8 +67,8 @@ pub struct App {
     pub debug: bool,
     pub show_palette_ui: bool,
 }
-impl Default for App {
-    fn default() -> Self {
+impl App {
+    pub fn new(cli_network_path: Option<PathBuf>) -> Self {
         let config = Config::read_config();
         config.setup_environment();
         let projects = config.read_projects();
@@ -82,16 +83,23 @@ impl Default for App {
         let app_theme = Config::load_theme();
         let mut user_data = UserData::read_user_data();
 
-        let network = match user_data.get_recent_network_file() {
-            Some(recent_network) => match Network::load_network(recent_network) {
+        let network = match cli_network_path {
+            Some(np) => match Network::load_network(&np) {
                 Ok(n) => n,
-                Err(_) => {
-                    user_data.set_recent_network_file(None); // Recent network failed to load,
-                                                             // remove it from user data
-                    Network::default()
-                }
+                Err(_) => Network::default(),
             },
-            None => Network::default(),
+            //// If no network provided, get the most recent network
+            None => match user_data.get_recent_network_file() {
+                Some(recent_network) => match Network::load_network(recent_network) {
+                    Ok(n) => n,
+                    Err(_) => {
+                        user_data.set_recent_network_file(None); // Recent network failed to load,
+                                                                 // remove it from user data
+                        Network::default()
+                    }
+                },
+                None => Network::default(),
+            },
         };
 
         App {

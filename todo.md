@@ -178,19 +178,12 @@
   - [x] complex visualization (for now just display magnitude)
 
 - [ ] design/implement how a virtual environment is chosen.
-  - [ ] set venv to `../.venv` relative to network location
-  - [ ] if no network, set to last location
-  - [ ] if no previous location, prompt for location
+  - [ ] relative to the network location?
   - [ ] set from ui?
   - [ ] network load/save defaults to network folder in same directory as venv?
 
 - [ ] minimal documentation on installation, writing nodes, etc.
-  - [x] install instructions
-    - [x] take network path as cli argument
-  - [ ] example repo
-    - [x] example pyproject.toml
-    - [ ] example nodes
-    - [ ] example network
+  - [ ] repository with example layout, and nodes
 
 ##  functional testing
 - error handling 
