@@ -120,6 +120,7 @@ fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (Color, Color)
         PortType::Object(_) => app_theme.orange.color_pair(),
         PortType::Integer => app_theme.red.color_pair(),
         PortType::Float => app_theme.blue.color_pair(),
+        PortType::Complex => app_theme.orange.color_pair(),
         PortType::Boolean => app_theme.cyan.color_pair(),
         PortType::String => app_theme.green.color_pair(),
         PortType::Array(array_port_type, _) => port_color_pair(array_port_type, app_theme),
@@ -131,6 +132,7 @@ fn port_text(port_type: &PortType) -> String {
     match port_type {
         PortType::Integer => "Integer",
         PortType::Float => "Float",
+        PortType::Complex => "Complex",
         PortType::Boolean => "Boolean",
         PortType::String => "String",
         PortType::Array(_port_type, _items) => "Array",

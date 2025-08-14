@@ -12,53 +12,90 @@ pub struct Visualization {
 impl Visualization {
     pub fn new(node: &ForayNodeInstance, output_data: &BTreeMap<String, PortData>) -> Self {
         let image_handle = match node.outputs().iter().next() {
-            Some((name, PortType::Array(port_type, shape))) => match **port_type {
-                PortType::Float => {
-                    //debug!("maybe making handle for {node:?} {name}");
-                    if shape.len() >= 2 {
-                        match output_data.get(name) {
-                            Some(port) => {
-                                // debug!("making image handle for {node:?} {name}");
-                                let data = match port {
-                                    PortData::Array(ForayArray::Float(a)) => {
-                                        &Array3::<f64>::from_shape_vec(
-                                            (a.shape()[0], a.shape()[1], 3),
-                                            //    .strides((
-                                            //    a.strides()[0] as usize,
-                                            //    a.strides()[1] as usize,
-                                            //    0,
-                                            //)),
-                                            a.indexed_iter()
-                                                .flat_map(|(_, v)| [*v, *v, *v])
-                                                .collect::<Vec<_>>(),
-                                        )
-                                        .expect("square matrix")
-                                    }
-                                    //PortData::ArrayComplex(a) => &Array3::<f64>::from_shape_vec(
-                                    //    (
-                                    //        (a.len() as f32).sqrt() as usize,
-                                    //        (a.len() as f32).sqrt() as usize,
-                                    //        3,
-                                    //    ),
-                                    //    a.iter()
-                                    //        .map(|v| v.norm_sqr().sqrt())
-                                    //        .flat_map(|v| [v, v, v])
-                                    //        .collect::<Vec<_>>(),
-                                    //)
-                                    //.expect("square matrix"),
-                                    _ => panic!("unsuported plot types {:?}", port),
-                                };
-                                Some(create_rgb_handle(data))
-                            }
-                            _ => None, //(None, PortData::ArrayReal(Default::default())),
-                        }
-                    } else {
-                        None
-                    }
+            Some((name, PortType::Array(port_type, shape))) => match output_data.get(name) {
+                Some(port) => {
+                    // debug!("making image handle for {node:?} {name}");
+                    let data = match port {
+                        PortData::Array(ForayArray::Float(a)) => Some(
+                            Array3::<f64>::from_shape_vec(
+                                (a.shape()[0], a.shape()[1], 3),
+                                a.indexed_iter()
+                                    .flat_map(|(_, v)| [*v, *v, *v])
+                                    .collect::<Vec<_>>(),
+                            )
+                            .expect("square matrix"),
+                        ),
+                        PortData::Array(ForayArray::Complex(a)) => Some(
+                            Array3::<f64>::from_shape_vec(
+                                (a.shape()[0], a.shape()[1], 3),
+                                a.indexed_iter()
+                                    .flat_map(|(_, v)| [v.norm(), v.norm(), v.norm()])
+                                    .collect::<Vec<_>>(),
+                            )
+                            .expect("square matrix"),
+                        ),
+                        //PortData::ArrayComplex(a) => &Array3::<f64>::from_shape_vec(
+                        //    (
+                        //        (a.len() as f32).sqrt() as usize,
+                        //        (a.len() as f32).sqrt() as usize,
+                        //        3,
+                        //    ),
+                        //    a.iter()
+                        //        .map(|v| v.norm_sqr().sqrt())
+                        //        .flat_map(|v| [v, v, v])
+                        //        .collect::<Vec<_>>(),
+                        //)
+                        //.expect("square matrix"),
+                        _ => None, //panic!("unsuported plot types {:?}", port),
+                    };
+                    data.map(|data| create_rgb_handle(&data))
                 }
-                _ => None,
+                _ => None, //(None, PortData::ArrayReal(Default::default())),
             },
             _ => None,
+            //Some((name, PortType::Array(port_type, shape))) => match **port_type {
+            //    PortType::Float => {
+            //        //debug!("maybe making handle for {node:?} {name}");
+            //        if shape.len() >= 2 {
+            //            match output_data.get(name) {
+            //                Some(port) => {
+            //                    // debug!("making image handle for {node:?} {name}");
+            //                    let data = match port {
+            //                        PortData::Array(ForayArray::Float(a)) => {
+            //                            &Array3::<f64>::from_shape_vec(
+            //                                (a.shape()[0], a.shape()[1], 3),
+            //                                //    .strides((
+            //                                //    a.strides()[0] as usize,
+            //                                //    a.strides()[1] as usize,
+            //                                //    0,
+            //                                //)),
+            //                                a.indexed_iter()
+            //                                    .flat_map(|(_, v)| [*v, *v, *v])
+            //                                    .collect::<Vec<_>>(),
+            //                            )
+            //                            .expect("square matrix")
+            //                        }
+            //                        //PortData::ArrayComplex(a) => &Array3::<f64>::from_shape_vec(
+            //                        //    (
+            //                        //        (a.len() as f32).sqrt() as usize,
+            //                        //        (a.len() as f32).sqrt() as usize,
+            //                        //        3,
+            //                        //    ),
+            //                        //    a.iter()
+            //                        //        .map(|v| v.norm_sqr().sqrt())
+            //                        //        .flat_map(|v| [v, v, v])
+            //                        //        .collect::<Vec<_>>(),
+            //                        //)
+            //                        //.expect("square matrix"),
+            //                        _ => panic!("unsuported plot types {:?}", port),
+            //                    };
+            //                    Some(create_rgb_handle(data))
+            //                }
+            //                _ => None, //(None, PortData::ArrayReal(Default::default())),
+            //            }
+            //        } else {
+            //            None
+            //        }
         };
         Self { image_handle }
     }
@@ -78,9 +115,10 @@ fn create_rgb_handle(data: &Array3<f64>) -> Handle {
     let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
     let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
     let brightness = |p: f64| {
-        let p = ((p - min) / (max - min)) as f32;
-        let p = if p.is_nan() { 0.0 } else { p };
-        (p * 255.0).round() as u8
+        return (p * 255.0).round() as u8;
+        //let p = ((p - min) / (max - min)) as f32;
+        //let p = if p.is_nan() { 0.0 } else { p };
+        //(p * 255.0).round() as u8
     };
     let img: Vec<u8> = data
         .outer_iter()

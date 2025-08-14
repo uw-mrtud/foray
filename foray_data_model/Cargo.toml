@@ -10,3 +10,5 @@ relative-path.workspace = true
 serde.workspace = true
 pyo3.workspace = true
 numpy.workspace = true
+num-complex = { version = "0.4.6", features = ["serde", "rkyv"] }
+rkyv = { version = "0.7.45", default-features = false, features = ["size_64"] }

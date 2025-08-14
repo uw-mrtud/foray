@@ -1,5 +1,5 @@
 use derive_more::{Display, Error};
-use numpy::{PyReadwriteArrayDyn, ToPyArray, ndarray::ArrayD};
+use numpy::{Complex64, PyReadwriteArrayDyn, ToPyArray, ndarray::ArrayD};
 use pyo3::{exceptions::PyTypeError, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -25,7 +25,7 @@ impl UIParameter {
 }
 impl<'py> FromPyObject<'py> for UIParameter {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        //try to extract String
+        // TODO: make some helper functions for this
         match ob.extract::<(String, Dict<String, Bound<'py, PyAny>>)>() {
             Ok((s, o)) => Ok(match s.as_str() {
                 "NumberField" => match o.get("default") {
@@ -78,6 +78,7 @@ impl<'py> FromPyObject<'py> for UIParameter {
 pub enum PortType {
     Integer,
     Float,
+    Complex,
     Boolean,
     String,
     Array(Box<PortType>, Shape),
@@ -86,11 +87,11 @@ pub enum PortType {
 
 impl<'py> FromPyObject<'py> for PortType {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        //try to extract String
         match ob.extract::<&str>() {
             Ok(s) => Ok(match s {
                 "Integer" => PortType::Integer,
                 "Float" => PortType::Float,
+                "Complex" => PortType::Complex,
                 "Boolean" => PortType::Boolean,
                 "String" => PortType::String,
                 _ => Err(PyTypeError::new_err(format!("Unsupported data type: {s}")))?,
@@ -103,10 +104,11 @@ impl<'py> FromPyObject<'py> for PortType {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, FromPyObject, IntoPyObject, Debug, PartialEq)]
+#[derive(Clone, Serialize, IntoPyObject, FromPyObject, Deserialize, Debug, PartialEq)]
 pub enum PortData {
     Integer(i32),
     Float(f64),
+    Complex((f64, f64)),
     Boolean(bool),
     String(String),
     Array(ForayArray),
@@ -117,9 +119,10 @@ pub enum PortData {
 pub enum ForayArray {
     Integer(ArrayD<i32>),
     Float(ArrayD<f64>),
+    Complex(ArrayD<Complex64>),
     Boolean(ArrayD<bool>),
     String(ArrayD<String>),
-    // arrays should be flattened into non-nested arrays whenever
+    // Arrays should be flattened into non-nested arrays whenever
     // posible. ArrayD<i32> is much faster than ArrayD<PrimitiveData::Integer(i32)>,
     // but nesting is still possible when needed
     Object(ArrayD<PortData>),
@@ -127,12 +130,32 @@ pub enum ForayArray {
 
 impl<'py> FromPyObject<'py> for ForayArray {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
-        match ob.extract::<PyReadwriteArrayDyn<i32>>() {
-            Ok(arr) => Ok(ForayArray::Integer(arr.as_array().to_owned())),
-            Err(_) => ob
-                .extract::<PyReadwriteArrayDyn<f64>>()
-                .map(|arr| ForayArray::Float(arr.as_array().to_owned())),
-        }
+        let un_extracted = match ob.extract::<PyReadwriteArrayDyn<i32>>() {
+            Ok(arr) => return Ok(ForayArray::Integer(arr.as_array().to_owned())),
+            Err(_) => ob,
+        };
+        let un_extracted = match un_extracted.extract::<PyReadwriteArrayDyn<f64>>() {
+            Ok(arr) => return Ok(ForayArray::Float(arr.as_array().to_owned())),
+            Err(_) => ob,
+        };
+        let un_extracted = match un_extracted.extract::<PyReadwriteArrayDyn<Complex64>>() {
+            Ok(arr) => return Ok(ForayArray::Complex(arr.as_array().to_owned())),
+            Err(_) => ob,
+        };
+        let _un_extracted = match un_extracted.extract::<PyReadwriteArrayDyn<bool>>() {
+            Ok(arr) => return Ok(ForayArray::Boolean(arr.as_array().to_owned())),
+            Err(_) => ob,
+        };
+        panic!("Arrays of Strings or Objects, are not supported yet")
+        //TODO: Support arrays of strings and objects
+        //let un_extracted = match un_extracted.extract::<PyReadwriteArrayDyn<String>>() {
+        //    Ok(arr) => return Ok(ForayArray::String(arr.as_array().to_owned())),
+        //    Err(_) => ob,
+        //};
+        //let un_extracted = match un_extracted.extract::<PyReadwriteArrayDyn<PortData>>() {
+        //    Ok(arr) => return Ok(ForayArray::Object(arr.as_array().to_owned())),
+        //    Err(pyerr) => return Err(pyerr),
+        //};
     }
 }
 
@@ -147,39 +170,15 @@ impl<'py> IntoPyObject<'py> for ForayArray {
         Ok(match self {
             Self::Integer(array_base) => array_base.to_pyarray(py).into_any(),
             Self::Float(array_base) => array_base.to_pyarray(py).into_any(),
+            Self::Complex(array_base) => array_base.to_pyarray(py).into_any(),
             Self::Boolean(array_base) => array_base.to_pyarray(py).into_any(),
-            _ => todo!(), // Self::String(array_base) => array_base
-                          //     .iter()
-                          //     .map(|e| e.into_pyobject(py))
-                          //     .collect()
-                          //     .to_pyarray(py),
-                          // Self::Object(array_base) => array_base
-                          //     .iter()
-                          //     .map(|e| e.into_pyobject(py))
-                          //     .collect()
-                          //     .to_pyarray(py)
-                          //     .into_any()
-                          //     .into(),
+            _ => panic!("Arrays of Strings or Objects, are not supported yet"),
+            //TODO: Support arrays of strings and objects
+            //Self::String(array_base) => array_base.to_pyarray(py).into_any(),
+            //Self::Object(array_base) => array_base.to_pyarray(py).into_any(),
         })
     }
 }
-
-// impl GraphNode<NodeTemplate, PortType, PortData> for NodeTemplate {
-//     fn inputs(&self) -> Dict<PortName, PortType> {
-//         todo!()
-//     }
-//
-//     fn outputs(&self) -> Dict<PortName, PortType> {
-//         todo!()
-//     }
-//
-//     fn compute(
-//         self,
-//         inputs: Dict<PortName, WireDataContainer<PortData>>,
-//     ) -> Result<(Dict<PortName, PortData>, NodeTemplate), NodeError> {
-//         todo!()
-//     }
-// }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Display, Debug)]
 pub enum NodeError {

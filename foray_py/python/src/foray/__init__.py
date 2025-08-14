@@ -9,6 +9,7 @@ type ArrayType = tuple[PortType, ArrayShape]
 class PrimitivePortType(StrEnum):
     integer = "Integer"
     float = "Float"
+    complex = "Complex"
     boolean = "Boolean"
     string = "String"
 
@@ -16,6 +17,7 @@ class PrimitivePortType(StrEnum):
 class Port:
     integer = PrimitivePortType.integer
     float = PrimitivePortType.float
+    complex = PrimitivePortType.complex
     boolean = PrimitivePortType.boolean
     string = PrimitivePortType.integer
 
@@ -51,22 +53,3 @@ class ForayConfig(dict):
     def parameters(self, parameters: dict[str, ParameterType]):
         self["parameters"] = parameters
         return self
-
-
-conf = (
-    ForayConfig()
-    .inputs({"a": Port.integer, "a2": Port.array(Port.float, [1, None])})
-    .outputs(
-        {
-            "b": Port.float,
-            "c": Port.array(Port.float, [None, None]),
-            "d": {
-                "r": Port.float,
-                "g": Port.float,
-                "b": Port.float,
-            },
-        }
-    )
-    .parameters({"a": CheckBox(True)})
-)
-print("1:22")

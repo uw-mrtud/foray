@@ -1,0 +1,152 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: PyNode((
+                    name: "shepp_logan",
+                    py_path: "test_nodes.foray.shepp_logan",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            1: (
+                template: PyNode((
+                    name: "fft",
+                    py_path: "test_nodes.foray.fft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            2: (
+                template: PyNode((
+                    name: "multiply",
+                    py_path: "test_nodes.foray.multiply",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                            "b": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            3: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            4: (
+                template: PyNode((
+                    name: "circle_mask",
+                    py_path: "test_nodes.foray.circle_mask",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "radius": Slider(0.0, 6.0, 0.5),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "radius": Float(4.39),
+                },
+            ),
+        },
+        edges: [((
+            node: 0,
+            name: "out",
+            io: Out,
+        ), (
+            node: 1,
+            name: "a",
+            io: In,
+        )), ((
+            node: 4,
+            name: "out",
+            io: Out,
+        ), (
+            node: 2,
+            name: "b",
+            io: In,
+        )), ((
+            node: 1,
+            name: "out",
+            io: Out,
+        ), (
+            node: 2,
+            name: "a",
+            io: In,
+        )), ((
+            node: 2,
+            name: "out",
+            io: Out,
+        ), (
+            node: 3,
+            name: "a",
+            io: In,
+        ))],
+        next_id: 5,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: -15.722656,
+                y: 24.863281,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            4: (
+                x: 340.6051,
+                y: 299.09296,
+            ),
+            0: (
+                x: 87.171875,
+                y: 128.24687,
+            ),
+            3: (
+                x: 128.77692,
+                y: 539.87103,
+            ),
+            2: (
+                x: 161.23944,
+                y: 435.5211,
+            ),
+            1: (
+                x: 86.15314,
+                y: 268.30005,
+            ),
+        },
+    ),
+)
