@@ -11,6 +11,7 @@ pub const CODE_FONT: Font = Font::with_name("CaskaydiaCove Nerd Font");
 pub mod app;
 pub mod config;
 pub mod file_watch;
+pub mod headless;
 pub mod interface;
 pub mod math;
 pub mod network;

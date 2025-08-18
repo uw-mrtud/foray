@@ -42,6 +42,7 @@ pub struct Network {
     #[serde(skip)]
     pub unsaved_changes: bool,
 }
+#[derive(Debug)]
 pub enum NetworkLoadError {
     FileNotFound,
     CouldNotParse,

@@ -84,10 +84,7 @@ impl App {
         let mut user_data = UserData::read_user_data();
 
         let network = match cli_network_path {
-            Some(np) => match Network::load_network(&np) {
-                Ok(n) => n,
-                Err(_) => Network::default(),
-            },
+            Some(np) => Network::load_network(&np).unwrap_or_default(),
             //// If no network provided, get the most recent network
             None => match user_data.get_recent_network_file() {
                 Some(recent_network) => match Network::load_network(recent_network) {

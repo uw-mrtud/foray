@@ -1,0 +1,178 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: PyNode((
+                    name: "shepp_logan",
+                    py_path: "test_nodes.foray.shepp_logan",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            1: (
+                template: PyNode((
+                    name: "fft",
+                    py_path: "test_nodes.foray.fft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            2: (
+                template: PyNode((
+                    name: "circle_mask",
+                    py_path: "test_nodes.foray.circle_mask",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "radius": Slider(0.0, 6.0, 0.5),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "radius": Float(0.5),
+                },
+            ),
+            3: (
+                template: PyNode((
+                    name: "multiply",
+                    py_path: "test_nodes.foray.multiply",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                            "b": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            5: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            6: (
+                template: PyNode((
+                    name: "print_stats",
+                    py_path: "test_nodes.foray.print_stats",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({}),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+        },
+        edges: [((
+            node: 0,
+            name: "out",
+            io: Out,
+        ), (
+            node: 1,
+            name: "a",
+            io: In,
+        )), ((
+            node: 1,
+            name: "out",
+            io: Out,
+        ), (
+            node: 3,
+            name: "a",
+            io: In,
+        )), ((
+            node: 2,
+            name: "out",
+            io: Out,
+        ), (
+            node: 3,
+            name: "b",
+            io: In,
+        )), ((
+            node: 3,
+            name: "out",
+            io: Out,
+        ), (
+            node: 5,
+            name: "a",
+            io: In,
+        )), ((
+            node: 5,
+            name: "out",
+            io: Out,
+        ), (
+            node: 6,
+            name: "a",
+            io: In,
+        ))],
+        next_id: 7,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: -5.2539063,
+                y: 174.04297,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            6: (
+                x: 169.08047,
+                y: 618.01483,
+            ),
+            3: (
+                x: 167.32813,
+                y: 359.7125,
+            ),
+            5: (
+                x: 171.11563,
+                y: 483.15933,
+            ),
+            2: (
+                x: 367.72815,
+                y: 229.09688,
+            ),
+            1: (
+                x: 107.09375,
+                y: 216.47188,
+            ),
+            0: (
+                x: 67.20624,
+                y: 71.815636,
+            ),
+        },
+    ),
+)

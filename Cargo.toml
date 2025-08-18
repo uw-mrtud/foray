@@ -1,3 +1,4 @@
+cargo-features = ["codegen-backend"]
 [package]
 name = "foray"
 version = "0.1.0"
@@ -34,3 +35,7 @@ ron = "0.10.1"
 
 pyo3 = "0.25.0"
 numpy = "0.25.0"
+
+[profile.dev]
+debug = 0
+codegen-backend = "cranelift"

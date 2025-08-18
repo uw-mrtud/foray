@@ -142,6 +142,14 @@
 ## Primary Visualization/Output
 - [?] compose widgets from multiple nodes together
 
+## Semantics
+- [ ] rank polymorphism
+  - inputs could be a scalar, or an n-dim array
+  - a generic "array" port type?
+  - rank to operate on? "leading axis" or "trailing axis"
+
+- [ ] higher order functions
+
 # Bugs
 - [ ] Node running while it's deleted, results come back, but node is gone. crash on unwrapping node
 - [ ] Node's are selectable when behind left panel
@@ -154,6 +162,9 @@
 - [ ] Loading a network from UI differs from load on start. Load on start dosn't crash if there's an error with nodes, Load from UI does crash.
 - [ ] Visualization of transposed arrays doesn't take into account the changed strides
 
+- [ ] unwrap on Err foray_py/src/discover.rs:65:14, No module found
+  - probably because I moved the location of the venv. need to re-create the venv
+  - handle the error better, to hopefully point the user to what went wrong clearly
 
 # Before alpha release
 - [x] Python helper API
@@ -178,12 +189,14 @@
   - [x] complex visualization (for now just display magnitude)
 
 - [ ] design/implement how a virtual environment is chosen.
-  - [ ] relative to the network location?
+  - [x] network path as cli argument
+  - [~] relative to the network location?
   - [ ] set from ui?
   - [ ] network load/save defaults to network folder in same directory as venv?
 
 - [ ] minimal documentation on installation, writing nodes, etc.
   - [ ] repository with example layout, and nodes
+
 
 ##  functional testing
 - error handling 
