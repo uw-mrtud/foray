@@ -12,7 +12,7 @@ pub struct Visualization {
 impl Visualization {
     pub fn new(node: &ForayNodeInstance, output_data: &BTreeMap<String, PortData>) -> Self {
         let image_handle = match node.outputs().iter().next() {
-            Some((name, PortType::Array(port_type, shape))) => match output_data.get(name) {
+            Some((name, PortType::Array(_port_type, _shape))) => match output_data.get(name) {
                 Some(port) => {
                     // debug!("making image handle for {node:?} {name}");
                     let data = match port {
@@ -112,8 +112,8 @@ use super::ForayNodeInstance;
 //fn create_grayscale_handle(data: &Array3<f64>) -> Handle {}
 fn create_rgb_handle(data: &Array3<f64>) -> Handle {
     // trace!("Creating image handle for plot2d, {:?}", data.shape());
-    let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
-    let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
+    // let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
+    // let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
     let brightness = |p: f64| {
         return (p * 255.0).round() as u8;
         //let p = ((p - min) / (max - min)) as f32;

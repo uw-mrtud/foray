@@ -3,19 +3,15 @@ use std::{error::Error, path::PathBuf};
 use foray_graph::graph::Graph;
 use log::trace;
 
-use crate::{config::Config, network::Network};
+use crate::{network::Network, python_env};
 
 pub fn run_headless(network_path: PathBuf) -> Result<(), Box<dyn Error>> {
-    let config = Config::read_config();
-    config.setup_environment();
-    let projects = config.read_projects();
-    trace!(
-        "Configured Python Projects: {:?}",
-        projects
-            .iter()
-            .map(|p| p.absolute_path.clone())
-            .collect::<Vec<_>>()
-    );
+    let venv_dir = network_path
+        .parent()
+        .expect("Network should be a file")
+        .join("../.venv");
+
+    python_env::setup_python(venv_dir);
 
     let network = match Network::load_network(&network_path) {
         Ok(n) => n,

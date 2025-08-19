@@ -3,7 +3,6 @@ from foray import ForayConfig, NumberField, Port, Slider
 
 
 def config():
-    print(Slider(0, 1, 1))
     return (
         ForayConfig()
         .outputs(

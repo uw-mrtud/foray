@@ -1,6 +1,9 @@
 use std::{collections::HashMap, iter::once, path::PathBuf};
 
-use foray_py::{discover::RawNodePackageInfo, py_node::PyNodeTemplate};
+use foray_py::{
+    discover::{self, RawNodePackageInfo},
+    py_node::PyNodeTemplate,
+};
 
 use crate::node_instance::ForayNodeTemplate;
 
@@ -34,6 +37,12 @@ impl<D> NodeTree<D> {
         }
         current_node.data = Some(data);
     }
+}
+
+/// Get all python projects (node collections) from the current python environment
+pub fn read_python_projects() -> Vec<crate::project::Project> {
+    let raw = discover::get_foray_py_packages();
+    raw.into_iter().map(python_project).collect()
 }
 
 #[derive(Debug)]

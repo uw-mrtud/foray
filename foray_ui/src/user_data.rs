@@ -20,8 +20,8 @@ impl UserData {
         self.most_recent_network_file = file;
         self.write();
     }
-    pub fn get_recent_network_file(&self) -> &Option<PathBuf> {
-        &self.most_recent_network_file
+    pub fn get_recent_network_file(&self) -> Option<PathBuf> {
+        self.most_recent_network_file.clone()
     }
 
     pub fn set_new_node_path(&mut self, new_node_path: &[String]) {

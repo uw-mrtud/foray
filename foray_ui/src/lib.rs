@@ -17,6 +17,7 @@ pub mod math;
 pub mod network;
 pub mod node_instance;
 pub mod project;
+pub mod python_env;
 pub mod rust_nodes;
 pub mod style;
 pub mod user_data;

@@ -7,7 +7,8 @@ use crate::math::{Point, Vector};
 use crate::network::Network;
 use crate::node_instance::visualiztion::Visualization;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
-use crate::project::Project;
+use crate::project::{read_python_projects, Project};
+use crate::python_env;
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
@@ -69,9 +70,32 @@ pub struct App {
 }
 impl App {
     pub fn new(cli_network_path: Option<PathBuf>) -> Self {
+        let mut user_data = UserData::read_user_data();
+
+        let network_path = match cli_network_path {
+            Some(np) => Some(np),
+            //// If no network provided, get the most recent network
+            None => user_data.get_recent_network_file(),
+        };
+        //// Venv selection precedence
+        //// 1. if network specified, venv = "network_path/../.venv"
+        ////    - if no venv, panic
+        ////    - if venv, create a new default network
+        //// 3. If no recent network use check current directory for venv
+        ////    - if no venv, panic
+        ////    - if venv, create a new default network
+
+        let venv_dir = match &network_path {
+            Some(np) => np
+                .parent()
+                .expect("Network should be a file")
+                .join("../.venv"),
+            None => panic!("No venv found relative to network path"),
+        };
+
         let config = Config::read_config();
-        config.setup_environment();
-        let projects = config.read_projects();
+        python_env::setup_python(venv_dir);
+        let projects = read_python_projects();
         trace!(
             "Configured Python Projects: {:?}",
             projects
@@ -81,22 +105,19 @@ impl App {
         );
 
         let app_theme = Config::load_theme();
-        let mut user_data = UserData::read_user_data();
 
-        let network = match cli_network_path {
-            Some(np) => Network::load_network(&np).unwrap_or_default(),
-            //// If no network provided, get the most recent network
-            None => match user_data.get_recent_network_file() {
-                Some(recent_network) => match Network::load_network(recent_network) {
-                    Ok(n) => n,
-                    Err(_) => {
-                        user_data.set_recent_network_file(None); // Recent network failed to load,
-                                                                 // remove it from user data
-                        Network::default()
-                    }
-                },
-                None => Network::default(),
+        let network = match network_path {
+            Some(np) => match Network::load_network(&np) {
+                Ok(n) => n,
+                Err(err) => {
+                    warn!("{err:?}");
+                    user_data.set_recent_network_file(None); // Recent network failed to load,
+                                                             // remove it from user data
+                    Network::default()
+                }
             },
+            //// If no network provided, get the most recent network
+            None => Network::default(),
         };
 
         App {
@@ -782,7 +803,7 @@ impl App {
             }
         });
         // Update list of available nodes
-        self.projects = self.config.read_projects();
+        self.projects = read_python_projects();
     }
 }
 

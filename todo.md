@@ -142,14 +142,6 @@
 ## Primary Visualization/Output
 - [?] compose widgets from multiple nodes together
 
-## Semantics
-- [ ] rank polymorphism
-  - inputs could be a scalar, or an n-dim array
-  - a generic "array" port type?
-  - rank to operate on? "leading axis" or "trailing axis"
-
-- [ ] higher order functions
-
 # Bugs
 - [ ] Node running while it's deleted, results come back, but node is gone. crash on unwrapping node
 - [ ] Node's are selectable when behind left panel
@@ -188,17 +180,22 @@
 - [x] complex data type
   - [x] complex visualization (for now just display magnitude)
 
+- [x] headless mode
+
 - [ ] design/implement how a virtual environment is chosen.
   - [x] network path as cli argument
-  - [~] relative to the network location?
-  - [ ] set from ui?
+  - [x] relative to the network location?
   - [ ] network load/save defaults to network folder in same directory as venv?
 
 - [ ] minimal documentation on installation, writing nodes, etc.
-  - [ ] repository with example layout, and nodes
+  - [x] repository with example layout
+  - [ ] example nodes
+  - [ ] explain port types
+  - [ ] explain controls
 
 
-##  functional testing
+## Functional Testing
+- [ ] Installation
 - error handling 
     - [ ] config errors
     - [ ] compute errors
