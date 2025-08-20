@@ -1,3 +1,0 @@
-foray
-numpy>=2.2.6
-pillow>=11.2.1

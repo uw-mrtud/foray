@@ -158,6 +158,10 @@
   - probably because I moved the location of the venv. need to re-create the venv
   - handle the error better, to hopefully point the user to what went wrong clearly
 
+- [ ] undo causes crash
+  - thread 'main' panicked at foray_ui/src/app.rs:554:49:
+      Node should not be idle here!
+
 # Before alpha release
 - [x] Python helper API
   - [x] input, output, parameters functions
@@ -185,7 +189,7 @@
 - [ ] design/implement how a virtual environment is chosen.
   - [x] network path as cli argument
   - [x] relative to the network location?
-  - [ ] network load/save defaults to network folder in same directory as venv?
+  - [~] network load/save defaults to network folder in same directory as venv?
 
 - [ ] minimal documentation on installation, writing nodes, etc.
   - [x] repository with example layout
@@ -204,3 +208,7 @@
 - hot reloading
     - [ ] changes to virtual env (e.g. adding/removing dependencies) should trigger reload
 
+
+## Minor usability tweaks
+- [ ] don't re-execute node on click
+- [ ] visualize nodes firing

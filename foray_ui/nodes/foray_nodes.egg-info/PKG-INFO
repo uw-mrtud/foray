@@ -1,7 +1,0 @@
-Metadata-Version: 2.4
-Name: foray_nodes
-Version: 0.0.1
-Requires-Python: >=3.10
-Requires-Dist: foray
-Requires-Dist: numpy>=2.2.6
-Requires-Dist: pillow>=11.2.1

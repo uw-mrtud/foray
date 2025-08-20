@@ -1,8 +1,4 @@
 cargo-features = ["codegen-backend"]
-[package]
-name = "foray"
-version = "0.1.0"
-edition = "2024"
 
 [workspace]
 resolver = "3"

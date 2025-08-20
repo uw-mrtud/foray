@@ -6,7 +6,7 @@ edition = "2021"
 [package.metadata.bundle]
 name = "Foray"
 identifier = "org.mrtud.foray"
-icon = ["resources/icon*.png"]
+icon = ["data/resources/icon*.png"]
 version = "0.1.0"
 category = "Development"
 short_description = "An interactive signal processing toolkit"
@@ -31,18 +31,13 @@ pyo3.workspace = true
 numpy.workspace = true
 ndarray = "0.16.1"
 
-ron.workspace = true                                   # = { version = "0.8.1", features = ["indexmap"] }
+ron.workspace = true
 indexmap = { version = "2.7.0", features = ["serde"] }
 
-serde.workspace = true       # = { version = "1.0.217", features = ["serde_derive"] }
-strum.workspace = true       # = { version = "0.26.3", features = ["derive"] }
-derive_more.workspace = true # = { version = "1.0.0", features = [
-# 	"debug",
-# 	"display",
-# 	"add",
-# 	"mul",
-# 	"not",
-# ] }
+serde.workspace = true
+strum.workspace = true
+derive_more.workspace = true
+
 float-cmp = "0.10.0"
 notify = { version = "8.0.0", features = ["serde"] }
 notify-debouncer-full = "0.5.0"
@@ -56,8 +51,7 @@ glam = "0.29.2"
 colorgrad = "0.7.0"
 directories = "6.0.0"
 toml = "0.8.20"
-#rfd ={version =  "0.15.3", default-features = false, features = ["async-std","gtk3"]}
 rfd = "0.15.3"
-relative-path.workspace = true # = { version = "1.9.3", features = ["serde"] }
+relative-path.workspace = true
 iced_aw = { version = "0.12.2", features = ["typed_input"] }
 clap = { version = "4.5.45", features = ["derive"] }
