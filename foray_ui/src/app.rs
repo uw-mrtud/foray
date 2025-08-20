@@ -31,7 +31,7 @@ use iced::{mouse, window, Subscription, Task};
 use itertools::Itertools;
 use log::{debug, error, info, trace, warn};
 use rfd::FileDialog;
-use std::fs::read_to_string;
+use std::fs::{self, read_to_string};
 use std::iter::once;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -133,6 +133,13 @@ impl App {
             projects,
             user_data,
         }
+    }
+    fn get_and_create_network_default_dir(&self) -> PathBuf {
+        let network_dir = self.config.venv_dir.join("../networks");
+
+        // Create the network directory if it doesn't exist
+        let _ = fs::create_dir_all(&network_dir);
+        network_dir
     }
 }
 
@@ -412,8 +419,8 @@ impl App {
                     }
                 }
                 let file = FileDialog::new()
-                    .set_directory(self.user_data.network_search_dir())
-                    .add_filter("network", &["ron"])
+                    .set_directory(self.get_and_create_network_default_dir())
+                    .add_filter("network", &["network"])
                     .pick_file();
 
                 if let Some(file) = file {
@@ -435,8 +442,8 @@ impl App {
                 let file = match self.network.file.clone() {
                     Some(file) => Some(file),
                     None => FileDialog::new()
-                        .set_directory(self.user_data.network_search_dir())
-                        .add_filter("network", &["ron"])
+                        .set_directory(self.get_and_create_network_default_dir())
+                        .add_filter("network", &["network"])
                         .save_file(),
                 };
                 if let Some(file) = file {

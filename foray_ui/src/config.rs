@@ -12,7 +12,7 @@ use crate::style::theme::AppTheme;
 /// User configuration data that is saved/loaded from a config.toml file
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    venv_dir: PathBuf,
+    pub venv_dir: PathBuf,
 }
 
 impl Config {

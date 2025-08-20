@@ -4,7 +4,7 @@ use foray_ui::{
     headless::run_headless,
 };
 use iced::{application, Font, Task};
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, fs, path::PathBuf};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -20,9 +20,12 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     let cli = Cli::parse();
+    let absolute_network = cli
+        .network
+        .map(|p| fs::canonicalize(&p).unwrap_or_else(|_| panic!("network does not exist {p:?}")));
 
     if cli.no_gui {
-        match cli.network {
+        match absolute_network {
             Some(network) => run_headless(network),
             None => {
                 println!("No network file provided");
@@ -44,7 +47,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             .font(include_bytes!("../data/CaskaydiaCoveNerdFont.ttf").as_slice())
             .font(include_bytes!("../data/CaskaydiaCove.ttf").as_slice())
             .default_font(Font::with_name("CaskaydiaCove"))
-            .run_with(|| (App::new(cli.network), Task::none()))?;
+            .run_with(|| (App::new(absolute_network), Task::none()))?;
         Ok(())
     }
 }

@@ -11,9 +11,6 @@ use log::{debug, warn};
 use pyo3::{types::PyAnyMethods, PyResult, Python};
 
 pub fn setup_python(venv_dir: PathBuf) {
-    let venv_dir = fs::canonicalize(&venv_dir)
-        .unwrap_or_else(|_| panic!("virtual environment should exist at {venv_dir:?}"));
-
     println!("Using python environment: {venv_dir:?}");
 
     //// Shell ENV variables
