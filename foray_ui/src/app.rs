@@ -30,10 +30,10 @@ use iced::Length::Fill;
 use iced::{mouse, window, Subscription, Task};
 use itertools::Itertools;
 use log::{debug, error, info, trace, warn};
-use rfd::FileDialog;
 use std::fs::{self, read_to_string};
 use std::iter::once;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[derive(Default, Clone, PartialEq)]
@@ -46,6 +46,8 @@ pub enum Action {
     CreatingInputWire(PortRef, Option<PortRef>),
     CreatingOutputWire(PortRef, Option<PortRef>),
     AddingNode,
+    LoadingNetwork,
+    SavingNetwork,
 }
 
 pub struct App {
@@ -180,8 +182,10 @@ pub enum Message {
     ToggleDebug,
     TogglePaletteUI,
     New,
-    Load,
-    Save,
+    StartLoadNetwork,
+    EndLoadNetwork(#[debug(skip)] Result<(PathBuf, Arc<String>), FileError>),
+    StartSaveNetwork,
+    EndSaveNetwork(Option<PathBuf>),
     ReloadNodes,
     WindowOpen,
     ModifiersChanged(Modifiers),
@@ -391,7 +395,8 @@ impl App {
                         .show();
                     match result {
                         rfd::MessageDialogResult::Yes => {
-                            return Task::done(Message::Save).chain(Task::done(Message::New))
+                            return Task::done(Message::StartSaveNetwork)
+                                .chain(Task::done(Message::New))
                         }
                         rfd::MessageDialogResult::Cancel => return Task::none(),
                         _ => {}
@@ -400,9 +405,9 @@ impl App {
                 self.network = Network::default();
                 self.reload_nodes();
             }
-            Message::Load => {
-                //TODO: move into Network
+            Message::StartLoadNetwork => {
                 if self.network.unsaved_changes {
+                    // TODO: make this dialog async similar to `load_network_dialog`
                     let result = rfd::MessageDialog::new()
                         .set_title("Save Changes?")
                         .set_description(
@@ -412,40 +417,55 @@ impl App {
                         .show();
                     match result {
                         rfd::MessageDialogResult::Yes => {
-                            return Task::done(Message::Save).chain(Task::done(Message::Load))
+                            return Task::done(Message::StartSaveNetwork)
+                                .chain(Task::done(Message::StartLoadNetwork))
                         }
                         rfd::MessageDialogResult::Cancel => return Task::none(),
                         _ => {}
                     }
                 }
-                let file = FileDialog::new()
-                    .set_directory(self.get_and_create_network_default_dir())
-                    .add_filter("network", &["network"])
-                    .pick_file();
+                self.action = Action::LoadingNetwork;
+                return Task::perform(
+                    load_network_dialog(self.get_and_create_network_default_dir()),
+                    Message::EndLoadNetwork,
+                );
+            }
 
-                if let Some(file) = file {
-                    self.network = ron::from_str(
-                        &read_to_string(&file)
-                            .unwrap_or_else(|e| panic!("Could not read network {file:?}\n {e}")),
-                    )
-                    .unwrap_or_else(|e| panic!("Could not parse network {file:?}\n {e}"));
-                    self.network.file = Some(file.clone());
-                    self.user_data.set_recent_network_file(Some(file));
-                    self.reload_nodes();
-                    return Task::done(Message::ComputeAll);
-                } else {
-                    info!("File not picked")
+            Message::EndLoadNetwork(result) => {
+                self.action = Action::Idle;
+                match result {
+                    Ok((file, network)) => match ron::from_str(&network) {
+                        Ok(network) => {
+                            self.network = network;
+
+                            self.network.file = Some(file.clone());
+                            self.user_data.set_recent_network_file(Some(file));
+                            self.reload_nodes();
+                            self.reload_nodes();
+                            return Task::done(Message::ComputeAll);
+                        }
+                        Err(err) => {
+                            error!("Error parsing network: {err}")
+                        }
+                    },
+                    Err(FileError::DialogClosed) => {}
+                    Err(FileError::FileReadFailed(err)) => {
+                        error!("Error reading network file: {err}")
+                    }
                 }
             }
-            Message::Save => {
-                //TODO: move into Network
-                let file = match self.network.file.clone() {
-                    Some(file) => Some(file),
-                    None => FileDialog::new()
-                        .set_directory(self.get_and_create_network_default_dir())
-                        .add_filter("network", &["network"])
-                        .save_file(),
-                };
+            Message::StartSaveNetwork => match self.network.file.clone() {
+                Some(file) => return Task::done(Message::EndSaveNetwork(Some(file))),
+                None => {
+                    self.action = Action::SavingNetwork;
+                    return Task::perform(
+                        save_network_dialog(self.get_and_create_network_default_dir()),
+                        Message::EndSaveNetwork,
+                    );
+                }
+            },
+            Message::EndSaveNetwork(file) => {
+                self.action = Action::Idle;
                 if let Some(file) = file {
                     std::fs::write(
                         &file,
@@ -642,10 +662,10 @@ impl App {
 
     /// App View
     pub fn view(&'_ self) -> Element<'_, Message, Theme, Renderer> {
-        let content = column![
-            row![
-                side_bar(self),
-                vertical_rule(SEPERATOR),
+        let network_panel = container(match self.action {
+            Action::LoadingNetwork => container(text("loading...")),
+            Action::SavingNetwork => container(text("saving...")),
+            _ => {
                 container(
                     workspace(
                         &self.network.shapes,
@@ -657,11 +677,13 @@ impl App {
                     .on_cursor_move(Message::OnMove)
                     .on_press(Message::OnCanvasDown)
                     .on_release(Message::OnCanvasUp)
-                    .pan(Message::ScrollPan)
+                    .pan(Message::ScrollPan),
                 )
-                .height(Fill)
-                .width(Fill)
-            ],
+            }
+        })
+        .center(Fill);
+        let content = column![
+            row![side_bar(self), vertical_rule(SEPERATOR), network_panel],
             match self.show_palette_ui {
                 true => column![horizontal_rule(SEPERATOR), self.app_theme.view()],
                 false => column![],
@@ -677,7 +699,7 @@ impl App {
                         .center(Fill)
                         .style(container::transparent)
                 )
-                // Stop any mouseover interactions from showing,
+                // Stop any mouseover cursor interactions from showing,
                 .interaction(mouse::Interaction::Idle)
                 .on_press(Message::Cancel),
                 //// Add node modal
@@ -876,4 +898,38 @@ pub fn title(state: &App) -> String {
             .clone()
             .map(|p| p.file_stem().unwrap().to_string_lossy().to_string())
             .unwrap_or("*new".to_string())
+}
+
+#[derive(Clone)]
+pub enum FileError {
+    DialogClosed,
+    FileReadFailed(String),
+}
+
+/// Open a file dialog to pick a network file
+async fn load_network_dialog(
+    start_directory: PathBuf,
+) -> Result<(PathBuf, Arc<String>), FileError> {
+    let picked_file = rfd::AsyncFileDialog::new()
+        .set_title("Open a network file...")
+        .set_directory(start_directory)
+        .add_filter("network", &["network"])
+        .pick_file()
+        .await
+        .ok_or(FileError::DialogClosed)?;
+
+    match read_to_string(picked_file.path()) {
+        Ok(network_string) => Ok((picked_file.path().to_path_buf(), Arc::new(network_string))),
+        Err(err) => Err(FileError::FileReadFailed(err.to_string()))?,
+    }
+}
+
+/// Open a file dialog to save a network file
+async fn save_network_dialog(default_dir: PathBuf) -> Option<PathBuf> {
+    rfd::AsyncFileDialog::new()
+        .set_directory(default_dir)
+        .add_filter("network", &["network"])
+        .save_file()
+        .await
+        .map(|fh| fh.into())
 }

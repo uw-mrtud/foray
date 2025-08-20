@@ -96,6 +96,22 @@
                 )),
                 parameters_values: {},
             ),
+            7: (
+                template: PyNode((
+                    name: "fft",
+                    py_path: "test_nodes.foray.fft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
         },
         edges: [((
             node: 0,
@@ -138,17 +154,21 @@
             name: "a",
             io: In,
         ))],
-        next_id: 7,
+        next_id: 8,
     ),
     shapes: (
         camera: (
             position: (
-                x: -5.2539063,
-                y: 46.660156,
+                x: 4.6679688,
+                y: 185.9082,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
+            7: (
+                x: 67.14609,
+                y: 543.9207,
+            ),
             6: (
                 x: 169.08047,
                 y: 618.01483,

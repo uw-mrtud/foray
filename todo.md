@@ -186,10 +186,10 @@
 
 - [x] headless mode
 
-- [ ] design/implement how a virtual environment is chosen.
+- [x] design/implement how a virtual environment is chosen.
   - [x] network path as cli argument
   - [x] relative to the network location?
-  - [~] network load/save defaults to network folder in same directory as venv?
+  - [x] network load/save defaults to network folder in same directory as venv
 
 - [ ] minimal documentation on installation, writing nodes, etc.
   - [x] repository with example layout
@@ -212,3 +212,5 @@
 ## Minor usability tweaks
 - [ ] don't re-execute node on click
 - [ ] visualize nodes firing
+- [x] async save/load
+- [ ] gracefully handle when venv cannot be determined

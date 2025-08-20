@@ -39,8 +39,8 @@ pub fn side_bar(app: &App) -> Element<'_, Message> {
     //''
     let file_commands = row![
         file_button('󰝒', Message::New),
-        file_button('󰝰', Message::Load),
-        file_button('󰆓', Message::Save),
+        file_button('󰝰', Message::StartLoadNetwork),
+        file_button('󰆓', Message::StartSaveNetwork),
         file_button('󰃤', Message::ToggleDebug),
         file_button('󰏘', Message::TogglePaletteUI),
     ]

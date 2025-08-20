@@ -1,0 +1,81 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            1: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            2: (
+                template: PyNode((
+                    name: "circle_mask",
+                    py_path: "test_nodes.foray.circle_mask",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "radius": Slider(0.0, 6.0, 0.5),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "radius": Float(0.5),
+                },
+            ),
+        },
+        edges: [],
+        next_id: 3,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: -44.04297,
+                y: 117.197266,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            2: (
+                x: 109.881256,
+                y: 198.41562,
+            ),
+            0: (
+                x: 380.91565,
+                y: 232.6688,
+            ),
+            1: (
+                x: 102.19061,
+                y: 339.74374,
+            ),
+        },
+    ),
+)
