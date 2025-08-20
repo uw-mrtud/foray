@@ -38,7 +38,7 @@ We will use `uv` to simplify creating the python virtual environement. It can be
 
 ```bash
 cd foray_example
-uv sync
+uv venv # Creates a virtual environment, `./venv`, and installs python packages
 foray networks/hello_foray.network
 ```
 
