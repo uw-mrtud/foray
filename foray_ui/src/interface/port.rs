@@ -27,6 +27,7 @@ pub fn port_view<'a>(
     node_data: &ForayNodeInstance,
     node_size: Size,
     app_theme: &'a AppTheme,
+    show_tooltip: bool,
 ) -> Vec<Element<'a, Message>> {
     let port_x = |i: usize| i as f32 * (node_size.width / 4.) + NODE_RADIUS * 2.;
 
@@ -38,7 +39,10 @@ pub fn port_view<'a>(
         .map(|(i, port)| (Point::new(port_x(i), -PORT_RADIUS), port))
         .map(|(point, port)| {
             let (name, port_type) = port;
-            let port_tooltip = port_tooltip(name.clone(), port_type.clone(), app_theme);
+            let port_tooltip = match show_tooltip {
+                true => port_tooltip(name.clone(), port_type.clone(), app_theme),
+                false => text("").into(),
+            };
 
             let in_port = PortRef {
                 node: node_id,
@@ -72,7 +76,11 @@ pub fn port_view<'a>(
         .map(|(i, port)| (Point::new(port_x(i), node_size.height - PORT_RADIUS), port))
         .map(|(point, port)| {
             let (name, port_type) = port;
-            let port_tooltip = port_tooltip(name.clone(), port_type.clone(), app_theme);
+
+            let port_tooltip = match show_tooltip {
+                true => port_tooltip(name.clone(), port_type.clone(), app_theme),
+                false => text("").into(),
+            };
 
             let out_port = PortRef {
                 node: node_id,

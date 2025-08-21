@@ -261,6 +261,13 @@ where
     ) -> event::Status {
         let event_status = event::Status::Ignored;
 
+        // Early return if cursor is not over the widget
+        if let Some(pos) = cursor.position() {
+            if !layout.bounds().contains(pos) {
+                return event_status;
+            }
+        };
+
         let bounds = layout.bounds();
         let workspace_offset = Vector::new(bounds.position().x, bounds.position().y);
 
@@ -361,6 +368,13 @@ where
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
+        //// Early return if cursor is not over the widget
+        if let Some(pos) = cursor.position() {
+            if !layout.bounds().contains(pos) {
+                return mouse::Interaction::default();
+            }
+        };
+
         self.shapes
             .0
             .values()

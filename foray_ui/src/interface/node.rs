@@ -78,7 +78,8 @@ impl App {
         let node_size = template_node_size(&node.template);
 
         //// Ports
-        let port_buttons = port_view(id, node, node_size, &self.app_theme);
+        let show_port_tooltips = !matches!(self.action, crate::app::Action::AddingNode);
+        let port_buttons = port_view(id, node, node_size, &self.app_theme, show_port_tooltips);
 
         let node_primary = container(node_view(node, id, input_data))
             .style(move |theme| node_style(node, theme))
