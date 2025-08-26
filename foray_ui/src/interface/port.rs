@@ -12,11 +12,11 @@ use iced::{
 use itertools::Itertools;
 
 use crate::{
-    app::Message,
     math::Point,
     node_instance::ForayNodeInstance,
     style::{color::Color, theme::AppTheme},
     widget::{custom_button, pin::Pin},
+    workspace::WorkspaceMessage,
     CODE_FONT,
 };
 
@@ -28,7 +28,7 @@ pub fn port_view<'a>(
     node_size: Size,
     app_theme: &'a AppTheme,
     show_tooltip: bool,
-) -> Vec<Element<'a, Message>> {
+) -> Vec<Element<'a, WorkspaceMessage>> {
     let port_x = |i: usize| i as f32 * (node_size.width / 4.) + NODE_RADIUS * 2.;
 
     //TODO: Unify in/out port view creation
@@ -53,16 +53,16 @@ pub fn port_view<'a>(
             Pin::new(tooltip(
                 mouse_area(
                     custom_button::Button::new("")
-                        .on_press(Message::PortPress(in_port.clone()))
-                        .on_drag(Message::OnMove)
-                        .on_right_press(Message::PortDelete(in_port.clone()))
-                        .on_release_self(Message::PortRelease)
+                        .on_press(WorkspaceMessage::PortPress(in_port.clone()))
+                        .on_drag(WorkspaceMessage::OnMove)
+                        .on_right_press(WorkspaceMessage::PortDelete(in_port.clone()))
+                        .on_release_self(WorkspaceMessage::PortRelease)
                         .style(move |_t, s| port_style(port_type.clone(), s, app_theme))
                         .width(PORT_RADIUS * 2.)
                         .height(PORT_RADIUS * 2.),
                 )
-                .on_enter(Message::PortStartHover(in_port.clone()))
-                .on_exit(Message::PortEndHover(in_port.clone())),
+                .on_enter(WorkspaceMessage::PortStartHover(in_port.clone()))
+                .on_exit(WorkspaceMessage::PortEndHover(in_port.clone())),
                 port_tooltip,
                 tooltip::Position::Top,
             ))
@@ -91,10 +91,10 @@ pub fn port_view<'a>(
             Pin::new(
                 mouse_area(tooltip(
                     custom_button::Button::new(vertical_space())
-                        .on_press(Message::PortPress(out_port.clone()))
-                        .on_drag(Message::OnMove)
-                        .on_right_press(Message::PortDelete(out_port.clone()))
-                        .on_release_self(Message::PortRelease)
+                        .on_press(WorkspaceMessage::PortPress(out_port.clone()))
+                        .on_drag(WorkspaceMessage::OnMove)
+                        .on_right_press(WorkspaceMessage::PortDelete(out_port.clone()))
+                        .on_release_self(WorkspaceMessage::PortRelease)
                         .style(move |_t, s| port_style(port_type.clone(), s, app_theme))
                         .width(PORT_RADIUS * 2.)
                         .height(PORT_RADIUS * 2.)
@@ -102,8 +102,8 @@ pub fn port_view<'a>(
                     port_tooltip,
                     tooltip::Position::Bottom,
                 ))
-                .on_enter(Message::PortStartHover(out_port.clone()))
-                .on_exit(Message::PortEndHover(out_port.clone())),
+                .on_enter(WorkspaceMessage::PortStartHover(out_port.clone()))
+                .on_exit(WorkspaceMessage::PortEndHover(out_port.clone())),
             )
             .position(point)
             .into()
@@ -148,11 +148,11 @@ fn port_text(port_type: &PortType) -> String {
     }
     .to_owned()
 }
-fn port_type_label<'a>(
-    label: Element<'a, Message>,
+fn port_type_label<'a, M: 'a>(
+    label: Element<'a, M>,
     port_type: &PortType,
     app_theme: &'a AppTheme,
-) -> Element<'a, Message> {
+) -> Element<'a, M> {
     //text::Rich<'a, Message> {
     let color = port_color_pair(port_type, app_theme).0.iced_color();
     container(label)
@@ -161,11 +161,11 @@ fn port_type_label<'a>(
 }
 
 /// Display summary of port information
-fn port_tooltip(
+fn port_tooltip<'a, M: 'a>(
     port_name: String,
     port_type: PortType,
-    app_theme: &'_ AppTheme,
-) -> Element<'_, Message> {
+    app_theme: &'a AppTheme,
+) -> Element<'a, M> {
     row![
         text(port_name),
         port_tooltip_recurse(port_type, app_theme, true)
@@ -178,12 +178,12 @@ const VERTICAL_SPACING: u16 = 2;
 const NESTED_PADDING: u16 = 2;
 const BORDER_RADIUS: u16 = 4;
 
-fn port_tooltip_recurse(
+fn port_tooltip_recurse<'a, M: 'a>(
     //port_name: String,
     port_type: PortType,
-    app_theme: &'_ AppTheme,
+    app_theme: &'a AppTheme,
     even: bool, // Switch between 2 background colors as objects are nested
-) -> Element<'_, Message> {
+) -> Element<'a, M> {
     let nested = |inner| {
         container(column(inner).spacing(VERTICAL_SPACING).align_x(Right)).style(move |_t| {
             background(iced::Color::from(if even {

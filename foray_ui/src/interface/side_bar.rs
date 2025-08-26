@@ -1,10 +1,10 @@
-use crate::app::{App, Message};
 use crate::interface::node::format_node_debug_output;
 use crate::interface::status::{node_status_icon, node_status_text_element};
 use crate::interface::{debug_format, SEPERATOR};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::style::button::{primary_icon, secondary_icon};
 use crate::style::icon::icon;
+use crate::workspace::{Workspace, WorkspaceMessage};
 use foray_data_model::node::{Dict, PortData, UIParameter};
 use foray_data_model::WireDataContainer;
 use iced::*;
@@ -14,8 +14,11 @@ use super::numeric_input::{self, PartialUIValue};
 
 const PRECISION: f64 = 100.0;
 /// Create the sidebar view
-pub fn side_bar(app: &App) -> Element<'_, Message> {
-    fn file_button<'a>(lbl: impl Into<String>, message: Message) -> Button<'a, Message> {
+pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
+    fn file_button<'a>(
+        lbl: impl Into<String>,
+        message: WorkspaceMessage,
+    ) -> Button<'a, WorkspaceMessage> {
         button(icon(lbl.into()))
             .on_press(message)
             .style(primary_icon)
@@ -24,8 +27,8 @@ pub fn side_bar(app: &App) -> Element<'_, Message> {
     fn undo_button<'a>(
         lbl: impl Into<String>,
         enabled: bool,
-        message: Message,
-    ) -> Button<'a, Message> {
+        message: WorkspaceMessage,
+    ) -> Button<'a, WorkspaceMessage> {
         button(icon(lbl.into()))
             .on_press_maybe(if enabled { Some(message) } else { None })
             .padding(0.0)
@@ -38,40 +41,42 @@ pub fn side_bar(app: &App) -> Element<'_, Message> {
     //''
     //''
     let file_commands = row![
-        file_button('󰝒', Message::New),
-        file_button('󰝰', Message::StartLoadNetwork),
-        file_button('󰆓', Message::StartSaveNetwork),
-        file_button('󰃤', Message::ToggleDebug),
-        file_button('󰏘', Message::TogglePaletteUI),
+        file_button('󰝒', WorkspaceMessage::New),
+        file_button('󰝰', WorkspaceMessage::StartLoadNetwork),
+        file_button('󰆓', WorkspaceMessage::StartSaveNetwork),
+        //file_button('󰃤', WorkspaceMessage::ToggleDebug),
+        //file_button('󰏘', WorkspaceMessage::TogglePaletteUI),
     ]
     .spacing(3.0);
 
     let undo = undo_button(
-        debug_format(&app.debug, '', app.network.undo_stack.len()),
+        '',
+        //debug_format(&app.debug, '', app.network.undo_stack.len()),
         !app.network.undo_stack.is_empty(),
-        Message::Undo,
+        WorkspaceMessage::Undo,
     );
     let redo = undo_button(
-        debug_format(&app.debug, '', app.network.redo_stack.len()),
+        //debug_format(&app.debug, '', app.network.redo_stack.len()),
+        '',
         !app.network.redo_stack.is_empty(),
-        Message::Redo,
+        WorkspaceMessage::Redo,
     );
     let action_commands = row![horizontal_space(), undo, redo].spacing(4.0);
 
     //// Config
-    let config: Element<Message> =
+    let config: Element<WorkspaceMessage> =
         if let Some(selected_id) = app.network.selected_shapes.iter().next() {
             let node = app.network.graph.get_node(*selected_id);
             let input_data = app.network.graph.get_input_data(selected_id);
-            let out_port_display: Element<Message> = if app.debug {
-                column![format_node_debug_output(
-                    node,
-                    &app.network.graph.get_output_data(selected_id)
-                )]
-                .into()
-            } else {
-                text("").into()
-            };
+            //let out_port_display: Element<WorkspaceMessage> = if app.debug {
+            //    column![format_node_debug_output(
+            //        node,
+            //        &app.network.graph.get_output_data(selected_id)
+            //    )]
+            //    .into()
+            //} else {
+            //    text("").into()
+            //};
             column![
                 container(text(node.template.name().clone()).size(20.)).center_x(Fill),
                 horizontal_rule(0),
@@ -86,11 +91,11 @@ pub fn side_bar(app: &App) -> Element<'_, Message> {
                 // node.config_view(*selected_id, input_data)
                 //     .unwrap_or(text("...").into()),
                 vertical_space(),
-                scrollable(out_port_display),
+                //scrollable(out_port_display),
                 row![button(text("delete node"))
                     .style(button::danger)
                     .padding([1, 4])
-                    .on_press(Message::DeleteSelectedNodes)]
+                    .on_press(WorkspaceMessage::DeleteSelectedNodes)]
             ]
             .align_x(Center)
             .height(Fill)
@@ -124,7 +129,7 @@ pub fn config_view<'a>(
     node_instance: &'a ForayNodeInstance,
     id: u32,
     _input_data: Dict<String, WireDataContainer<PortData>>,
-) -> Option<iced::Element<'a, Message>> {
+) -> Option<iced::Element<'a, WorkspaceMessage>> {
     match &node_instance.template {
         ForayNodeTemplate::RustNode(_rn) => None,
         // match rn {
@@ -139,11 +144,11 @@ pub fn config_view<'a>(
                         let name_2 = name.clone();
                         let name_3 = name.clone();
                         let message = move |widget_value| {
-                            Message::UpdateNodeParameter(id, name.clone(), widget_value)
+                            WorkspaceMessage::UpdateNodeParameter(id, name.clone(), widget_value)
                         };
                         let message_2 = message.clone();
                         //TODO: make widget type view
-                        let widget: Element<Message> = match widget_type {
+                        let widget: Element<WorkspaceMessage> = match widget_type {
                             UIParameter::CheckBox(_initial_v) => {
                                 row![
                                     horizontal_space(),
@@ -192,7 +197,7 @@ pub fn config_view<'a>(
                                             &current_value
                                         )
                                         .on_input(
-                                            move |new_v| Message::UpdateNodeParameter(
+                                            move |new_v| WorkspaceMessage::UpdateNodeParameter(
                                                 id,
                                                 name_2.clone(),
                                                 PortData::Float(new_v),

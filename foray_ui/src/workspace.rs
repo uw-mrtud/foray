@@ -1,0 +1,869 @@
+use crate::file_watch::file_watch_subscription;
+use crate::interface::add_node::add_node_tree_panel;
+use crate::interface::{side_bar::side_bar, SEPERATOR};
+use crate::math::{Point, Vector};
+use crate::network::Network;
+use crate::node_instance::visualiztion::Visualization;
+use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
+use crate::project::{read_python_projects, Project};
+use crate::python_env;
+use crate::rust_nodes::RustNodeTemplate;
+use crate::style::theme::AppTheme;
+use crate::user_data::UserData;
+use crate::widget::shapes::ShapeId;
+use crate::widget::workspace_canvas::workspace_canvas;
+
+use foray_data_model::node::{Dict, PortData};
+use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
+
+use foray_py::py_node::{PyConfig, PyNodeTemplate};
+use iced::event::listen_with;
+use iced::keyboard::key::Named;
+use iced::keyboard::{Event::KeyPressed, Key, Modifiers};
+use iced::widget::{column, container, mouse_area, row, stack, text, vertical_rule};
+use iced::Event::Keyboard;
+use iced::Length::Fill;
+use iced::{mouse, window, Element, Renderer, Subscription, Task, Theme};
+use itertools::Itertools;
+use log::{error, info, trace, warn};
+use std::fs::{self, read_to_string};
+use std::iter::once;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+#[derive(Default, Clone, PartialEq)]
+pub enum Action {
+    #[default]
+    InitialLoad,
+    Idle,
+    DragPan(Vector),
+    DragNode(Vec<(u32, Vector)>),
+    CreatingInputWire(PortRef, Option<PortRef>),
+    CreatingOutputWire(PortRef, Option<PortRef>),
+    AddingNode,
+    LoadingNetwork,
+    SavingNetwork,
+}
+
+pub struct Workspace {
+    pub workspace_dir: PathBuf,
+
+    /// Node, Wire and Shape data that is executed, and saved to disk
+    pub network: Network,
+
+    /// List of all known Node types, including system and user nodes
+    pub projects: Vec<Project>,
+
+    pub user_data: UserData,
+    //// UI
+    pub action: Action,
+    pub cursor_position: Point,
+}
+
+pub enum WorkspaceError {
+    NoVenv,
+}
+
+impl Workspace {
+    pub fn is_valid_workspace(workspace_dir: &PathBuf) -> bool {
+        workspace_dir.join(".venv").is_dir()
+    }
+
+    pub fn new(
+        workspace_dir: PathBuf,
+        network_path: Option<PathBuf>,
+    ) -> Result<Self, WorkspaceError> {
+        if !Self::is_valid_workspace(&workspace_dir) {
+            return Err(WorkspaceError::NoVenv);
+        };
+
+        let network = match network_path {
+            Some(np) => match Network::load_network(&np) {
+                Ok(n) => n,
+                Err(err) => {
+                    warn!("{err:?}");
+                    //user_data.set_recent_network_file(None); // Recent network failed to load,
+                    // remove it from user data
+                    Network::default()
+                }
+            },
+            //// If no network provided, get the most recent network
+            None => Network::default(),
+        };
+        let venv_dir = workspace_dir.join(".venv");
+        python_env::setup_python(venv_dir);
+        let projects = read_python_projects();
+        trace!(
+            "Configured Python Projects: {:?}",
+            projects
+                .iter()
+                .map(|p| p.absolute_path.clone())
+                .collect::<Vec<_>>()
+        );
+
+        Ok(Self {
+            workspace_dir,
+            network,
+            projects,
+            user_data: UserData::read_user_data(),
+            action: Default::default(),
+            cursor_position: Default::default(),
+        })
+    }
+
+    pub fn get_and_create_network_default_dir(&self) -> PathBuf {
+        let network_dir = self.workspace_dir.join("networks");
+
+        // Create the network directory if it doesn't exist
+        let _ = fs::create_dir_all(&network_dir);
+        network_dir
+    }
+
+    /// Read node definitions from disk, and copies node configuration (parameters and port connections) forward.
+    /// *Does not trigger the compute function of any nodes.*
+    /// TODO: This has been edited several times as the data model has changed. This may be
+    /// able to be cleaned up significantly
+    fn reload_nodes(&mut self) {
+        // Update any existing nodes in the graph that could change based on file changes
+        self.network.graph.nodes_ref().iter().for_each(|nx| {
+            let node = self.network.graph.get_node(*nx).clone();
+            if let ForayNodeTemplate::PyNode(old_py_node) = node.template {
+                let PyNodeTemplate {
+                    name: _node_name,
+                    py_path,
+                    config: old_config,
+                } = old_py_node;
+
+                let PyConfig {
+                    inputs: old_inputs,
+                    outputs: old_outputs,
+                    parameters: _old_parameters,
+                } = old_config.unwrap_or_default();
+
+                //// Read new node from disk
+                let new_py_node = PyNodeTemplate::new(py_path);
+
+                // TODO: Implement parameter merging
+
+                //// Update Parameters
+                // let new_parameters = {
+                //     // If Ok, copy old parameters to new parameters
+                //     if let (Ok(new_parameters), Ok(old_param)) =
+                //         (new_py_node.parameters(), &old_parameters)
+                //     {
+                //         // Only keep old values that are still present in the new parameters list
+                //         Ok(new_parameters
+                //             .clone()
+                //             .into_iter()
+                //             .chain(old_param.clone().into_iter().filter(|(k, v)| {
+                //                 if let Some(new_v) = new_parameters.get(k) {
+                //                     discriminant(v) == discriminant(new_v)
+                //                 } else {
+                //                     false
+                //                 }
+                //             }))
+                //             .collect())
+                //     } else {
+                //         warn!(
+                //             "Paramaters not ok, not loading.\nNew: {:?}\nOld: {:?}",
+                //             &new_py_node.parameters(),
+                //             &old_parameters
+                //         );
+                //         new_py_node.parameters()
+                //     }
+                // };
+
+                //// Update Ports, and Graph Edges
+                {
+                    let new_in_ports = new_py_node.inputs().unwrap_or_default();
+                    let new_out_ports = new_py_node.outputs().unwrap_or_default();
+
+                    // Get old version's ports
+                    let old_in_ports = old_inputs.unwrap_or_default();
+                    let old_out_ports = old_outputs.unwrap_or_default();
+
+                    // Find any nodes that previously existed, but now doesn't
+                    let invalid_in = old_in_ports
+                        .into_iter()
+                        .filter(|(old_name, old_type)| new_in_ports.get(old_name) != Some(old_type))
+                        .map(|(old_name, _)| PortRef {
+                            node: *nx,
+                            name: old_name,
+                            io: IO::In,
+                        });
+                    let invalid_out = old_out_ports
+                        .into_iter()
+                        .filter(|(old_name, old_type)| {
+                            new_out_ports.get(old_name) != Some(old_type)
+                        })
+                        .map(|(old_name, _)| PortRef {
+                            node: *nx,
+                            name: old_name,
+                            io: IO::Out,
+                        });
+
+                    // Remove invalid edges from Graph
+                    invalid_in.chain(invalid_out).for_each(|p| {
+                        warn!(
+                            "Removing port {:?} from node {:?}",
+                            p.name, new_py_node.name
+                        );
+                        self.network.graph.remove_edge(&p);
+                    });
+                }
+
+                // Update Graph Node
+                self.network
+                    .graph
+                    .set_node_data(*nx, ForayNodeTemplate::PyNode(new_py_node).into());
+            }
+        });
+        // Update list of available nodes
+        self.projects = read_python_projects();
+    }
+
+    pub fn subscriptions(&self) -> Subscription<WorkspaceMessage> {
+        Subscription::batch(
+            self.projects
+                .iter()
+                .filter(|p| !p.absolute_path.to_string_lossy().is_empty())
+                .enumerate()
+                .map(|(id, p)| {
+                    file_watch_subscription(
+                        id,
+                        p.absolute_path.clone(),
+                        WorkspaceMessage::ReloadNodes,
+                    )
+                })
+                .chain([
+                    window::open_events().map(|_| WorkspaceMessage::WindowOpen),
+                    listen_with(|event, _status, _id| match event {
+                        Keyboard(KeyPressed { key, modifiers, .. }) => match key {
+                            Key::Named(Named::Delete) => {
+                                Some(WorkspaceMessage::DeleteSelectedNodes)
+                            }
+                            Key::Named(Named::Escape) => Some(WorkspaceMessage::Cancel),
+                            Key::Character(smol_str) => {
+                                if modifiers.control() && smol_str == "a" {
+                                    Some(WorkspaceMessage::OpenAddNodeUi)
+                                } else {
+                                    None
+                                }
+                            }
+                            _ => None,
+                        },
+                        _ => None,
+                    }),
+                    // Refresh for animation while nodes are actively running
+                    if self.network.any_nodes_running() {
+                        iced::time::every(Duration::from_micros(1_000_000 / 16))
+                            .map(|_| WorkspaceMessage::AnimationTick)
+                    } else {
+                        Subscription::none()
+                    },
+                ]),
+        )
+    }
+}
+#[derive(Clone, Debug)]
+pub enum WorkspaceMessage {
+    //// Workspace
+    OnMove(Point),
+    ScrollPan(Vector),
+
+    //// Port
+    PortStartHover(PortRef),
+    PortEndHover(PortRef),
+    PortPress(PortRef),
+    PortRelease,
+    PortDelete(PortRef),
+
+    //// Node
+    OnCanvasDown(Option<ShapeId>),
+    OnCanvasUp,
+    OpenAddNodeUi,
+    AddNode(ForayNodeTemplate),
+    SelectNodeGroup(Vec<String>),
+
+    UpdateNodeTemplate(u32, ForayNodeTemplate),
+    UpdateNodeParameter(u32, String, PortData),
+    DeleteSelectedNodes,
+
+    QueueCompute(u32),
+    ComputeComplete(u32, Result<Dict<String, PortData>, ForayNodeError>),
+    ComputeAll,
+
+    //// Application
+    AnimationTick,
+    //ThemeValueChange(AppThemeMessage, GuiColorMessage),
+    //ToggleDebug,
+    //TogglePaletteUI,
+    New,
+    StartLoadNetwork,
+    EndLoadNetwork(Result<(PathBuf, Arc<String>), FileError>),
+    StartSaveNetwork,
+    EndSaveNetwork(Option<PathBuf>),
+    ReloadNodes,
+    WindowOpen,
+
+    Cancel,
+
+    //// History
+    Undo,
+    Redo,
+}
+
+impl Workspace {
+    pub fn update(
+        &mut self,
+        message: WorkspaceMessage,
+        modifiers: Modifiers,
+    ) -> Task<WorkspaceMessage> {
+        match message {
+            WorkspaceMessage::OnMove(_) => {}
+            _ => info!("---Message--- {message:?} {:?}", Instant::now()),
+        }
+        match message {
+            WorkspaceMessage::Cancel => self.action = Action::Idle,
+            WorkspaceMessage::OnMove(cursor_position) => {
+                self.cursor_position = cursor_position;
+
+                // Update node position if currently dragging
+                match &self.action {
+                    Action::DragNode(offsets) => {
+                        offsets.iter().for_each(|(id, offset)| {
+                            *self
+                                .network
+                                .shapes
+                                .shape_positions
+                                .get_mut(id)
+                                .expect("Shape index must exist") =
+                                (cursor_position + self.network.shapes.camera.position) + *offset
+                        });
+                    }
+                    Action::DragPan(offset) => {
+                        self.network.shapes.camera.position =
+                            -cursor_position.to_vector() + *offset;
+                    }
+                    _ => (),
+                }
+            }
+
+            WorkspaceMessage::ScrollPan(delta) => {
+                self.network.shapes.camera.position.x -= delta.x * 2.;
+                self.network.shapes.camera.position.y -= delta.y * 2.;
+            }
+
+            //// Port
+            WorkspaceMessage::PortStartHover(hover_port) => match &self.action {
+                Action::CreatingInputWire(input, _) => {
+                    if *input != hover_port {
+                        self.action = Action::CreatingInputWire(input.clone(), Some(hover_port))
+                    }
+                }
+                Action::CreatingOutputWire(output, _) => {
+                    if *output != hover_port {
+                        self.action = Action::CreatingOutputWire(output.clone(), Some(hover_port))
+                    }
+                }
+                _ => {}
+            },
+            WorkspaceMessage::PortEndHover(_port) => match &self.action {
+                Action::CreatingInputWire(input, _) => {
+                    self.action = Action::CreatingInputWire(input.clone(), None)
+                }
+                Action::CreatingOutputWire(output, _) => {
+                    self.action = Action::CreatingOutputWire(output.clone(), None)
+                }
+                _ => {}
+            },
+            WorkspaceMessage::PortPress(port) => match port.io {
+                IO::In => self.action = Action::CreatingInputWire(port, None),
+                IO::Out => self.action = Action::CreatingOutputWire(port, None),
+            },
+            WorkspaceMessage::PortRelease => {
+                let task = match &self.action.clone() {
+                    Action::CreatingInputWire(input, Some(output))
+                    | Action::CreatingOutputWire(output, Some(input)) => {
+                        self.network.add_edge(input, output);
+                        Task::done(WorkspaceMessage::QueueCompute(output.node))
+                    }
+                    _ => Task::none(),
+                };
+                self.action = Action::Idle;
+                return task;
+            }
+            WorkspaceMessage::PortDelete(port) => {
+                self.network.remove_edge(port);
+            }
+
+            //// Node
+            WorkspaceMessage::OnCanvasDown(clicked_id) => {
+                //TODO: break this logic down into pure functions
+                //// Clicked on a node
+                if let Some(nx) = clicked_id {
+                    self.action = self
+                        .network
+                        .select_node(nx, modifiers, self.cursor_position);
+                    return Task::done(WorkspaceMessage::QueueCompute(nx));
+                } else
+                //// Clicked on the canvas background
+                {
+                    //// Clear selected shapes
+                    self.network.selected_shapes = Default::default();
+
+                    //// Start Pan
+                    self.action = Action::DragPan(
+                        self.network.shapes.camera.position + self.cursor_position.to_vector(),
+                    );
+                }
+            }
+            WorkspaceMessage::OnCanvasUp => {
+                // TODO: push undo stack if shape has moved
+                match self.action {
+                    Action::DragNode(..) => self.action = Action::Idle,
+                    Action::DragPan(_) => self.action = Action::Idle,
+                    _ => (),
+                }
+            }
+
+            WorkspaceMessage::UpdateNodeTemplate(id, new_template) => {
+                //TODO: move into Network
+                let old_template = &self.network.graph.get_node(id).template;
+                if *old_template != new_template {
+                    self.network.stash_state();
+                    // Now we can aquire mutable reference
+                    let old_template = &mut self.network.graph.get_mut_node(id).template;
+                    *old_template = new_template;
+                    return Task::done(WorkspaceMessage::QueueCompute(id));
+                };
+            }
+            WorkspaceMessage::UpdateNodeParameter(id, name, updated_widget) => {
+                //TODO: move into Network
+                self.network.stash_state();
+                let old_template = &mut self.network.graph.get_mut_node(id);
+                old_template.parameters_values.insert(name, updated_widget);
+                return Task::done(WorkspaceMessage::QueueCompute(id));
+            }
+            WorkspaceMessage::OpenAddNodeUi => self.action = Action::AddingNode,
+            WorkspaceMessage::SelectNodeGroup(selected_tree_path) => match &self.action {
+                Action::AddingNode => {
+                    let current_path = self.user_data.get_new_node_path();
+                    if current_path.starts_with(&selected_tree_path) {
+                        self.user_data.set_new_node_path(
+                            &selected_tree_path[0..selected_tree_path.len().saturating_sub(1)],
+                        );
+                    } else {
+                        self.user_data.set_new_node_path(&selected_tree_path);
+                        //self.action = Action::AddingNode(selected_tree_path)
+                    }
+                }
+                _ => error!(
+                    "should not be able to select a nope group while Add Node UI is not active"
+                ),
+            },
+            WorkspaceMessage::AddNode(template) => {
+                //TODO: move into Network
+                self.network.stash_state();
+                let id = self.network.graph.node(template.into());
+                self.network.selected_shapes = [id].into();
+                self.network.shapes.shape_positions.insert_before(
+                    0,
+                    id,
+                    self.cursor_position + self.network.shapes.camera.position,
+                );
+                self.action = Action::DragNode(vec![(id, [0.0, 0.0].into())])
+            }
+            WorkspaceMessage::DeleteSelectedNodes => {
+                //TODO: move into Network
+                if !self.network.selected_shapes.is_empty() {
+                    self.network.stash_state();
+                    self.network.selected_shapes.iter().for_each(|id| {
+                        self.network.graph.delete_node(*id);
+                        self.network.shapes.shape_positions.swap_remove(id);
+                    });
+                    self.network.selected_shapes = [].into();
+                    //PERF: ideally, we should only execute affected nodes
+                    return Task::done(WorkspaceMessage::ComputeAll);
+                }
+            }
+
+            WorkspaceMessage::AnimationTick => {}
+            //WorkspaceMessage::ThemeValueChange(tm, tv) => self.app_theme.update(tm, tv),
+            //WorkspaceMessage::ToggleDebug => {
+            //    self.debug = !self.debug;
+            //}
+            //WorkspaceMessage::TogglePaletteUI => {
+            //    self.show_palette_ui = !self.show_palette_ui;
+            //}
+            WorkspaceMessage::New => {
+                //TODO: move into Network
+                if self.network.unsaved_changes {
+                    let result = rfd::MessageDialog::new()
+                        .set_title("Unsaved Changes")
+                        .set_level(rfd::MessageLevel::Warning)
+                        .set_description("Network has unsaved changes, continue without saving?")
+                        .set_buttons(rfd::MessageButtons::OkCancel)
+                        .show();
+                    match result {
+                        rfd::MessageDialogResult::Ok => {}
+                        rfd::MessageDialogResult::Cancel => return Task::none(),
+                        _ => {}
+                    }
+                }
+                self.network = Network::default();
+                self.reload_nodes();
+            }
+            WorkspaceMessage::StartLoadNetwork => {
+                if self.network.unsaved_changes {
+                    // TODO: make this dialog async similar to `load_network_dialog`
+                    let result = rfd::MessageDialog::new()
+                        .set_title("Unsaved Changes")
+                        .set_level(rfd::MessageLevel::Warning)
+                        .set_description("Network has unsaved changes, continue without saving?")
+                        .set_buttons(rfd::MessageButtons::OkCancel)
+                        .show();
+                    match result {
+                        rfd::MessageDialogResult::Ok => {}
+                        rfd::MessageDialogResult::Cancel => return Task::none(),
+                        _ => {}
+                    }
+                }
+                self.action = Action::LoadingNetwork;
+                return Task::perform(
+                    load_network_dialog(self.get_and_create_network_default_dir()),
+                    WorkspaceMessage::EndLoadNetwork,
+                );
+            }
+
+            WorkspaceMessage::EndLoadNetwork(result) => {
+                self.action = Action::Idle;
+                match result {
+                    Ok((file, network)) => match ron::from_str(&network) {
+                        Ok(network) => {
+                            self.network = network;
+
+                            self.network.file = Some(file.clone());
+                            self.user_data.set_recent_network_file(Some(file));
+                            self.reload_nodes();
+                            self.reload_nodes();
+                            return Task::done(WorkspaceMessage::ComputeAll);
+                        }
+                        Err(err) => {
+                            error!("Error parsing network: {err}")
+                        }
+                    },
+                    Err(FileError::DialogClosed) => {}
+                    Err(FileError::FileReadFailed(err)) => {
+                        error!("Error reading network file: {err}")
+                    }
+                }
+            }
+            WorkspaceMessage::StartSaveNetwork => match self.network.file.clone() {
+                Some(file) => return Task::done(WorkspaceMessage::EndSaveNetwork(Some(file))),
+                None => {
+                    self.action = Action::SavingNetwork;
+                    return Task::perform(
+                        save_network_dialog(self.get_and_create_network_default_dir()),
+                        WorkspaceMessage::EndSaveNetwork,
+                    );
+                }
+            },
+            WorkspaceMessage::EndSaveNetwork(file) => {
+                self.action = Action::Idle;
+                if let Some(file) = file {
+                    std::fs::write(
+                        &file,
+                        ron::ser::to_string_pretty(
+                            &self.network,
+                            ron::ser::PrettyConfig::default().compact_arrays(true),
+                        )
+                        .unwrap(),
+                    )
+                    .expect("Could not save to file");
+                    info!("saved network {file:?}");
+                    self.network.file = Some(file.clone());
+                    self.network.unsaved_changes = false;
+                    self.user_data.set_recent_network_file(Some(file));
+                } else {
+                    info!("File not picked")
+                }
+            }
+            WorkspaceMessage::ReloadNodes => {
+                self.reload_nodes();
+                return Task::done(WorkspaceMessage::ComputeAll);
+            }
+            WorkspaceMessage::WindowOpen => {
+                if self.action == Action::InitialLoad {
+                    self.action = Action::Idle;
+                    return Task::done(WorkspaceMessage::ComputeAll);
+                }
+            }
+
+            //// History
+            WorkspaceMessage::Undo => {
+                //TODO: move into Network
+                if let Some(prev) = self.network.undo_stack.pop() {
+                    self.network.redo_stack.push((
+                        self.network.graph.clone(),
+                        self.network.shapes.shape_positions.clone(),
+                    ));
+                    self.network.graph = prev.0;
+                    self.network.shapes.shape_positions = prev.1;
+                    return Task::done(WorkspaceMessage::ComputeAll);
+                }
+            }
+            WorkspaceMessage::Redo => {
+                //TODO: move into Network
+                if let Some(next) = self.network.redo_stack.pop() {
+                    self.network.undo_stack.push((
+                        self.network.graph.clone(),
+                        self.network.shapes.shape_positions.clone(),
+                    ));
+                    self.network.graph = next.0;
+                    self.network.shapes.shape_positions = next.1;
+                    return Task::done(WorkspaceMessage::ComputeAll);
+                }
+            }
+            WorkspaceMessage::ComputeAll => {
+                //TODO: move into Network
+                let nodes = self.network.graph.get_roots();
+                trace!("Queuing root nodes: {nodes:?}");
+                return Task::batch(
+                    nodes
+                        .into_iter()
+                        .map(|nx| Task::done(WorkspaceMessage::QueueCompute(nx))),
+                );
+            }
+            WorkspaceMessage::QueueCompute(nx) => {
+                //TODO: move into Network
+                //// Modify node status
+                {
+                    let node = self.network.graph.get_mut_node(nx);
+
+                    // Check if in an error state
+                    if let NodeStatus::Error(e) = &node.status {
+                        trace!(
+                            "Did not compute node in error state {e:?} compute: {:?} #{nx}",
+                            node.template,
+                        );
+                        return Task::none();
+                    }
+                    // Re-queue
+                    if let NodeStatus::Running { .. } = node.status {
+                        // trace!("Re-queue, {} #{nx}", node.template);
+                        self.network.queued_nodes.insert(nx);
+                        return Task::none();
+                    };
+
+                    node.status = NodeStatus::Running {
+                        start: Instant::now(),
+                    };
+                    trace!("Beginning compute: {:?} #{nx}", node.template,);
+                }
+
+                //// Queue compute
+                let node = self.network.graph.get_node(nx);
+                return Task::perform(
+                    Graph::async_compute(nx, node.clone(), self.network.graph.get_input_data(&nx)),
+                    move |(nx, res)| WorkspaceMessage::ComputeComplete(nx, res),
+                );
+            }
+            WorkspaceMessage::ComputeComplete(nx, result) => {
+                //TODO: move into Network
+                let node = self.network.graph.get_node(nx);
+                match result {
+                    Ok(output) => {
+                        // Assert that status is what is expected
+                        let run_time = match &node.status {
+                            NodeStatus::Idle => panic!("Node should not be idle here!"),
+                            NodeStatus::Running { start: start_inst } => {
+                                Instant::now() - *start_inst
+                            }
+                            NodeStatus::Error(py_node_error) => panic!(
+                                "Node should not be in an error state here!{py_node_error:?}"
+                            ),
+                        };
+
+                        trace!(
+                            "Compute complete: {:?} #{nx}, {run_time:.1?}",
+                            node.template,
+                        );
+
+                        //// Update node
+                        self.network.graph.set_node_data(
+                            nx,
+                            ForayNodeInstance {
+                                status: NodeStatus::Idle,
+                                parameters_values: node.parameters_values.clone(),
+                                visualization: Visualization::new(node, &output),
+                                // run_time: Some(run_time),
+                                // We *don't* update template here for some nodes
+                                // because that causes stuttery behaviour for
+                                // fast update scenarios like the slider of the 'constant'
+                                // node. alternatively, canceling in progress compute tasks
+                                // might address this, and may be necessary in the future.
+                                // similar to TODO: below
+                                template: match node.template {
+                                    ForayNodeTemplate::RustNode(RustNodeTemplate::Constant(_)) => {
+                                        self.network.graph.get_node(nx).template.clone()
+                                    }
+                                    ForayNodeTemplate::PyNode(_) => {
+                                        self.network.graph.get_node(nx).template.clone()
+                                    }
+                                    _ => node.template.clone(),
+                                },
+                            },
+                        );
+                        //// Update wire
+                        self.network.graph.update_wire_data(nx, output);
+
+                        //// Queue children for compute
+                        let to_queue: Vec<_> = self
+                            .network
+                            .graph
+                            .outgoing_edges(&nx)
+                            .into_iter()
+                            .map(|port_ref| port_ref.node)
+                            .unique() // Don't queue a child multiple times
+                            // TODO: instead of requeing after compute is done,
+                            // potentially abort the running compute task, and restart
+                            // immediately when new input data is received
+                            .chain(
+                                once(self.network.queued_nodes.remove(&nx).then_some(nx)).flatten(),
+                            ) // Re-execute node if it got queued up in the meantime
+                            .collect();
+                        trace!("Queuing children for compute {to_queue:?}");
+                        return Task::batch(
+                            to_queue
+                                .into_iter()
+                                .map(|node| Task::done(WorkspaceMessage::QueueCompute(node))),
+                        );
+                    }
+                    Err(node_error) => {
+                        //// Update Node
+                        let node = self.network.graph.get_mut_node(nx);
+                        warn!("Compute failed {node:?},{node_error:?}");
+                        //TODO: set node error!!!!
+                        node.status = NodeStatus::Idle;
+
+                        //// Update Wire
+                        self.network.graph.update_wire_data(nx, [].into());
+
+                        return Task::none();
+                    }
+                };
+            }
+        };
+        Task::none()
+    }
+
+    /// App View
+    pub fn view<'a>(
+        &'a self,
+        app_theme: &'a AppTheme,
+    ) -> Element<'a, WorkspaceMessage, Theme, Renderer> {
+        let network_panel = container(match self.action {
+            Action::LoadingNetwork => container(text("loading...")),
+            Action::SavingNetwork => container(text("saving...")),
+            _ => {
+                container(
+                    workspace_canvas(
+                        &self.network.shapes,
+                        //// Node view
+                        |id| self.node_content(id, app_theme),
+                        //// Wires paths
+                        |wire_end_node, points| self.wire_curve(wire_end_node, points, app_theme),
+                    )
+                    .on_cursor_move(WorkspaceMessage::OnMove)
+                    .on_press(WorkspaceMessage::OnCanvasDown)
+                    .on_release(WorkspaceMessage::OnCanvasUp)
+                    .pan(WorkspaceMessage::ScrollPan),
+                )
+            }
+        })
+        .center(Fill);
+        let content = column![
+            row![side_bar(self), vertical_rule(SEPERATOR), network_panel],
+            //match self.show_palette_ui {
+            //    true => column![horizontal_rule(SEPERATOR), self.app_theme.view()],
+            //    false => column![],
+            //}
+        ];
+
+        let output: Element<WorkspaceMessage, Theme, Renderer> = match &self.action {
+            Action::AddingNode => stack![
+                content,
+                // Barrier to stop interaction
+                mouse_area(
+                    container(text(""))
+                        .center(Fill)
+                        .style(container::transparent)
+                )
+                // Stop any mouseover cursor interactions from showing,
+                .interaction(mouse::Interaction::Idle)
+                .on_press(WorkspaceMessage::Cancel),
+                //// Add node modal
+                container(
+                    mouse_area(add_node_tree_panel(
+                        &self.projects,
+                        self.user_data.get_new_node_path()
+                    ))
+                    .interaction(mouse::Interaction::Idle) //.on_press(Message::NOP)
+                )
+                .center(Fill)
+            ]
+            .into(),
+            _ => content.into(),
+        };
+
+        // Potentially add a specific mouse cursor
+        let output = match self.action {
+            Action::DragNode(_) => mouse_area(output)
+                .interaction(mouse::Interaction::Move)
+                .into(),
+            _ => output,
+        };
+
+        //if self.debug {
+        //    output.explain(iced::Color::from_rgba(0.7, 0.7, 0.8, 0.2))
+        //} else {
+        output
+        //}
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum FileError {
+    DialogClosed,
+    FileReadFailed(String),
+}
+
+/// Open a file dialog to pick a network file
+pub async fn load_network_dialog(
+    start_directory: PathBuf,
+) -> Result<(PathBuf, Arc<String>), FileError> {
+    let picked_file = rfd::AsyncFileDialog::new()
+        .set_title("Open a network file...")
+        .set_directory(start_directory)
+        .add_filter("network", &["network"])
+        .pick_file()
+        .await
+        .ok_or(FileError::DialogClosed)?;
+
+    match read_to_string(picked_file.path()) {
+        Ok(network_string) => Ok((picked_file.path().to_path_buf(), Arc::new(network_string))),
+        Err(err) => Err(FileError::FileReadFailed(err.to_string()))?,
+    }
+}
+
+/// Open a file dialog to save a network file
+async fn save_network_dialog(default_dir: PathBuf) -> Option<PathBuf> {
+    rfd::AsyncFileDialog::new()
+        .set_directory(default_dir)
+        .add_filter("network", &["network"])
+        .save_file()
+        .await
+        .map(|fh| fh.into())
+}

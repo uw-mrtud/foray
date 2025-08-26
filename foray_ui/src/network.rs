@@ -8,10 +8,10 @@ use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    app::Action,
     math::Point,
     node_instance::{ForayNodeInstance, NodeStatus},
-    widget::{shapes::ShapeId, workspace},
+    widget::{shapes::ShapeId, workspace_canvas},
+    workspace::Action,
 };
 
 type UndoStash = Vec<(
@@ -23,7 +23,7 @@ type UndoStash = Vec<(
 pub struct Network {
     //// Persistant data
     pub graph: Graph<ForayNodeInstance, PortType, PortData>,
-    pub shapes: workspace::State,
+    pub shapes: workspace_canvas::State,
     //// Runtime data
     #[serde(skip)]
     pub file: Option<PathBuf>,

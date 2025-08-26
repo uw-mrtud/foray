@@ -24,6 +24,11 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         .network
         .map(|p| fs::canonicalize(&p).unwrap_or_else(|_| panic!("network does not exist {p:?}")));
 
+    let workspace_dir = match &absolute_network {
+        Some(n) => n.parent().unwrap().parent().unwrap().to_owned(),
+        None => std::env::current_dir().expect("current working directory should be availble"),
+    };
+
     if cli.no_gui {
         match absolute_network {
             Some(network) => run_headless(network),
@@ -46,8 +51,9 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             .scale_factor(|_| 1.25)
             .font(include_bytes!("../data/CaskaydiaCoveNerdFont.ttf").as_slice())
             .font(include_bytes!("../data/CaskaydiaCove.ttf").as_slice())
+            .font(include_bytes!("../data/cour.ttf").as_slice())
             .default_font(Font::with_name("CaskaydiaCove"))
-            .run_with(|| (App::new(absolute_network), Task::none()))?;
+            .run_with(|| (App::new(workspace_dir, absolute_network), Task::none()))?;
         Ok(())
     }
 }

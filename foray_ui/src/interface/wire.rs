@@ -1,19 +1,20 @@
 use std::iter::once;
 
-use crate::app::{Action, App};
-use crate::math::Point;
 use crate::style::theme::AppTheme;
+use crate::workspace::Workspace;
 use crate::StableMap;
+use crate::{math::Point, workspace::Action};
 use canvas::{Path, Stroke};
 use foray_graph::graph::{PortRef, IO};
 use iced::{widget::*, Size};
 
-impl App {
-    pub fn wire_curve(
-        &'_ self,
+impl Workspace {
+    pub fn wire_curve<'a>(
+        &'a self,
         wire_end_node: u32,
         points: &StableMap<u32, Point>,
-    ) -> Vec<(Path, Stroke<'_>)> {
+        app_theme: &'a AppTheme,
+    ) -> Vec<(Path, Stroke<'a>)> {
         let port_position = |port: &PortRef| {
             let node_size = template_node_size(&self.network.graph.get_node(port.node).template);
             points[&port.node]
@@ -25,25 +26,25 @@ impl App {
         let active_wire = match &self.action {
             Action::CreatingInputWire(input, Some(tentative_output)) => Some((
                 (port_position(input), port_position(tentative_output)),
-                active_wire_stroke(&self.app_theme, true),
+                active_wire_stroke(app_theme, true),
             )),
             Action::CreatingInputWire(input, None) => Some((
                 (
                     port_position(input),
                     self.cursor_position + self.network.shapes.camera.position,
                 ),
-                active_wire_stroke(&self.app_theme, false),
+                active_wire_stroke(app_theme, false),
             )),
             Action::CreatingOutputWire(output, Some(input)) => Some((
                 (port_position(input), port_position(output)),
-                active_wire_stroke(&self.app_theme, true),
+                active_wire_stroke(app_theme, true),
             )),
             Action::CreatingOutputWire(output, None) => Some((
                 (
                     self.cursor_position + self.network.shapes.camera.position,
                     port_position(output),
                 ),
-                active_wire_stroke(&self.app_theme, false),
+                active_wire_stroke(app_theme, false),
             )),
             _ => None,
         };
@@ -53,7 +54,7 @@ impl App {
         incoming_wires
             .iter()
             .map(|(from, to)| {
-                let stroke = wire_status(from, to, &self.action, &self.app_theme);
+                let stroke = wire_status(from, to, &self.action, app_theme);
                 ((port_position(to), port_position(from)), stroke)
             })
             //// include the active wire
@@ -78,7 +79,6 @@ impl App {
 }
 
 use super::node::{template_node_size, NODE_RADIUS, PORT_RADIUS};
-use crate::app;
 use iced::Vector;
 
 /// Determine where a port should be positioned relative to the origin of the node
@@ -99,7 +99,7 @@ pub fn find_port_offset(port_ref: &PortRef, port_index: usize, size: Size) -> Ve
 pub fn wire_status<'a>(
     output: &PortRef,
     input: &PortRef,
-    current_action: &app::Action,
+    current_action: &Action,
     theme: &'a AppTheme,
 ) -> Stroke<'a> {
     assert!(output.io == IO::Out);
@@ -112,7 +112,7 @@ pub fn wire_status<'a>(
     let will_delete = with_dashed_stroke(maybe_delete);
 
     match current_action {
-        app::Action::CreatingInputWire(active_input, active_output) => {
+        Action::CreatingInputWire(active_input, active_output) => {
             //// if a new wire is created at an input, any existing wires will be deleted
             if active_input == input {
                 //// differentiate between if the new wire is complete, and a MouseUp event
@@ -126,8 +126,8 @@ pub fn wire_status<'a>(
                 default_stroke
             }
         }
-        app::Action::CreatingOutputWire(_, None) => default_stroke,
-        app::Action::CreatingOutputWire(_, Some(active_input)) => {
+        Action::CreatingOutputWire(_, None) => default_stroke,
+        Action::CreatingOutputWire(_, Some(active_input)) => {
             //// if a new wire is created at an input, any existing wires will be deleted
             if active_input == input {
                 will_delete
@@ -135,7 +135,7 @@ pub fn wire_status<'a>(
                 default_stroke
             }
         }
-        app::Action::Idle => default_stroke,
+        Action::Idle => default_stroke,
         _ => default_stroke,
     }
 }

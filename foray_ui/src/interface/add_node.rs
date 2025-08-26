@@ -1,7 +1,8 @@
 use crate::node_instance::ForayNodeTemplate;
 use crate::project::{NodeTree, Project};
+use crate::style;
 use crate::style::container::rounded_box;
-use crate::{app::Message, style};
+use crate::workspace::WorkspaceMessage;
 use iced::padding::left;
 use iced::*;
 use itertools::Itertools;
@@ -14,7 +15,7 @@ const ROW_HEIGHT: f32 = 25.0;
 pub fn add_node_tree_panel<'b>(
     projects: &[Project],
     selected_tree_path: &[String],
-) -> Element<'b, Message> {
+) -> Element<'b, WorkspaceMessage> {
     let node_list = column(
         projects
             .iter()
@@ -43,7 +44,7 @@ pub fn node_tree<'b>(
     node: &NodeTree<ForayNodeTemplate>,
     tree_path: &[String],
     selected_tree_path: &[String],
-) -> Element<'b, Message> {
+) -> Element<'b, WorkspaceMessage> {
     let tree_row = |name, message| {
         row![
             // Vertical bar seperators
@@ -57,15 +58,18 @@ pub fn node_tree<'b>(
     };
     match &node.data {
         // Base case, File Row
-        Some(data) => tree_row(text(node.name.clone()), Message::AddNode(data.clone()))
-            .align_y(Center)
-            .into(),
+        Some(data) => tree_row(
+            text(node.name.clone()),
+            WorkspaceMessage::AddNode(data.clone()),
+        )
+        .align_y(Center)
+        .into(),
         // Folder Row
         None => {
             let next_path = &[tree_path, &[node.name.to_owned()]].concat();
             let folder_row = tree_row(
                 text(node.name.to_string()).style(text::primary),
-                Message::SelectNodeGroup(next_path.to_vec()),
+                WorkspaceMessage::SelectNodeGroup(next_path.to_vec()),
             );
             // Is this folder selected?
             match selected_tree_path.starts_with(next_path) {

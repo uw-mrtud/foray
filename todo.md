@@ -214,3 +214,8 @@
 - [ ] visualize nodes firing
 - [x] async save/load
 - [ ] gracefully handle when venv cannot be determined
+
+## Refactor changes
+- [ ] put all relevant ui into workspace module
+- [ ] reintroduce debug and palette toggles/display
+- [x] reimplement subscriptions

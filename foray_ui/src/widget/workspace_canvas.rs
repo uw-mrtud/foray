@@ -36,7 +36,7 @@ impl Default for Camera {
 
 /// A workspace is a an infinite canvas that can be zoomed, panned,
 /// and contains widgets that can be placed anywhere in 2d
-pub struct Workspace<'a, Message, Theme, Renderer>
+pub struct WorkspaceCanvas<'a, Message, Theme, Renderer>
 where
     Theme: Catalog,
     Renderer: iced::advanced::graphics::geometry::Renderer,
@@ -73,7 +73,7 @@ impl State {
     }
 }
 
-impl<'a, Message, Theme, Renderer> Workspace<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> WorkspaceCanvas<'a, Message, Theme, Renderer>
 where
     Theme: Catalog,
     Renderer: iced::advanced::graphics::geometry::Renderer,
@@ -141,7 +141,7 @@ where
 
 /// Implement Widet
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Workspace<'_, Message, Theme, Renderer>
+    for WorkspaceCanvas<'_, Message, Theme, Renderer>
 where
     Message: Clone,
     Theme: Catalog,
@@ -418,7 +418,7 @@ where
 }
 
 /// Convert to an element
-impl<'a, Message, Theme, Renderer> From<Workspace<'a, Message, Theme, Renderer>>
+impl<'a, Message, Theme, Renderer> From<WorkspaceCanvas<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
@@ -426,23 +426,23 @@ where
     Renderer: 'a + iced::advanced::graphics::geometry::Renderer,
 {
     fn from(
-        workspace: Workspace<'a, Message, Theme, Renderer>,
+        workspace: WorkspaceCanvas<'a, Message, Theme, Renderer>,
     ) -> Element<'a, Message, Theme, Renderer> {
         Self::new(workspace)
     }
 }
 
 /// Create a new `Workspace`
-pub fn workspace<'a, Message, Theme, Renderer>(
+pub fn workspace_canvas<'a, Message, Theme, Renderer>(
     state: &'a State,
     node_view: impl Fn(ShapeId) -> Element<'a, Message, Theme, Renderer>,
     connections_view: impl Fn(ShapeId, &StableMap<ShapeId, Point>) -> Vec<(Path, Stroke<'a>)>,
-) -> Workspace<'a, Message, Theme, Renderer>
+) -> WorkspaceCanvas<'a, Message, Theme, Renderer>
 where
     Theme: 'a + Catalog,
     Renderer: iced::advanced::graphics::geometry::Renderer,
 {
-    Workspace::new(state, node_view, connections_view)
+    WorkspaceCanvas::new(state, node_view, connections_view)
 }
 
 /// Very rough styling implementation

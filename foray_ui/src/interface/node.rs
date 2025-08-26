@@ -1,10 +1,11 @@
 use std::f32::consts::PI;
 use std::time::Instant;
 
-use crate::app::{App, Message};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::rust_nodes::RustNodeTemplate;
+use crate::style::theme::AppTheme;
 use crate::widget::node_container::NodeContainer;
+use crate::workspace::{Action, Workspace, WorkspaceMessage};
 use crate::StableMap;
 use foray_data_model::node::{Dict, PortData};
 use foray_data_model::WireDataContainer;
@@ -33,8 +34,12 @@ pub fn default_node_size() -> iced::Size {
     iced::Size::new(OUTER_NODE_WIDTH, OUTER_NODE_HEIGHT)
 }
 
-impl App {
-    pub fn node_content(&'_ self, id: u32) -> Element<'_, Message, Theme, Renderer> {
+impl Workspace {
+    pub fn node_content<'a>(
+        &'a self,
+        id: u32,
+        app_theme: &'a AppTheme,
+    ) -> Element<'a, WorkspaceMessage, Theme, Renderer> {
         let node = self.network.graph.get_node(id);
         let is_selected = self.network.selected_shapes.contains(&id);
 
@@ -70,7 +75,7 @@ impl App {
                         .color(pulse)
                         .width(NODE_BORDER_WIDTH),
                 )
-                .background(iced::Color::from(self.app_theme.background.base_color))
+                .background(iced::Color::from(app_theme.background.base_color))
         };
 
         //// Node
@@ -78,8 +83,8 @@ impl App {
         let node_size = template_node_size(&node.template);
 
         //// Ports
-        let show_port_tooltips = !matches!(self.action, crate::app::Action::AddingNode);
-        let port_buttons = port_view(id, node, node_size, &self.app_theme, show_port_tooltips);
+        let show_port_tooltips = !matches!(self.action, Action::AddingNode);
+        let port_buttons = port_view(id, node, node_size, app_theme, show_port_tooltips);
 
         let node_primary = container(node_view(node, id, input_data))
             .style(move |theme| node_style(node, theme))
@@ -99,15 +104,15 @@ impl App {
             None => container(""),
         };
         //let node_secondary =
-        let node: iced::Element<Message> =
+        let node: iced::Element<WorkspaceMessage> =
             row![node_primary, node_secondary].align_y(Center).into();
 
-        let content: Element<Message, Theme, Renderer> = NodeContainer::new(
-            if self.debug {
-                node.explain(Color::from_rgba(0.7, 0.7, 0.8, 0.2))
-            } else {
-                node
-            },
+        let content: Element<WorkspaceMessage, Theme, Renderer> = NodeContainer::new(
+            //if self.debug {
+            //    node.explain(Color::from_rgba(0.7, 0.7, 0.8, 0.2))
+            //} else {
+            node,
+            //},
             port_buttons,
         )
         //.width(node_size.width)
@@ -120,7 +125,7 @@ impl App {
 pub fn format_node_debug_output<'a>(
     node: &ForayNodeInstance,
     data: &StableMap<String, Option<&WireDataContainer<PortData>>>,
-) -> iced::Element<'a, Message> {
+) -> iced::Element<'a, WorkspaceMessage> {
     //TODO: Clean this up by iterating straight to text elements?
     let node_output = data.iter().map(|(port_name, d)| {
         (
@@ -145,7 +150,7 @@ pub fn node_view<'a>(
     node_instance: &'a ForayNodeInstance,
     _id: u32,
     _input_data: Dict<String, WireDataContainer<PortData>>,
-) -> iced::Element<'a, Message> {
+) -> iced::Element<'a, WorkspaceMessage> {
     let operation = |s| {
         text(s)
             .font(Font::with_name("DejaVu Math TeX Gyre"))

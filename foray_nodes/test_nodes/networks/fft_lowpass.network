@@ -46,7 +46,7 @@
                     )),
                 )),
                 parameters_values: {
-                    "radius": Float(0.5),
+                    "radius": Float(2.59),
                 },
             ),
             3: (
@@ -91,22 +91,6 @@
                             "a": Array(Float, [None, None]),
                         }),
                         outputs: Ok({}),
-                        parameters: Ok({}),
-                    )),
-                )),
-                parameters_values: {},
-            ),
-            7: (
-                template: PyNode((
-                    name: "fft",
-                    py_path: "test_nodes.foray.fft",
-                    config: Ok((
-                        inputs: Ok({
-                            "a": Array(Complex, [None, None]),
-                        }),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
                         parameters: Ok({}),
                     )),
                 )),
@@ -159,15 +143,23 @@
     shapes: (
         camera: (
             position: (
-                x: 4.6679688,
-                y: 185.9082,
+                x: -37.419556,
+                y: 51.036293,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
-            7: (
-                x: 67.14609,
-                y: 543.9207,
+            2: (
+                x: 310.13116,
+                y: 215.44382,
+            ),
+            1: (
+                x: 78.90939,
+                y: 224.61566,
+            ),
+            0: (
+                x: 67.20624,
+                y: 71.815636,
             ),
             6: (
                 x: 169.08047,
@@ -180,18 +172,6 @@
             5: (
                 x: 171.11563,
                 y: 483.15933,
-            ),
-            2: (
-                x: 367.72815,
-                y: 229.09688,
-            ),
-            1: (
-                x: 107.09375,
-                y: 216.47188,
-            ),
-            0: (
-                x: 67.20624,
-                y: 71.815636,
             ),
         },
     ),

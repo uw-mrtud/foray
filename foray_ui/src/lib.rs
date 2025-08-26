@@ -22,3 +22,5 @@ pub mod rust_nodes;
 pub mod style;
 pub mod user_data;
 pub mod widget;
+pub mod workspace;
+

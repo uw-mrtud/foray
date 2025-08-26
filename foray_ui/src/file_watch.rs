@@ -10,17 +10,17 @@ use log::trace;
 use notify::RecursiveMode;
 use notify_debouncer_full::new_debouncer;
 
-use crate::app::Message;
-
-/// Sends Message::ReloadNodes on a python file change
-pub fn file_watch_subscription(id: usize, nodes_dir: PathBuf) -> Subscription<Message> {
+/// Sends message when a python file changes, recursively from root_dir
+pub fn file_watch_subscription<M: Send + Clone + 'static>(
+    id: usize,
+    root_dir: PathBuf,
+    notify_message: M,
+) -> Subscription<M> {
     let stream = stream::channel(0, |mut output| async move {
-        trace!("Starting file watch subscription stream: {nodes_dir:?}");
+        trace!("Starting file watch subscription stream: {root_dir:?}");
         let (sender, receiver) = std::sync::mpsc::channel();
         let mut debouncer = new_debouncer(Duration::from_millis(250), None, sender).unwrap();
-        debouncer
-            .watch(nodes_dir, RecursiveMode::Recursive)
-            .unwrap();
+        debouncer.watch(root_dir, RecursiveMode::Recursive).unwrap();
 
         for res in receiver {
             match res {
@@ -40,7 +40,7 @@ pub fn file_watch_subscription(id: usize, nodes_dir: PathBuf) -> Subscription<Me
                         })
                         .collect();
                     if !nodes.is_empty() {
-                        let _ = output.send(Message::ReloadNodes).await;
+                        let _ = output.send(notify_message.clone()).await;
                     }
                 }
                 Err(error) => log::error!("Error: {error:?}"),

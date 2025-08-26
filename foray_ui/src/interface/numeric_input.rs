@@ -6,8 +6,6 @@ use iced::{
     Length::{Fill, Shrink},
 };
 
-use crate::app::Message;
-
 #[derive(Clone, PartialEq, Debug, Default, PartialOrd)]
 pub enum PartialUIValue {
     #[default]
@@ -22,13 +20,14 @@ pub enum PartialUIValue {
 /// This is complicated by intermediate strings that are encountered as the user enters a
 /// value, for example -0 cannot be immediatley saved in the data model as `0` because then "0"
 /// would be dispayed to the user, which would be frustring if trying to enter -0.1
-pub fn numeric_input<'a, F>(
+pub fn numeric_input<'a, F, M>(
     value: f32,
     in_progress_widget_string: PartialUIValue,
     update_message: F,
-) -> Element<'a, Message>
+) -> Element<'a, M>
 where
-    F: Fn(f32, PartialUIValue) -> Message + 'a,
+    F: Fn(f32, PartialUIValue) -> M + 'a,
+    M: std::clone::Clone + 'a,
 {
     column![text_input(
         "n/a",
@@ -57,7 +56,7 @@ where
     .into()
 }
 
-pub fn styled_text_input(input: TextInput<Message>) -> Element<Message> {
+pub fn styled_text_input<'a, M: Clone + 'a>(input: TextInput<'a, M>) -> Element<'a, M> {
     column![
         input
             .padding(0)
