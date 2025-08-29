@@ -1,5 +1,5 @@
 import numpy as np
-from foray import ForayConfig, Port, Slider
+from foray import ForayConfig, NumberField, Port, Slider
 
 
 def config():
@@ -10,18 +10,18 @@ def config():
                 "out": Port.array(Port.float, [None, None]),
             }
         )
-        .parameters({"radius": Slider(0, 6, 0.5)})
+        .parameters({"image_size": NumberField(256), "radius": Slider(0, 256, 1)})
     )
 
 
 def compute(_, p):
-    N = 256
-    x = np.linspace(0, 10, N)
-    y = np.linspace(0, 10, N)
+    N = p["image_size"]
+    x = np.arange(0, N)
+    y = np.arange(0, N)
 
-    radius = round(p["radius"] * 100) / 10
-
-    dist = (x[:, None] - 5) ** 2 + (y - 5) ** 2
+    half = (N - 1) / 2.0
+    radius = p["radius"]
+    dist = np.sqrt((x[:, None] - half) ** 2 + (y - half) ** 2)
     out = np.zeros_like(dist)
     # out = out - 1
     out[dist < radius] = 1.0

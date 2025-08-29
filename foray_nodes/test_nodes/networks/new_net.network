@@ -1,59 +1,48 @@
 (
     graph: (
         nodes: {
-            0: (
+            3: (
                 template: PyNode((
-                    name: "ifft",
-                    py_path: "test_nodes.foray.ifft",
+                    name: "multiply",
+                    py_path: "test_dependency.foray.multiply",
                     config: Ok((
                         inputs: Ok({
-                            "a": Array(Complex, [None, None]),
+                            "a": Float,
+                            "b": Float,
                         }),
                         outputs: Ok({
-                            "out": Array(Complex, [None, None]),
+                            "out": Float,
                         }),
                         parameters: Ok({}),
                     )),
                 )),
                 parameters_values: {},
             ),
-            1: (
+            4: (
                 template: PyNode((
-                    name: "ifft",
-                    py_path: "test_nodes.foray.ifft",
-                    config: Ok((
-                        inputs: Ok({
-                            "a": Array(Complex, [None, None]),
-                        }),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({}),
-                    )),
-                )),
-                parameters_values: {},
-            ),
-            2: (
-                template: PyNode((
-                    name: "circle_mask",
-                    py_path: "test_nodes.foray.circle_mask",
+                    name: "const",
+                    py_path: "test_dependency.foray.const",
                     config: Ok((
                         inputs: Ok({}),
                         outputs: Ok({
-                            "out": Array(Float, [None, None]),
+                            "out": Float,
                         }),
-                        parameters: Ok({
-                            "radius": Slider(0.0, 6.0, 0.5),
-                        }),
+                        parameters: Ok({}),
                     )),
                 )),
-                parameters_values: {
-                    "radius": Float(3.07),
-                },
+                parameters_values: {},
             ),
         },
-        edges: [],
-        next_id: 3,
+        edges: [((
+            node: 4,
+            name: "out",
+            io: Out,
+        ), (
+            node: 3,
+            name: "a",
+            io: In,
+        ))],
+        next_id: 5,
     ),
     shapes: (
         camera: (
@@ -64,17 +53,13 @@
             zoom: 1.0,
         ),
         shape_positions: {
-            2: (
-                x: 81.02814,
-                y: 184.45311,
+            4: (
+                x: 114.73004,
+                y: 125.2617,
             ),
-            1: (
-                x: 103.578125,
-                y: 367.65,
-            ),
-            0: (
-                x: 380.91565,
-                y: 232.6688,
+            3: (
+                x: 143.27066,
+                y: 282.36172,
             ),
         },
     ),

@@ -1,4 +1,9 @@
-use foray_data_model::node::PortType;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
+
+use foray_data_model::node::{PortData, PortType};
 use foray_graph::graph::{GraphNode, PortRef, IO};
 use iced::{
     alignment::Horizontal::Right,
@@ -25,6 +30,8 @@ use super::node::{NODE_RADIUS, PORT_RADIUS};
 pub fn port_view<'a>(
     node_id: u32,
     node_data: &ForayNodeInstance,
+    input_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
+    output_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
     node_size: Size,
     app_theme: &'a AppTheme,
     show_tooltip: bool,
@@ -39,6 +46,7 @@ pub fn port_view<'a>(
         .map(|(i, port)| (Point::new(port_x(i), -PORT_RADIUS), port))
         .map(|(point, port)| {
             let (name, port_type) = port;
+            let filled_port_type = get_filled_type(&name, input_data);
             let port_tooltip = match show_tooltip {
                 true => port_tooltip(name.clone(), port_type.clone(), app_theme),
                 false => text("").into(),
@@ -57,7 +65,9 @@ pub fn port_view<'a>(
                         .on_drag(WorkspaceMessage::OnMove)
                         .on_right_press(WorkspaceMessage::PortDelete(in_port.clone()))
                         .on_release_self(WorkspaceMessage::PortRelease)
-                        .style(move |_t, s| port_style(port_type.clone(), s, app_theme))
+                        .style(move |_t, s| {
+                            port_style(port_type.clone(), filled_port_type.clone(), s, app_theme)
+                        })
                         .width(PORT_RADIUS * 2.)
                         .height(PORT_RADIUS * 2.),
                 )
@@ -77,6 +87,7 @@ pub fn port_view<'a>(
         .map(|(point, port)| {
             let (name, port_type) = port;
 
+            let filled_port_type = get_filled_type(&name, output_data);
             let port_tooltip = match show_tooltip {
                 true => port_tooltip(name.clone(), port_type.clone(), app_theme),
                 false => text("").into(),
@@ -95,7 +106,9 @@ pub fn port_view<'a>(
                         .on_drag(WorkspaceMessage::OnMove)
                         .on_right_press(WorkspaceMessage::PortDelete(out_port.clone()))
                         .on_release_self(WorkspaceMessage::PortRelease)
-                        .style(move |_t, s| port_style(port_type.clone(), s, app_theme))
+                        .style(move |_t, s| {
+                            port_style(port_type.clone(), filled_port_type.clone(), s, app_theme)
+                        })
                         .width(PORT_RADIUS * 2.)
                         .height(PORT_RADIUS * 2.)
                         .padding(2.0),
@@ -111,13 +124,35 @@ pub fn port_view<'a>(
     in_port_buttons.chain(out_port_buttons).collect()
 }
 
+fn get_filled_type(
+    name: &String,
+    input_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
+) -> Option<PortType> {
+    if let Some(port_data) = input_data.get(name) {
+        Some((&*port_data.read().unwrap()).into())
+    } else {
+        None
+    }
+}
+
 fn port_style(
     port_type: PortType,
+    filled_type: Option<PortType>,
     s: custom_button::Status,
     app_theme: &AppTheme,
 ) -> custom_button::Style {
     let color_pair = port_color_pair(&port_type, app_theme);
-    let mut style = custom_button::custom(s, color_pair.0.into(), color_pair.1.into());
+    let filled_color = match filled_type {
+        Some(pt) => port_color_pair(&pt, app_theme).0,
+        None => app_theme.background.base_color.into(),
+    };
+
+    let mut style = custom_button::custom(
+        s,
+        color_pair.0.into(),
+        color_pair.1.into(),
+        filled_color.into(),
+    );
     style.border.radius = border::radius(100.);
     style
 }

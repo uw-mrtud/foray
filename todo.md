@@ -193,7 +193,7 @@
 
 - [ ] minimal documentation on installation, writing nodes, etc.
   - [x] repository with example layout
-  - [ ] example nodes
+  - [~] example nodes
   - [ ] explain port types
   - [ ] explain controls
 
@@ -214,8 +214,29 @@
 - [ ] visualize nodes firing
 - [x] async save/load
 - [ ] gracefully handle when venv cannot be determined
+- [ ] error messge for missing input ports/ parameters could be a lot clearer
+- [ ] parameters reset to defalt on relaod nodes
 
 ## Refactor changes
 - [ ] put all relevant ui into workspace module
 - [ ] reintroduce debug and palette toggles/display
 - [x] reimplement subscriptions
+
+## Open Issues
+- dynamic sliders
+- [x] no visual indication of errors
+- [x?] Differences between loaded node parameters and current node parameters (loaded overides current, need to merge)
+- [x] data on error nodes is not cleared
+- [ ] On error, downstream node data is not cleared
+- [ ] Disconnecting a node doesn't node/downstream
+- [x] No indication if ports are filled/unfilled
+
+## Open Questions
+- Should a port be able to accept multiple types? like a Numeric Type (Float,Int, or Complex)
+- optional ports
+
+## New Feautres
+- [ ] Display values/summaries on port hover. Filled Array type/shapes, actual values for simpler nodes
+- [ ] Add node search filter
+- [ ] Modify parameters when they are updated
+

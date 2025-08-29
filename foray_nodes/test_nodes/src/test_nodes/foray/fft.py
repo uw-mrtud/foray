@@ -20,5 +20,5 @@ def config():
 
 def compute(input, _):
     a = input["a"]
-    out = np.fft.fft2(a)
+    out = np.fft.fftshift(np.fft.fft2(a))
     return {"out": out}

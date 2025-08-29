@@ -1,17 +1,24 @@
 import numpy as np
+import foray
 from foray import ForayConfig, Port
 
 
 def config():
-    return ForayConfig().outputs(
-        {
-            "out": Port.array(Port.complex, [None, None]),
-        }
+    return (
+        ForayConfig()
+        .parameters({"image_size": foray.NumberField(256)})
+        .outputs(
+            {
+                "out": Port.array(Port.complex, [None, None]),
+            }
+        )
     )
 
 
 def compute(_, p):
-    return {"out": shepp_logan((256, 256))}
+    size = int(p["image_size"])
+    return {"out": shepp_logan((size, size), dtype=complex)}
+    # return {"out": shepp_logan((256, 256), dtype=np.float64)}
 
 
 # Following taken from `sigpy` package

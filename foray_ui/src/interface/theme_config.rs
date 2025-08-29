@@ -54,7 +54,12 @@ impl AppTheme {
         let color_element = move |color: Color| {
             custom_button::Button::new("")
                 .style(move |_t, _s| {
-                    custom(custom_button::Status::Active, color.into(), color.into())
+                    custom(
+                        custom_button::Status::Active,
+                        color.into(),
+                        color.into(),
+                        color.into(),
+                    )
                 })
                 .width(50.)
                 .height(20.)

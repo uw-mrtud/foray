@@ -36,15 +36,12 @@ pub struct App {
 }
 impl App {
     pub fn new(working_dir: PathBuf, cli_network_path: Option<PathBuf>) -> Self {
-        let workspace = match Workspace::is_valid_workspace(&working_dir) {
-            true => match Workspace::new(working_dir, cli_network_path) {
-                Ok(workspace) => Some(workspace),
-                Err(_e) => {
-                    warn!("Current directory is not a valid workspace");
-                    None
-                }
-            },
-            false => None,
+        let workspace = match Workspace::new(working_dir, cli_network_path) {
+            Ok(workspace) => Some(workspace),
+            Err(e) => {
+                warn!("Workspace Initialialization Error: {:?}", e);
+                None
+            }
         };
         App {
             workspace,

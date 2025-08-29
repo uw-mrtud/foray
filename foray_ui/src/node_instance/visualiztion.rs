@@ -29,7 +29,11 @@ impl Visualization {
                             Array3::<f64>::from_shape_vec(
                                 (a.shape()[0], a.shape()[1], 3),
                                 a.indexed_iter()
-                                    .flat_map(|(_, v)| [v.norm(), v.norm(), v.norm()])
+                                    .flat_map(|(_, v)| {
+                                        // let normalized = v.norm().log10();
+                                        let normalized = v.norm();
+                                        [normalized, normalized, normalized]
+                                    })
                                     .collect::<Vec<_>>(),
                             )
                             .expect("square matrix"),
@@ -48,7 +52,7 @@ impl Visualization {
                         //.expect("square matrix"),
                         _ => None, //panic!("unsuported plot types {:?}", port),
                     };
-                    data.map(|data| create_rgb_handle(&data))
+                    data.map(|data| create_rgb_handle(dbg!(&data)))
                 }
                 _ => None, //(None, PortData::ArrayReal(Default::default())),
             },
@@ -112,13 +116,14 @@ use super::ForayNodeInstance;
 //fn create_grayscale_handle(data: &Array3<f64>) -> Handle {}
 fn create_rgb_handle(data: &Array3<f64>) -> Handle {
     // trace!("Creating image handle for plot2d, {:?}", data.shape());
-    // let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
+    let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
     // let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
+    let min = 0.0;
     let brightness = |p: f64| {
-        return (p * 255.0).round() as u8;
-        //let p = ((p - min) / (max - min)) as f32;
-        //let p = if p.is_nan() { 0.0 } else { p };
-        //(p * 255.0).round() as u8
+        // return (p * 255.0).round() as u8;
+        let p = ((p - min) / (max - min)) as f32;
+        let p = if p.is_nan() { 0.0 } else { p };
+        (p * 255.0).round() as u8
     };
     let img: Vec<u8> = data
         .outer_iter()

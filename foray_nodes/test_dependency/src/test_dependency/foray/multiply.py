@@ -7,13 +7,13 @@ def config():
         ForayConfig()
         .inputs(
             {
-                "a": Port.array(Port.float, [None, None]),
-                "b": Port.array(Port.float, [None, None]),
+                "a": Port.float,
+                "b": Port.float,
             }
         )
         .outputs(
             {
-                "out": Port.array(Port.float, [None, None]),
+                "out": Port.float,
             }
         )
     )
@@ -22,5 +22,5 @@ def config():
 def compute(input, _):
     a = input["a"]
     b = input["b"]
-    out = np.multiply(a, b)
+    out = a * b
     return {"out": out}

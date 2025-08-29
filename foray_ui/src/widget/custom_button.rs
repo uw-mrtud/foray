@@ -533,11 +533,11 @@ impl Catalog for Theme {
     }
 }
 
-/// A primary button; denoting a main action.
-pub fn custom(status: Status, base_color: Color, hover_color: Color) -> Style {
+/// circular button
+pub fn custom(status: Status, outer_color: Color, hover_color: Color, fill_color: Color) -> Style {
     let base = Style {
-        background: Some(Background::Color(base_color)),
-        border: border::rounded(2),
+        background: Some(Background::Color(fill_color)),
+        border: border::color(outer_color).rounded(2).width(3),
         ..Style::default()
     };
     match status {

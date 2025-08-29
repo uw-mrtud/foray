@@ -115,6 +115,24 @@ pub enum PortData {
     Object(Dict<String, PortData>),
 }
 
+impl From<&PortData> for PortType {
+    fn from(value: &PortData) -> Self {
+        match value {
+            PortData::Integer(_) => PortType::Integer,
+            PortData::Float(_) => PortType::Float,
+            PortData::Complex(_) => PortType::Complex,
+            PortData::Boolean(_) => PortType::Boolean,
+            PortData::String(_) => PortType::String,
+            PortData::Array(foray_array) => foray_array.into(),
+            PortData::Object(obj) => PortType::Object(
+                obj.iter()
+                    .map(|(key, port_data)| (key.clone(), port_data.into()))
+                    .collect(),
+            ),
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum ForayArray {
     Integer(ArrayD<i32>),
@@ -126,6 +144,40 @@ pub enum ForayArray {
     // posible. ArrayD<i32> is much faster than ArrayD<PrimitiveData::Integer(i32)>,
     // but nesting is still possible when needed
     Object(ArrayD<PortData>),
+}
+impl From<&ForayArray> for PortType {
+    fn from(value: &ForayArray) -> Self {
+        fn array_to_shape<A>(a: &ArrayD<A>) -> Shape {
+            a.shape().iter().map(|l| Some(*l)).collect()
+        }
+
+        match value {
+            ForayArray::Integer(array) => {
+                PortType::Array(Box::new(PortType::Integer), array_to_shape(array))
+            }
+            ForayArray::Float(array) => {
+                PortType::Array(Box::new(PortType::Float), array_to_shape(array))
+            }
+            ForayArray::Complex(array) => {
+                PortType::Array(Box::new(PortType::Complex), array_to_shape(array))
+            }
+            ForayArray::Boolean(array) => {
+                PortType::Array(Box::new(PortType::Boolean), array_to_shape(array))
+            }
+            ForayArray::String(array) => {
+                PortType::Array(Box::new(PortType::String), array_to_shape(array))
+            }
+            ForayArray::Object(array) => PortType::Array(
+                Box::new(
+                    array
+                        .first()
+                        .map(|pt| pt.into())
+                        .unwrap_or(PortType::Object(Default::default())),
+                ),
+                array_to_shape(array),
+            ),
+        }
+    }
 }
 
 impl<'py> FromPyObject<'py> for ForayArray {

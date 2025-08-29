@@ -15,7 +15,7 @@ use iced::Font;
 use iced::{
     border,
     widget::{column, *},
-    Color, Element,
+    Element,
 };
 
 use super::port::port_view;
@@ -80,11 +80,20 @@ impl Workspace {
 
         //// Node
         let input_data = self.network.graph.get_input_data(&id);
+        let output_data = self.network.graph.get_output_data(&id);
         let node_size = template_node_size(&node.template);
 
         //// Ports
         let show_port_tooltips = !matches!(self.action, Action::AddingNode);
-        let port_buttons = port_view(id, node, node_size, app_theme, show_port_tooltips);
+        let port_buttons = port_view(
+            id,
+            node,
+            &input_data,
+            &output_data,
+            node_size,
+            app_theme,
+            show_port_tooltips,
+        );
 
         let node_primary = container(node_view(node, id, input_data))
             .style(move |theme| node_style(node, theme))
@@ -98,6 +107,7 @@ impl Workspace {
             Some(h) => container(
                 image(h)
                     .filter_method(image::FilterMethod::Nearest)
+                    // .content_fit(iced::ContentFit::ScaleDown)
                     .height(data_display_size)
                     .width(data_display_size),
             ),

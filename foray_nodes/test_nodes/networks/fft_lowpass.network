@@ -10,10 +10,14 @@
                         outputs: Ok({
                             "out": Array(Complex, [None, None]),
                         }),
-                        parameters: Ok({}),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                        }),
                     )),
                 )),
-                parameters_values: {},
+                parameters_values: {
+                    "image_size": Float(256.0),
+                },
             ),
             1: (
                 template: PyNode((
@@ -30,24 +34,6 @@
                     )),
                 )),
                 parameters_values: {},
-            ),
-            2: (
-                template: PyNode((
-                    name: "circle_mask",
-                    py_path: "test_nodes.foray.circle_mask",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Float, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "radius": Slider(0.0, 6.0, 0.5),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "radius": Float(2.59),
-                },
             ),
             3: (
                 template: PyNode((
@@ -82,19 +68,25 @@
                 )),
                 parameters_values: {},
             ),
-            6: (
+            8: (
                 template: PyNode((
-                    name: "print_stats",
-                    py_path: "test_nodes.foray.print_stats",
+                    name: "circle_mask",
+                    py_path: "test_nodes.foray.circle_mask",
                     config: Ok((
-                        inputs: Ok({
-                            "a": Array(Float, [None, None]),
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
                         }),
-                        outputs: Ok({}),
-                        parameters: Ok({}),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                            "radius": Slider(0.0, 256.0, 1.0),
+                        }),
                     )),
                 )),
-                parameters_values: {},
+                parameters_values: {
+                    "image_size": Float(256.0),
+                    "radius": Float(11.31),
+                },
             ),
         },
         edges: [((
@@ -114,60 +106,48 @@
             name: "a",
             io: In,
         )), ((
-            node: 2,
+            node: 3,
+            name: "out",
+            io: Out,
+        ), (
+            node: 5,
+            name: "a",
+            io: In,
+        )), ((
+            node: 8,
             name: "out",
             io: Out,
         ), (
             node: 3,
             name: "b",
             io: In,
-        )), ((
-            node: 3,
-            name: "out",
-            io: Out,
-        ), (
-            node: 5,
-            name: "a",
-            io: In,
-        )), ((
-            node: 5,
-            name: "out",
-            io: Out,
-        ), (
-            node: 6,
-            name: "a",
-            io: In,
         ))],
-        next_id: 8,
+        next_id: 9,
     ),
     shapes: (
         camera: (
             position: (
-                x: -37.419556,
-                y: 51.036293,
+                x: -36.86328,
+                y: -12.963715,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
-            2: (
-                x: 310.13116,
-                y: 215.44382,
-            ),
             1: (
                 x: 78.90939,
                 y: 224.61566,
             ),
-            0: (
-                x: 67.20624,
-                y: 71.815636,
+            8: (
+                x: 328.92114,
+                y: 221.97379,
             ),
-            6: (
-                x: 169.08047,
-                y: 618.01483,
+            0: (
+                x: 75.85309,
+                y: 107.25938,
             ),
             3: (
-                x: 167.32813,
-                y: 359.7125,
+                x: 171.19687,
+                y: 350.1344,
             ),
             5: (
                 x: 171.11563,
