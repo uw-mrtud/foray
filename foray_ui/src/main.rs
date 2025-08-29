@@ -1,4 +1,5 @@
 use clap::Parser;
+use env_logger::Env;
 use foray_ui::{
     app::{subscriptions, theme, title, App},
     headless::run_headless,
@@ -17,7 +18,7 @@ struct Cli {
 }
 
 pub fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("foray=warn")).init();
 
     let cli = Cli::parse();
     let absolute_network = cli
