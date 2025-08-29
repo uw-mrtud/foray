@@ -1,6 +1,5 @@
-use crate::interface::node::format_node_debug_output;
 use crate::interface::status::{node_status_icon, node_status_text_element};
-use crate::interface::{debug_format, SEPERATOR};
+use crate::interface::SEPERATOR;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::style::button::{primary_icon, secondary_icon};
 use crate::style::icon::icon;
@@ -137,6 +136,10 @@ pub fn config_view<'a>(
         // RustNode::Plot2D(plot) => plot.config_view(id, input_data),
         // RustNode::VectorField(plot) => plot.config_view(id, input_data),
         //_ => None,
+        // TODO: data is awkwardly stored in two locations, defaults are in the widget_type,
+        // current values are stored in node_instance.parameter_values. these values are less
+        // structured (they could be any PortData type)
+        //
         ForayNodeTemplate::PyNode(pn) => {
             if let Ok(parameters) = pn.parameters() {
                 Some(
@@ -170,19 +173,27 @@ pub fn config_view<'a>(
                                 .align_y(Center)
                                 .into()
                             }
-                            UIParameter::NumberField(v) => row![
-                                horizontal_space(),
-                                row![numeric_input::numeric_input(
-                                    v as f32,
-                                    numeric_input::PartialUIValue::Complete,
-                                    move |new_v, _in_progress: PartialUIValue| {
-                                        message(PortData::Float(new_v as f64)) //, in_progress))
-                                    },
-                                )]
-                                .width(60.0)
-                            ]
-                            .align_y(Center)
-                            .into(),
+                            UIParameter::NumberField(_v) => {
+                                let current_value =
+                                    match node_instance.parameters_values[&name_2.clone()] {
+                                        PortData::Float(v) => v,
+                                        _ => panic!("slider should be a float"),
+                                    };
+                                row![
+                                    horizontal_space(),
+                                    row![numeric_input::numeric_input(
+                                        current_value as f32,
+                                        numeric_input::PartialUIValue::Complete,
+                                        move |new_v, _in_progress: PartialUIValue| {
+                                            message(PortData::Float(new_v as f64))
+                                            //, in_progress))
+                                        },
+                                    )]
+                                    .width(60.0)
+                                ]
+                                .align_y(Center)
+                                .into()
+                            }
                             UIParameter::Slider(start, stop, _default_v) => {
                                 let current_value =
                                     match node_instance.parameters_values[&name_2.clone()] {
