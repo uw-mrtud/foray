@@ -1,7 +1,7 @@
-# The Interaface
+# The Interface
 ## Network
 
-On the right is your network. 
+On the right is your network.
 
 
 Controls: 
@@ -10,8 +10,9 @@ Controls:
 - `click and drag` on a node moves the node
 - `click and drag` on a port to connect nodes
 - `right click` on a port to remove a connection
-    - connections can also be replaced if a new connection is added ontop of an existing connection
+    - connections can also be replaced if a new connection is added on top of an existing connection
 - `cmd + a` create new node
+- `shift + click` select multiple nodes
 
 
 ## Application Actions
