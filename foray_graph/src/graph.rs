@@ -131,19 +131,14 @@ where
         self.nodes.get_mut(&nx).unwrap()
     }
 
-    pub fn get_output_data(
-        &self,
-        nx: &NodeIndex,
-    ) -> Dict<String, Option<&WireDataContainer<WireData>>> {
+    pub fn get_output_data(&self, nx: &NodeIndex) -> Dict<String, WireDataContainer<WireData>> {
         self.get_node(*nx)
             .outputs()
-            .clone()
-            .into_keys()
-            .map(|port_name| {
-                (
-                    port_name.clone(),
-                    self.wire_data.get(&(*nx, port_name.clone())),
-                )
+            .keys()
+            .filter_map(|port_name| {
+                self.wire_data
+                    .get(&(*nx, port_name.clone()))
+                    .map(|data| (port_name.clone(), data.clone()))
             })
             .collect()
     }
@@ -225,6 +220,11 @@ where
             self.wire_data
                 .insert((nx, port_name), Arc::new(wire_data.into()));
         }
+    }
+    pub fn clear_outputs(&mut self, nx: NodeIndex) {
+        self.get_node(nx).outputs().keys().for_each(|output_name| {
+            self.wire_data.remove(&(nx, output_name.clone()));
+        });
     }
 
     pub fn get_wire_data(

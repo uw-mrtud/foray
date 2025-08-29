@@ -16,6 +16,7 @@ use crate::widget::workspace_canvas::workspace_canvas;
 use foray_data_model::node::{Dict, PortData};
 use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
 
+use foray_py::err::PyNodeConfigError;
 use foray_py::py_node::{PyConfig, PyNodeTemplate};
 use iced::event::listen_with;
 use iced::keyboard::key::Named;
@@ -28,6 +29,7 @@ use itertools::Itertools;
 use log::{error, info, trace, warn};
 use std::fs::{self, read_to_string};
 use std::iter::once;
+use std::mem::discriminant;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -61,211 +63,6 @@ pub struct Workspace {
     pub cursor_position: Point,
 }
 
-pub enum WorkspaceError {
-    NoVenv,
-}
-
-impl Workspace {
-    pub fn is_valid_workspace(workspace_dir: &PathBuf) -> bool {
-        workspace_dir.join(".venv").is_dir()
-    }
-
-    pub fn new(
-        workspace_dir: PathBuf,
-        network_path: Option<PathBuf>,
-    ) -> Result<Self, WorkspaceError> {
-        if !Self::is_valid_workspace(&workspace_dir) {
-            return Err(WorkspaceError::NoVenv);
-        };
-
-        let network = match network_path {
-            Some(np) => match Network::load_network(&np) {
-                Ok(n) => n,
-                Err(err) => {
-                    warn!("{err:?}");
-                    //user_data.set_recent_network_file(None); // Recent network failed to load,
-                    // remove it from user data
-                    Network::default()
-                }
-            },
-            //// If no network provided, get the most recent network
-            None => Network::default(),
-        };
-        let venv_dir = workspace_dir.join(".venv");
-        python_env::setup_python(venv_dir);
-        let projects = read_python_projects();
-        trace!(
-            "Configured Python Projects: {:?}",
-            projects
-                .iter()
-                .map(|p| p.absolute_path.clone())
-                .collect::<Vec<_>>()
-        );
-
-        Ok(Self {
-            workspace_dir,
-            network,
-            projects,
-            user_data: UserData::read_user_data(),
-            action: Default::default(),
-            cursor_position: Default::default(),
-        })
-    }
-
-    pub fn get_and_create_network_default_dir(&self) -> PathBuf {
-        let network_dir = self.workspace_dir.join("networks");
-
-        // Create the network directory if it doesn't exist
-        let _ = fs::create_dir_all(&network_dir);
-        network_dir
-    }
-
-    /// Read node definitions from disk, and copies node configuration (parameters and port connections) forward.
-    /// *Does not trigger the compute function of any nodes.*
-    /// TODO: This has been edited several times as the data model has changed. This may be
-    /// able to be cleaned up significantly
-    fn reload_nodes(&mut self) {
-        // Update any existing nodes in the graph that could change based on file changes
-        self.network.graph.nodes_ref().iter().for_each(|nx| {
-            let node = self.network.graph.get_node(*nx).clone();
-            if let ForayNodeTemplate::PyNode(old_py_node) = node.template {
-                let PyNodeTemplate {
-                    name: _node_name,
-                    py_path,
-                    config: old_config,
-                } = old_py_node;
-
-                let PyConfig {
-                    inputs: old_inputs,
-                    outputs: old_outputs,
-                    parameters: _old_parameters,
-                } = old_config.unwrap_or_default();
-
-                //// Read new node from disk
-                let new_py_node = PyNodeTemplate::new(py_path);
-
-                // TODO: Implement parameter merging
-
-                //// Update Parameters
-                // let new_parameters = {
-                //     // If Ok, copy old parameters to new parameters
-                //     if let (Ok(new_parameters), Ok(old_param)) =
-                //         (new_py_node.parameters(), &old_parameters)
-                //     {
-                //         // Only keep old values that are still present in the new parameters list
-                //         Ok(new_parameters
-                //             .clone()
-                //             .into_iter()
-                //             .chain(old_param.clone().into_iter().filter(|(k, v)| {
-                //                 if let Some(new_v) = new_parameters.get(k) {
-                //                     discriminant(v) == discriminant(new_v)
-                //                 } else {
-                //                     false
-                //                 }
-                //             }))
-                //             .collect())
-                //     } else {
-                //         warn!(
-                //             "Paramaters not ok, not loading.\nNew: {:?}\nOld: {:?}",
-                //             &new_py_node.parameters(),
-                //             &old_parameters
-                //         );
-                //         new_py_node.parameters()
-                //     }
-                // };
-
-                //// Update Ports, and Graph Edges
-                {
-                    let new_in_ports = new_py_node.inputs().unwrap_or_default();
-                    let new_out_ports = new_py_node.outputs().unwrap_or_default();
-
-                    // Get old version's ports
-                    let old_in_ports = old_inputs.unwrap_or_default();
-                    let old_out_ports = old_outputs.unwrap_or_default();
-
-                    // Find any nodes that previously existed, but now doesn't
-                    let invalid_in = old_in_ports
-                        .into_iter()
-                        .filter(|(old_name, old_type)| new_in_ports.get(old_name) != Some(old_type))
-                        .map(|(old_name, _)| PortRef {
-                            node: *nx,
-                            name: old_name,
-                            io: IO::In,
-                        });
-                    let invalid_out = old_out_ports
-                        .into_iter()
-                        .filter(|(old_name, old_type)| {
-                            new_out_ports.get(old_name) != Some(old_type)
-                        })
-                        .map(|(old_name, _)| PortRef {
-                            node: *nx,
-                            name: old_name,
-                            io: IO::Out,
-                        });
-
-                    // Remove invalid edges from Graph
-                    invalid_in.chain(invalid_out).for_each(|p| {
-                        warn!(
-                            "Removing port {:?} from node {:?}",
-                            p.name, new_py_node.name
-                        );
-                        self.network.graph.remove_edge(&p);
-                    });
-                }
-
-                // Update Graph Node
-                self.network
-                    .graph
-                    .set_node_data(*nx, ForayNodeTemplate::PyNode(new_py_node).into());
-            }
-        });
-        // Update list of available nodes
-        self.projects = read_python_projects();
-    }
-
-    pub fn subscriptions(&self) -> Subscription<WorkspaceMessage> {
-        Subscription::batch(
-            self.projects
-                .iter()
-                .filter(|p| !p.absolute_path.to_string_lossy().is_empty())
-                .enumerate()
-                .map(|(id, p)| {
-                    file_watch_subscription(
-                        id,
-                        p.absolute_path.clone(),
-                        WorkspaceMessage::ReloadNodes,
-                    )
-                })
-                .chain([
-                    window::open_events().map(|_| WorkspaceMessage::WindowOpen),
-                    listen_with(|event, _status, _id| match event {
-                        Keyboard(KeyPressed { key, modifiers, .. }) => match key {
-                            Key::Named(Named::Delete) => {
-                                Some(WorkspaceMessage::DeleteSelectedNodes)
-                            }
-                            Key::Named(Named::Escape) => Some(WorkspaceMessage::Cancel),
-                            Key::Character(smol_str) => {
-                                if modifiers.control() && smol_str == "a" {
-                                    Some(WorkspaceMessage::OpenAddNodeUi)
-                                } else {
-                                    None
-                                }
-                            }
-                            _ => None,
-                        },
-                        _ => None,
-                    }),
-                    // Refresh for animation while nodes are actively running
-                    if self.network.any_nodes_running() {
-                        iced::time::every(Duration::from_micros(1_000_000 / 16))
-                            .map(|_| WorkspaceMessage::AnimationTick)
-                    } else {
-                        Subscription::none()
-                    },
-                ]),
-        )
-    }
-}
 #[derive(Clone, Debug)]
 pub enum WorkspaceMessage {
     //// Workspace
@@ -296,9 +93,6 @@ pub enum WorkspaceMessage {
 
     //// Application
     AnimationTick,
-    //ThemeValueChange(AppThemeMessage, GuiColorMessage),
-    //ToggleDebug,
-    //TogglePaletteUI,
     New,
     StartLoadNetwork,
     EndLoadNetwork(Result<(PathBuf, Arc<String>), FileError>),
@@ -490,13 +284,6 @@ impl Workspace {
             }
 
             WorkspaceMessage::AnimationTick => {}
-            //WorkspaceMessage::ThemeValueChange(tm, tv) => self.app_theme.update(tm, tv),
-            //WorkspaceMessage::ToggleDebug => {
-            //    self.debug = !self.debug;
-            //}
-            //WorkspaceMessage::TogglePaletteUI => {
-            //    self.show_palette_ui = !self.show_palette_ui;
-            //}
             WorkspaceMessage::New => {
                 //TODO: move into Network
                 if self.network.unsaved_changes {
@@ -546,7 +333,6 @@ impl Workspace {
 
                             self.network.file = Some(file.clone());
                             self.user_data.set_recent_network_file(Some(file));
-                            self.reload_nodes();
                             self.reload_nodes();
                             return Task::done(WorkspaceMessage::ComputeAll);
                         }
@@ -644,11 +430,16 @@ impl Workspace {
 
                     // Check if in an error state
                     if let NodeStatus::Error(e) = &node.status {
-                        trace!(
-                            "Did not compute node in error state {e:?} compute: {:?} #{nx}",
-                            node.template,
-                        );
-                        return Task::none();
+                        if e.iter().any(|e| match e {
+                            PyNodeConfigError::Runtime(_) => false,
+                            _ => true,
+                        }) {
+                            warn!(
+                                "Did not compute node  {e:?} compute: {:?} #{nx}",
+                                node.template,
+                            );
+                            return Task::none();
+                        }
                     }
                     // Re-queue
                     if let NodeStatus::Running { .. } = node.status {
@@ -745,11 +536,15 @@ impl Workspace {
                         //// Update Node
                         let node = self.network.graph.get_mut_node(nx);
                         warn!("Compute failed {node:?},{node_error:?}");
-                        //TODO: set node error!!!!
-                        node.status = NodeStatus::Idle;
 
-                        //// Update Wire
-                        self.network.graph.update_wire_data(nx, [].into());
+                        node.status = NodeStatus::Error(vec![PyNodeConfigError::Runtime(format!(
+                            "{:?}",
+                            node_error
+                        ))]);
+                        node.visualization.image_handle = None;
+
+                        //// Update wire
+                        self.network.graph.clear_outputs(nx);
 
                         return Task::none();
                     }
@@ -831,6 +626,221 @@ impl Workspace {
         //} else {
         output
         //}
+    }
+}
+
+#[derive(Debug)]
+pub enum WorkspaceError {
+    NoVenv,
+}
+
+impl Workspace {
+    pub fn is_valid_workspace(workspace_dir: &PathBuf) -> bool {
+        workspace_dir.join(".venv").is_dir()
+    }
+
+    pub fn new(
+        workspace_dir: PathBuf,
+        network_path: Option<PathBuf>,
+    ) -> Result<Self, WorkspaceError> {
+        if !Self::is_valid_workspace(&workspace_dir) {
+            return Err(WorkspaceError::NoVenv);
+        };
+
+        let network = match network_path {
+            Some(np) => match Network::load_network(&np) {
+                Ok(n) => n,
+                Err(err) => {
+                    warn!("{err:?}");
+                    //user_data.set_recent_network_file(None); // Recent network failed to load,
+                    // remove it from user data
+                    Network::default()
+                }
+            },
+            //// If no network provided, get the most recent network
+            None => Network::default(),
+        };
+        let venv_dir = workspace_dir.join(".venv");
+        python_env::setup_python(venv_dir);
+        let projects = read_python_projects();
+        trace!(
+            "Configured Python Projects: {:?}",
+            projects
+                .iter()
+                .map(|p| p.absolute_path.clone())
+                .collect::<Vec<_>>()
+        );
+
+        let mut workspace = Self {
+            workspace_dir,
+            network,
+            projects,
+            user_data: UserData::read_user_data(),
+            action: Default::default(),
+            cursor_position: Default::default(),
+        };
+        workspace.reload_nodes();
+        Ok(workspace)
+    }
+
+    pub fn get_and_create_network_default_dir(&self) -> PathBuf {
+        let network_dir = self.workspace_dir.join("networks");
+
+        // Create the network directory if it doesn't exist
+        let _ = fs::create_dir_all(&network_dir);
+        network_dir
+    }
+
+    /// Read node definitions from disk, and copies node configuration (parameters and port connections) forward.
+    /// *Does not trigger the compute function of any nodes.*
+    /// TODO: This has been edited several times as the data model has changed. This may be
+    /// able to be cleaned up significantly
+    fn reload_nodes(&mut self) {
+        // Update any existing nodes in the graph that could change based on file changes
+        self.network.graph.nodes_ref().iter().for_each(|nx| {
+            let node = self.network.graph.get_node(*nx).clone();
+            if let ForayNodeTemplate::PyNode(old_py_node) = node.template {
+                let PyNodeTemplate {
+                    name: _node_name,
+                    py_path,
+                    config: old_config,
+                } = old_py_node;
+
+                let PyConfig {
+                    inputs: old_inputs,
+                    outputs: old_outputs,
+                    parameters: old_parameters,
+                } = old_config.unwrap_or_default();
+
+                //// Read new node from disk
+                let new_py_node_template = PyNodeTemplate::new(py_path);
+
+                // TODO: Implement parameter merging
+
+                // //// Update Parameters
+                // let new_parameters = {
+                //     // If Ok, copy old parameters to new parameters
+                //     if let (Ok(new_parameters), Ok(old_param)) =
+                //         (new_py_node_template.parameters(), &old_parameters)
+                //     {
+                //         // Only keep old values that are still present in the new parameters list
+                //         Ok(new_parameters
+                //             .clone()
+                //             .into_iter()
+                //             .chain(old_param.clone().into_iter().filter(|(k, v)| {
+                //                 if let Some(new_v) = new_parameters.get(k) {
+                //                     discriminant(v) == discriminant(new_v)
+                //                 } else {
+                //                     false
+                //                 }
+                //             }))
+                //             .collect())
+                //     } else {
+                //         warn!(
+                //             "Paramaters not ok, not loading.\nNew: {:?}\nOld: {:?}",
+                //             &new_py_node_template.parameters(),
+                //             &old_parameters
+                //         );
+                //         new_py_node_template.parameters()
+                //     }
+                // };
+
+                //// Update Ports, and Graph Edges
+                {
+                    let new_in_ports = new_py_node_template.inputs().unwrap_or_default();
+                    let new_out_ports = new_py_node_template.outputs().unwrap_or_default();
+
+                    // Get old version's ports
+                    let old_in_ports = old_inputs.unwrap_or_default();
+                    let old_out_ports = old_outputs.unwrap_or_default();
+
+                    // Find any nodes that previously existed, but now doesn't
+                    let invalid_in = old_in_ports
+                        .into_iter()
+                        .filter(|(old_name, old_type)| new_in_ports.get(old_name) != Some(old_type))
+                        .map(|(old_name, _)| PortRef {
+                            node: *nx,
+                            name: old_name,
+                            io: IO::In,
+                        });
+                    let invalid_out = old_out_ports
+                        .into_iter()
+                        .filter(|(old_name, old_type)| {
+                            new_out_ports.get(old_name) != Some(old_type)
+                        })
+                        .map(|(old_name, _)| PortRef {
+                            node: *nx,
+                            name: old_name,
+                            io: IO::Out,
+                        });
+
+                    // Remove invalid edges from Graph
+                    invalid_in.chain(invalid_out).for_each(|p| {
+                        warn!(
+                            "Removing port {:?} from node {:?}",
+                            p.name, new_py_node_template.name
+                        );
+                        self.network.graph.remove_edge(&p);
+                    });
+                }
+
+                let mut new_node_instance: ForayNodeInstance =
+                    ForayNodeTemplate::PyNode(new_py_node_template).into();
+                node.parameters_values.into_iter().for_each(|(key, value)| {
+                    new_node_instance
+                        .parameters_values
+                        .entry(key)
+                        .and_modify(|v| *v = value);
+                });
+                // Update Graph Node
+                self.network.graph.set_node_data(*nx, new_node_instance);
+            }
+        });
+        // Update list of available nodes
+        self.projects = read_python_projects();
+    }
+
+    pub fn subscriptions(&self) -> Subscription<WorkspaceMessage> {
+        Subscription::batch(
+            self.projects
+                .iter()
+                .filter(|p| !p.absolute_path.to_string_lossy().is_empty())
+                .enumerate()
+                .map(|(id, p)| {
+                    file_watch_subscription(
+                        id,
+                        p.absolute_path.clone(),
+                        WorkspaceMessage::ReloadNodes,
+                    )
+                })
+                .chain([
+                    window::open_events().map(|_| WorkspaceMessage::WindowOpen),
+                    listen_with(|event, _status, _id| match event {
+                        Keyboard(KeyPressed { key, modifiers, .. }) => match key {
+                            Key::Named(Named::Delete) => {
+                                Some(WorkspaceMessage::DeleteSelectedNodes)
+                            }
+                            Key::Named(Named::Escape) => Some(WorkspaceMessage::Cancel),
+                            Key::Character(smol_str) => {
+                                if modifiers.control() && smol_str == "a" {
+                                    Some(WorkspaceMessage::OpenAddNodeUi)
+                                } else {
+                                    None
+                                }
+                            }
+                            _ => None,
+                        },
+                        _ => None,
+                    }),
+                    // Refresh for animation while nodes are actively running
+                    if self.network.any_nodes_running() {
+                        iced::time::every(Duration::from_micros(1_000_000 / 16))
+                            .map(|_| WorkspaceMessage::AnimationTick)
+                    } else {
+                        Subscription::none()
+                    },
+                ]),
+        )
     }
 }
 
