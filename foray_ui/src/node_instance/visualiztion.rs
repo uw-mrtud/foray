@@ -52,7 +52,7 @@ impl Visualization {
                         //.expect("square matrix"),
                         _ => None, //panic!("unsuported plot types {:?}", port),
                     };
-                    data.map(|data| create_rgb_handle(dbg!(&data)))
+                    data.map(|data| create_rgb_handle(&data))
                 }
                 _ => None, //(None, PortData::ArrayReal(Default::default())),
             },

@@ -29,7 +29,6 @@ use itertools::Itertools;
 use log::{error, info, trace, warn};
 use std::fs::{self, read_to_string};
 use std::iter::once;
-use std::mem::discriminant;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -709,41 +708,11 @@ impl Workspace {
                 let PyConfig {
                     inputs: old_inputs,
                     outputs: old_outputs,
-                    parameters: old_parameters,
+                    parameters: _old_parameters,
                 } = old_config.unwrap_or_default();
 
                 //// Read new node from disk
                 let new_py_node_template = PyNodeTemplate::new(py_path);
-
-                // TODO: Implement parameter merging
-
-                // //// Update Parameters
-                // let new_parameters = {
-                //     // If Ok, copy old parameters to new parameters
-                //     if let (Ok(new_parameters), Ok(old_param)) =
-                //         (new_py_node_template.parameters(), &old_parameters)
-                //     {
-                //         // Only keep old values that are still present in the new parameters list
-                //         Ok(new_parameters
-                //             .clone()
-                //             .into_iter()
-                //             .chain(old_param.clone().into_iter().filter(|(k, v)| {
-                //                 if let Some(new_v) = new_parameters.get(k) {
-                //                     discriminant(v) == discriminant(new_v)
-                //                 } else {
-                //                     false
-                //                 }
-                //             }))
-                //             .collect())
-                //     } else {
-                //         warn!(
-                //             "Paramaters not ok, not loading.\nNew: {:?}\nOld: {:?}",
-                //             &new_py_node_template.parameters(),
-                //             &old_parameters
-                //         );
-                //         new_py_node_template.parameters()
-                //     }
-                // };
 
                 //// Update Ports, and Graph Edges
                 {
@@ -786,6 +755,8 @@ impl Workspace {
 
                 let mut new_node_instance: ForayNodeInstance =
                     ForayNodeTemplate::PyNode(new_py_node_template).into();
+
+                // Merge parameters
                 node.parameters_values.into_iter().for_each(|(key, value)| {
                     new_node_instance
                         .parameters_values

@@ -38,9 +38,11 @@ To instal with brew: `brew install uv`.
 
 ```bash
 cd foray_example
-uv venv # Creates a virtual environment, `./venv`, and installs python packages into the environment
+uv sync
 foray ./networks/fft_lowpass.network
 ```
+
+`uv sync` Creates a virtual environment, `./venv`, and installs python packages into the environment.
 
 The last commands opens Foray with a specific network.
 
