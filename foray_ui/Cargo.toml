@@ -6,7 +6,7 @@ edition = "2021"
 [package.metadata.bundle]
 name = "Foray"
 identifier = "org.mrtud.foray"
-icon = ["data/resources/icon*.png"]
+icon = ["foray_ui/data/resources/icon*.png"]
 version = "0.1.0"
 category = "Development"
 short_description = "An interactive signal processing toolkit"

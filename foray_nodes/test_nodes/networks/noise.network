@@ -1,0 +1,43 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: PyNode((
+                    name: "perlin_noise",
+                    py_path: "test_nodes.foray.perlin_noise",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                            "scale": Slider(0.0, 100.0, 1.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "image_size": Float(256.0),
+                    "scale": Float(7.87),
+                },
+            ),
+        },
+        edges: [],
+        next_id: 1,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: -41.168747,
+                y: 4.931244,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            0: (
+                x: 56.753143,
+                y: 134.97502,
+            ),
+        },
+    ),
+)

@@ -1,4 +1,4 @@
-use crate::interface::status::{node_status_icon, node_status_text_element};
+use crate::interface::status::node_status_widget;
 use crate::interface::SEPERATOR;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::style::button::{primary_icon, secondary_icon};
@@ -79,12 +79,7 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
             column![
                 container(text(node.template.name().clone()).size(20.)).center_x(Fill),
                 horizontal_rule(0),
-                row![
-                    node_status_icon(&node.status),
-                    node_status_text_element(&node.status).size(12.)
-                ]
-                .align_y(Center)
-                .spacing(8.0),
+                node_status_widget(&node.status),
                 vertical_space().height(10.),
                 config_view(node, *selected_id, input_data).unwrap_or(text("...").into()),
                 // node.config_view(*selected_id, input_data)

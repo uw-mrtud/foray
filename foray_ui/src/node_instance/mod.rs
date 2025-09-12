@@ -8,10 +8,7 @@ use foray_data_model::{
     WireDataContainer,
 };
 use foray_graph::graph::{ForayNodeError, GraphNode, PortName};
-use foray_py::{
-    err::PyNodeConfigError,
-    py_node::{py_compute, PyNodeTemplate},
-};
+use foray_py::py_node::{py_compute, PyNodeTemplate};
 use serde::{Deserialize, Serialize};
 use visualiztion::Visualization;
 
@@ -50,7 +47,7 @@ pub enum NodeStatus {
     Running {
         start: Instant,
     },
-    Error(Vec<PyNodeConfigError>),
+    Error(Vec<ForayNodeError>),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -114,7 +111,11 @@ impl From<ForayNodeTemplate> for ForayNodeInstance {
             status: match &template {
                 ForayNodeTemplate::RustNode(_rust_node_template) => Default::default(),
                 ForayNodeTemplate::PyNode(py_node_template) => {
-                    let errors = py_node_template.errors();
+                    let errors: Vec<_> = py_node_template
+                        .errors()
+                        .into_iter()
+                        .map(ForayNodeError::PyNodeConifgError)
+                        .collect();
                     if errors.is_empty() {
                         Default::default()
                     } else {

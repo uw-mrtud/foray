@@ -430,7 +430,9 @@ impl Workspace {
                     // Check if in an error state
                     if let NodeStatus::Error(e) = &node.status {
                         if e.iter().any(|e| match e {
-                            PyNodeConfigError::Runtime(_) => false,
+                            ForayNodeError::PyNodeConifgError(PyNodeConfigError::Runtime(_)) => {
+                                false
+                            }
                             _ => true,
                         }) {
                             warn!(
@@ -536,10 +538,7 @@ impl Workspace {
                         let node = self.network.graph.get_mut_node(nx);
                         warn!("Compute failed {node:?},{node_error:?}");
 
-                        node.status = NodeStatus::Error(vec![PyNodeConfigError::Runtime(format!(
-                            "{:?}",
-                            node_error
-                        ))]);
+                        node.status = NodeStatus::Error(vec![node_error]);
                         node.visualization.image_handle = None;
 
                         //// Update wire

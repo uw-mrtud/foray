@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 
 [[package]]
@@ -60,6 +60,18 @@ wheels = [
 ]
 
 [[package]]
+name = "perlin-numpy"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1f/7a/21376ae8832d6eed7a17af294103fc7e08842c84f826e6a49596032f0e22/perlin_numpy-0.0.1.tar.gz", hash = "sha256:4463c4e66fa815ee8f7faee0be4264ca11698e5e74a825e8035d0f0af0374b07", size = 4635, upload-time = "2024-07-21T16:12:03.348Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/51/ca529fd8ed0ae4e0e6130e7eae812aed8e4dde27697a65b62a71d8605c76/perlin_numpy-0.0.1-py3-none-any.whl", hash = "sha256:5d770389a4b3317f3be90dabc497030328ec666ab493cc9c224b745b0dadc195", size = 4988, upload-time = "2024-07-21T16:12:01.89Z" },
+]
+
+[[package]]
 name = "test-dependency"
 version = "0.1.0"
 source = { editable = "../test_dependency" }
@@ -70,7 +82,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "foray", directory = "../../foray_py/python" },
+    { name = "foray", editable = "../../foray_py/python" },
     { name = "numpy", specifier = ">=2.3.2" },
 ]
 
@@ -81,6 +93,7 @@ source = { editable = "." }
 dependencies = [
     { name = "foray" },
     { name = "numpy" },
+    { name = "perlin-numpy" },
     { name = "test-dependency" },
 ]
 
@@ -88,5 +101,6 @@ dependencies = [
 requires-dist = [
     { name = "foray", editable = "../../foray_py/python" },
     { name = "numpy", specifier = ">=2.3.2" },
+    { name = "perlin-numpy", specifier = ">=0.0.1" },
     { name = "test-dependency", editable = "../test_dependency" },
 ]

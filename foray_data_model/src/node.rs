@@ -232,7 +232,7 @@ impl<'py> IntoPyObject<'py> for ForayArray {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Display, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Display, Debug, PartialOrd)]
 pub enum NodeError {
     Input(String),
     Err,

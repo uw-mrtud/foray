@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use derive_more::Display;
 use foray_py::err::PyNodeConfigError;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,7 @@ use foray_data_model::{
 
 pub type PortName = String;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Display)]
 pub enum ForayNodeError {
     PyNodeConifgError(PyNodeConfigError),
     NodeError(NodeError),
