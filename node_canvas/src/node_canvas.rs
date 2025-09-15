@@ -4,10 +4,7 @@ use iced::{
     Element, Length, Rectangle, Renderer, Size, Theme, Transformation, Vector, event,
     keyboard::Modifiers,
     mouse::{self, ScrollDelta},
-    widget::{
-        canvas::{Frame, Program},
-        center,
-    },
+    widget::canvas::{Frame, Program},
 };
 
 use iced::widget::canvas;
@@ -29,9 +26,9 @@ impl ShapeContext {
         bounds: iced::Rectangle,
     ) -> Frame<Renderer> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
-        let center_offset = Vector::ZERO; //Vector::new(bounds.center_x(), bounds.center_y());
+        let center_offset = Vector::new(bounds.center_x(), bounds.center_y());
 
-        let camera_translation = Vector::new(self.camera.position.0, self.camera.position.1); // + center_offset;
+        let camera_translation = Vector::new(self.camera.position.0, self.camera.position.1);
         let camera_scale = self.camera.zoom;
 
         let shape_translation = Vector::new(self.position.0, self.position.1);
@@ -42,13 +39,6 @@ impl ShapeContext {
         frame.translate(-camera_translation);
         frame.translate(shape_translation);
 
-        // frame.translate(-camera_translation);
-        // frame.translate(shape_translation * camera_scale);
-        // frame.scale(camera_scale);
-        // frame.translate(-center_offset);
-        // frame.translate(center_offset * transform.scale_factor());
-        // frame.scale(camera_scale);
-        // frame.translate(-center_offset * (1.0 / camera_scale));
         frame
     }
 }
@@ -92,21 +82,10 @@ impl Camera {
         self.position.0 += movement.0;
         self.position.1 += movement.1;
     }
-    // pub fn transform(&self) -> Transformation {
-    //     Transformation::translate(self.position.0, self.position.1)
-    //         * Transformation::scale(self.zoom)
-    // }
-    //
-    // pub fn zoom_in(&mut self) {
-    //     self.zoom *= 1.2;
-    // }
-    // pub fn zoom_out(&mut self) {
-    //     self.zoom *= 0.8;
-    // }
     pub fn cursor_to_world(&self, point: iced::Point, canvas_size: Size) -> iced::Point {
-        let center_offset = Vector::ZERO; //Vector::new(canvas_size.width, canvas_size.height) * 0.5;
+        let center_offset = Vector::new(canvas_size.width, canvas_size.height) * 0.5;
 
-        let camera_translation = Vector::new(self.position.0, self.position.1); // + center_offset;
+        let camera_translation = Vector::new(self.position.0, self.position.1);
 
         (point - center_offset) * Transformation::scale(1.0 / self.zoom) + camera_translation
     }
@@ -127,7 +106,7 @@ impl<Message, P: Program<Message, State = ShapeContext>> canvas::Program<Message
 
     fn draw(
         &self,
-        state: &Self::State,
+        _state: &Self::State,
         renderer: &Renderer,
         theme: &Theme,
         bounds: Rectangle,
@@ -170,25 +149,52 @@ impl<Message, P: Program<Message, State = ShapeContext>> canvas::Program<Message
                         };
                         let mut new_camera = self.camera;
                         if state.modifiers.control() {
-                            new_camera.zoom *= 1.0 + (-scroll_amount.1 / 100.0);
-                            if let Some(canvas_cursor) = cursor.position_in(bounds) {
-                                let world_cursor =
-                                    canvas_cursor * Transformation::scale(1.0 / self.camera.zoom); // self.camera.cursor_to_world(canvas_cursor, bounds.size());
+                            //// Zoom
+                            let z_new = new_camera.zoom * 1.0 + (-scroll_amount.1 / 100.0);
+                            new_camera.zoom = z_new;
+                            //// We want to zoom in based on where the cursor is.
+                            //// The cursor in world space should remain fixed, so we shift the
+                            //// camera position to compensate.
+                            if let Some(cursor_position) = cursor.position_in(bounds) {
+                                let center_offset =
+                                    Vector::new(bounds.center_x(), bounds.center_y());
+                                let z_old = self.camera.zoom;
+                                let scaled_cursor = (cursor_position - center_offset)
+                                    * Transformation::scale(1.0 / z_old);
 
-                                let delta = world_cursor
-                                    // - iced::Point::new(
-                                    //     self.camera.position.0,
-                                    //     self.camera.position.1,
-                                    // ))
-                                    * Transformation::scale(1.0 - (new_camera.zoom / self.camera.zoom));
+                                // This was derived by finding the world_cursor_position:
+                                //
+                                // world_cursor_position = ((cursor_position-center_offset)/z_old) + camera_position
+                                //
+                                // The amount to shift the camera position, should be somewhere in
+                                // this direction:
+                                //
+                                // camera_shift = (world_cursor_position-camera_position) *
+                                // correction_factor
+                                //
+                                // new_camera_position = camera_position - camera_shift
+                                //
+                                // new_world_cursor_position = ((cursor_position-center_offset)/z_new) + new_camera_position
+                                //
+                                // we can solve for correction_factor by setting
+                                //
+                                // new_world_cursor_position - world_cursor_position = 0
+                                //
+                                // (we want to the cursor to stay in the same world position as we zoom in)
+                                let correction_factor =
+                                    Transformation::scale((z_old / z_new) - 1.0);
+                                let delta = scaled_cursor * correction_factor;
                                 new_camera.pan((-delta.x, -delta.y));
 
-                                let new_world_curosr =
-                                    new_camera.cursor_to_world(canvas_cursor, bounds.size());
-
-                                dbg!(world_cursor - new_world_curosr);
+                                // Should be zero!
+                                // dbg!(
+                                //     self.camera.cursor_to_world(cursor_position, bounds.size())
+                                //         - new_camera
+                                //             .cursor_to_world(cursor_position, bounds.size())
+                                // );
                             };
                         } else {
+                            //// Pan
                             new_camera.pan(scroll_amount)
                         }
                         return (event::Status::Captured, Some(update_camera(new_camera)));
