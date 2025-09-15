@@ -2,7 +2,7 @@ cargo-features = ["codegen-backend"]
 
 [workspace]
 resolver = "3"
-members = ["foray_data_model", "foray_graph", "foray_py", "foray_ui"]
+members = ["foray_data_model", "foray_graph", "foray_py", "foray_ui", "node_canvas"]
 default-members = ["foray_ui"]
 
 
@@ -31,6 +31,20 @@ ron = "0.10.1"
 
 pyo3 = "0.25.0"
 numpy = "0.25.0"
+
+
+iced = { version = "0.13.1", default-features = false, features = [
+	"wgpu",
+	"auto-detect-theme",
+	"debug",
+	"lazy",
+	"image-without-codecs",
+	"advanced",
+	"canvas",
+	"async-std",
+	"markdown",
+	"svg",
+] }
 
 [profile.dev]
 debug = 0
