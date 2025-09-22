@@ -1,3 +1,2 @@
 pub mod camera;
 pub mod node_canvas;
-pub mod shape_context;

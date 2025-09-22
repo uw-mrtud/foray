@@ -1,47 +1,16 @@
 use std::marker::PhantomData;
 
 use iced::{
-    Element, Length, Rectangle, Renderer, Size, Theme, Transformation, Vector, event,
+    Element, Length, Rectangle, Renderer, Theme, Transformation, Vector, event,
     keyboard::Modifiers,
     mouse::{self, ScrollDelta},
-    widget::canvas::{Frame, Program},
+    widget::canvas::Program,
 };
 
 use iced::widget::canvas;
 use iced::widget::canvas::event::Event;
-#[derive(Default)]
-pub struct ShapeContext {
-    pub camera: Camera,
-    pub position: (f32, f32),
-}
 
-impl ShapeContext {
-    pub fn new(camera: Camera, position: (f32, f32)) -> Self {
-        Self { camera, position }
-    }
-
-    pub fn frame_in_shape_space(
-        &self,
-        renderer: &Renderer,
-        bounds: iced::Rectangle,
-    ) -> Frame<Renderer> {
-        let mut frame = canvas::Frame::new(renderer, bounds.size());
-        let center_offset = Vector::new(bounds.center_x(), bounds.center_y());
-
-        let camera_translation = Vector::new(self.camera.position.0, self.camera.position.1);
-        let camera_scale = self.camera.zoom;
-
-        let shape_translation = Vector::new(self.position.0, self.position.1);
-
-        frame.translate(center_offset);
-        frame.scale(camera_scale);
-
-        frame.translate(-camera_translation);
-        frame.translate(shape_translation);
-
-        frame
-    }
-}
+use crate::{camera::Camera, shape_context::ShapeContext};
 
 impl<'a, M: 'a, P: Program<M, State = ShapeContext>> Into<Element<'a, M>> for NodeCanvas<'a, M, P> {
     fn into(self) -> Element<'a, M> {
@@ -60,42 +29,15 @@ impl<'a, M, P: Program<M, State = ShapeContext>> NodeCanvas<'a, M, P> {
     pub fn new(nodes: &'a [((f32, f32), P)], camera: Camera) -> Self {
         NodeCanvas {
             nodes,
-            m: Default::default(),
             camera,
             update_camera: None,
+            m: PhantomData::default(),
         }
     }
 
     pub fn on_update_camera(mut self, update_camera: impl Fn(Camera) -> M + 'a) -> Self {
         self.update_camera = Some(Box::new(update_camera));
         self
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Camera {
-    pub position: (f32, f32),
-    pub zoom: f32,
-}
-impl Camera {
-    pub fn pan(&mut self, movement: (f32, f32)) {
-        self.position.0 += movement.0;
-        self.position.1 += movement.1;
-    }
-    pub fn cursor_to_world(&self, point: iced::Point, canvas_size: Size) -> iced::Point {
-        let center_offset = Vector::new(canvas_size.width, canvas_size.height) * 0.5;
-
-        let camera_translation = Vector::new(self.position.0, self.position.1);
-
-        (point - center_offset) * Transformation::scale(1.0 / self.zoom) + camera_translation
-    }
-}
-impl Default for Camera {
-    fn default() -> Self {
-        Self {
-            position: Default::default(),
-            zoom: 1.0,
-        }
     }
 }
 
@@ -150,7 +92,12 @@ impl<Message, P: Program<Message, State = ShapeContext>> canvas::Program<Message
                         let mut new_camera = self.camera;
                         if state.modifiers.control() {
                             //// Zoom
-                            let z_new = new_camera.zoom * 1.0 + (-scroll_amount.1 / 100.0);
+                            let zoom_scale = 500.0;
+                            let zoom_min = 0.20;
+                            let zoom_max = 8.00;
+                            //// Zoom
+                            let z_new = (new_camera.zoom * (1.0 + (-scroll_amount.1 / zoom_scale)))
+                                .clamp(zoom_min, zoom_max);
                             new_camera.zoom = z_new;
                             //// We want to zoom in based on where the cursor is.
                             //// The cursor in world space should remain fixed, so we shift the

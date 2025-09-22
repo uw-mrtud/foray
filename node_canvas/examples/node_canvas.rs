@@ -1,22 +1,25 @@
 use iced::{
-    self, Element, Renderer, Task, Theme,
+    self, Color, Element, Font, Renderer, Task, Theme,
     event::listen_with,
-    widget::{
-        canvas, canvas::Stroke, column, container, container::bordered_box, mouse_area, text,
-    },
+    font::Weight,
+    widget::{canvas::Stroke, column, mouse_area, text},
 };
 
 use iced::Event::Keyboard;
 use iced::keyboard::Event::KeyPressed;
-use node_canvas::node_canvas::{Camera, ShapeContext};
+use iced::widget::canvas;
+use iced::widget::container;
+use node_canvas::{camera::Camera, shape_context::ShapeContext};
 
 struct State {
     pub nodes: Vec<((f32, f32), Node)>,
     pub camera: Camera,
+    pub selected_node: Option<u32>,
 }
 
 pub fn main() -> Result<(), iced::Error> {
     iced::application("example canvas", update, view)
+        .antialiasing(true)
         .subscription(|_s| {
             listen_with(|event, _status, _id| match event {
                 Keyboard(KeyPressed { key, .. }) => match key {
@@ -28,23 +31,14 @@ pub fn main() -> Result<(), iced::Error> {
             })
         })
         .run_with(|| {
-            let a = 20.0;
-            let b = 200.0;
             (
                 State {
-                    nodes: vec![
-                        ((0.0, 0.0), "0".into()),
-                        ((a, 0.0), "1".into()),
-                        ((-a, 0.0), "2".into()),
-                        ((0.0, a), "3".into()),
-                        ((0.0, -a), "4".into()),
-                        ((b, b), "5".into()),
-                        ((a + b, b), "6".into()),
-                        ((-a + b, b), "7".into()),
-                        ((b, a + b), "8".into()),
-                        ((b, -a + b), "9".into()),
-                    ],
+                    nodes: (1..=200)
+                        .rev()
+                        .map(|s| ((0.0, s as f32 * 30.0), Node::new(16, "multiply")))
+                        .collect(),
                     camera: Default::default(),
+                    selected_node: None,
                 },
                 Task::none(),
             )
@@ -53,12 +47,15 @@ pub fn main() -> Result<(), iced::Error> {
 
 #[derive(Default)]
 struct Node {
+    size: u32,
     name: String,
 }
-impl From<&str> for Node {
-    fn from(name: &str) -> Self {
-        Node {
-            name: name.to_string(),
+
+impl Node {
+    fn new(size: u32, text: &str) -> Self {
+        Self {
+            size,
+            name: text.to_string(),
         }
     }
 }
@@ -66,35 +63,30 @@ impl From<&str> for Node {
 #[derive(Debug, Clone)]
 enum Message {
     UpdateCamera(Camera),
-    // Pan(ScrollDelta),
-    // ZoomIn,
-    // ZoomOut,
+    NodeClicked(u32),
 }
 
 fn update(state: &mut State, message: Message) -> Task<Message> {
     match message {
         Message::UpdateCamera(camera) => state.camera = camera,
+        Message::NodeClicked(id) => state.selected_node = Some(id),
     }
     Task::none()
 }
 
 fn view(state: &'_ State) -> Element<'_, Message> {
-    column![
-        container(
-            container(
-                mouse_area(
-                    node_canvas::node_canvas::NodeCanvas::new(&state.nodes, state.camera)
-                        .on_update_camera(Message::UpdateCamera)
-                ) // .on_scroll(Message::Pan),
-            )
-            .style(bordered_box),
-        )
+    container(column![
+        container(container(mouse_area(
+            node_canvas::node_canvas::NodeCanvas::new(&state.nodes, state.camera)
+                .on_update_camera(Message::UpdateCamera)
+        ),))
         .padding(20),
         text(format!(
             "camera: ({},{}),zoom: {}",
             state.camera.position.0, state.camera.position.1, state.camera.zoom
         ))
-    ]
+    ])
+    .style(|_| container::background(iced::Color::new(0.5, 0.5, 0.5, 0.5)))
     .into()
 }
 
@@ -111,12 +103,49 @@ impl iced::widget::canvas::Program<Message> for Node {
     ) -> Vec<iced::widget::canvas::Geometry<Renderer>> {
         let mut frame = shape_context.frame_in_shape_space(&renderer, bounds);
 
-        let text = canvas::Text::from(self.name.clone());
-        text.draw_with(|path, color| {
-            frame.fill(&path, color);
-            frame.stroke(&path, Stroke::default().with_color(color));
-        });
+        frame.scale(self.size as f32 / 22.0);
+        let text = canvas::Text {
+            font: Font {
+                family: iced::font::Family::Name("Courier New"),
+                ..Default::default()
+            },
+            content: self.name.clone(),
+            color: Color::from_rgb(1.0, 1.0, 1.0),
+            // size: (self.size as u16).into(),
+            size: 22.into(),
+            ..Default::default()
+        };
+        frame.fill_text(text);
+        // text.draw_with(|path, _color| {
+        //     frame.fill(&path, text_color);
+        //     // frame.stroke(&path, Stroke::default().with_color(text_color));
+        // });
 
         vec![frame.into_geometry()]
+    }
+    fn update(
+        &self,
+        _state: &mut Self::State,
+        event: canvas::Event,
+        _bounds: iced::Rectangle,
+        _cursor: iced::advanced::mouse::Cursor,
+    ) -> (canvas::event::Status, Option<Message>) {
+        match event {
+            canvas::Event::Mouse(event) => match event {
+                iced::mouse::Event::ButtonPressed(button) => match button {
+                    iced::mouse::Button::Left => {
+                        return (
+                            canvas::event::Status::Captured,
+                            Some(Message::NodeClicked(self.size)),
+                        );
+                    }
+                    _ => {}
+                },
+                _ => {}
+            },
+            canvas::Event::Touch(event) => todo!(),
+            canvas::Event::Keyboard(event) => todo!(),
+        }
+        (canvas::event::Status::Ignored, None)
     }
 }

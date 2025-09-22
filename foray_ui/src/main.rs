@@ -49,7 +49,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             .antialiasing(true)
             .window_size((1000., 800.))
             .decorations(true)
-            .scale_factor(|_| 1.25)
+            // .scale_factor(|_| 1.25)
             .font(include_bytes!("../data/CaskaydiaCoveNerdFont.ttf").as_slice())
             .font(include_bytes!("../data/CaskaydiaCove.ttf").as_slice())
             .font(include_bytes!("../data/cour.ttf").as_slice())

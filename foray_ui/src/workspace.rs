@@ -1,5 +1,7 @@
 use crate::file_watch::file_watch_subscription;
 use crate::interface::add_node::add_node_tree_panel;
+use crate::interface::node_canvas::camera::Camera;
+use crate::interface::node_canvas::node_canvas;
 use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
@@ -11,7 +13,6 @@ use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 use crate::widget::shapes::ShapeId;
-use crate::widget::workspace_canvas::workspace_canvas;
 
 use foray_data_model::node::{Dict, PortData};
 use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
@@ -67,6 +68,7 @@ pub enum WorkspaceMessage {
     //// Workspace
     OnMove(Point),
     ScrollPan(Vector),
+    UpdateCamera(Camera),
 
     //// Port
     PortStartHover(PortRef),
@@ -147,6 +149,7 @@ impl Workspace {
                 self.network.shapes.camera.position.x -= delta.x * 2.;
                 self.network.shapes.camera.position.y -= delta.y * 2.;
             }
+            WorkspaceMessage::UpdateCamera(camera) => self.network.shapes.camera = camera,
 
             //// Port
             WorkspaceMessage::PortStartHover(hover_port) => match &self.action {
@@ -561,19 +564,25 @@ impl Workspace {
             Action::LoadingNetwork => container(text("loading...")),
             Action::SavingNetwork => container(text("saving...")),
             _ => {
-                container(
-                    workspace_canvas(
-                        &self.network.shapes,
-                        //// Node view
-                        |id| self.node_content(id, app_theme),
-                        //// Wires paths
-                        |wire_end_node, points| self.wire_curve(wire_end_node, points, app_theme),
-                    )
-                    .on_cursor_move(WorkspaceMessage::OnMove)
-                    .on_press(WorkspaceMessage::OnCanvasDown)
-                    .on_release(WorkspaceMessage::OnCanvasUp)
-                    .pan(WorkspaceMessage::ScrollPan),
-                )
+                container(node_canvas::node_canvas(
+                    &self.network.shapes.shape_positions,
+                    self.network.shapes.camera,
+                    self,
+                    app_theme,
+                ))
+                // container(
+                //     workspace_canvas(
+                //         &self.network.shapes,
+                //         //// Node view
+                //         |id| self.node_content(id, app_theme),
+                //         //// Wires paths
+                //         |wire_end_node, points| self.wire_curve(wire_end_node, points, app_theme),
+                //     )
+                //     .on_cursor_move(WorkspaceMessage::OnMove)
+                //     .on_press(WorkspaceMessage::OnCanvasDown)
+                //     .on_release(WorkspaceMessage::OnCanvasUp)
+                //     .pan(WorkspaceMessage::ScrollPan),
+                // )
             }
         })
         .center(Fill);

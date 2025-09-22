@@ -14,25 +14,11 @@ use iced::{Length, Rectangle, Size};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
+use crate::interface::node_canvas::camera::Camera;
 use crate::math::{Point, Vector};
 use crate::StableMap;
 
 use super::shapes::{Shape, ShapeId, Shapes};
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Camera {
-    pub position: Vector,
-    pub zoom: f32,
-}
-
-impl Default for Camera {
-    fn default() -> Self {
-        Self {
-            position: [0., 0.].into(),
-            zoom: 1.0,
-        }
-    }
-}
 
 /// A workspace is a an infinite canvas that can be zoomed, panned,
 /// and contains widgets that can be placed anywhere in 2d

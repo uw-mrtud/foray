@@ -75,6 +75,14 @@ impl From<iced::Point> for Point {
         }
     }
 }
+impl From<Point> for iced::Vector {
+    fn from(value: Point) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+        }
+    }
+}
 
 impl From<Point> for iced::Point<f32> {
     fn from(val: Point) -> Self {
@@ -118,5 +126,12 @@ impl std::ops::Add<Vector> for Point {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
         }
+    }
+}
+impl std::ops::Mul<f32> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        (self.x * rhs, self.y * rhs).into()
     }
 }

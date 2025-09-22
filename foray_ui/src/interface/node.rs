@@ -10,13 +10,16 @@ use crate::StableMap;
 use foray_data_model::node::{Dict, PortData};
 use foray_data_model::WireDataContainer;
 
+use iced::font::Family;
+use iced::widget::canvas::{stroke, Geometry, Path, Text};
 use iced::Alignment::Center;
-use iced::Font;
 use iced::{
     border,
     widget::{column, *},
     Element,
 };
+use iced::{Font, Rectangle};
+use itertools::Itertools;
 
 use super::port::port_view;
 
@@ -29,9 +32,118 @@ pub const NODE_RADIUS: f32 = 5.0;
 pub const NODE_BORDER_WIDTH: f32 = 2.0;
 pub const OUTER_NODE_WIDTH: f32 = INNER_NODE_WIDTH + NODE_BORDER_WIDTH;
 pub const OUTER_NODE_HEIGHT: f32 = INNER_NODE_HEIGHT + NODE_BORDER_WIDTH;
+pub const NODE_TEXT_SIZE: f32 = 24.0;
 
 pub fn default_node_size() -> iced::Size {
     iced::Size::new(OUTER_NODE_WIDTH, OUTER_NODE_HEIGHT)
+}
+
+impl ForayNodeInstance {
+    pub fn node_bounding_rect(&self) -> Rectangle {
+        let estimated_text_width = NODE_TEXT_SIZE * self.template.name().len() as f32 * 0.75;
+        let node_padding = 8.0;
+
+        Rectangle::new(
+            (0.0, 0.0).into(),
+            (
+                estimated_text_width + node_padding,
+                NODE_TEXT_SIZE + node_padding,
+            )
+                .into(),
+        )
+    }
+}
+
+pub fn draw_node(
+    mut frame: iced::widget::canvas::Frame,
+    // only needed for stroke width, all other scaleing is already accounted for
+    scale: f32,
+    node: &ForayNodeInstance,
+    is_selected: bool,
+    app_theme: &AppTheme,
+) -> Vec<Geometry> {
+    let node_bounding = node.node_bounding_rect();
+    //// Name
+    let text = Text {
+        content: node.template.name(),
+        position: node_bounding.center(),
+        color: app_theme.text.strong_color().into(),
+        size: iced::Pixels(NODE_TEXT_SIZE),
+        font: Font {
+            family: Family::Name("Courier New"),
+            ..Font::default()
+        },
+        horizontal_alignment: iced::alignment::Horizontal::Center,
+        vertical_alignment: iced::alignment::Vertical::Center,
+        shaping: text::Shaping::Basic,
+        ..Default::default()
+    };
+
+    //// Draw text on top of everything, much faster but will cause overlap issues
+    frame.fill_text(text);
+
+    //// Draw text with proper layers, but is much slower. Won't scale well with lots of nodes
+    //// This method also can let us calculate the text width more accurately
+    // let mut text_bounding: Option<iced::Rectangle<f32>> = None; //iced::Rectangle::<f32>::default();
+    // text.draw_with(|path, _color| {
+    //     frame.fill(&path, app_theme.text.strong_color().iced_color());
+    //     // akwardly get bounding box in closure, since there is no other way to acess text's path
+    //     let char_bounding = path_bounding_rect(path);
+    //     text_bounding = Some(
+    //         text_bounding
+    //             .map(|r| r.union(&char_bounding))
+    //             .unwrap_or(char_bounding),
+    //     );
+    // });
+    // let text_bounding = text_bounding.unwrap_or_default();
+
+    //// Border
+    let node_border = Path::rounded_rectangle(
+        // text_bounding.position(),
+        // text_bounding.size(),
+        node_bounding.position(),
+        node_bounding.size(),
+        NODE_RADIUS.into(),
+    );
+
+    let node_border_color = match is_selected {
+        true => app_theme.primary.strong_color().into(),
+        false => app_theme.text.strong_color().into(),
+    };
+    let stroke = stroke::Stroke::default()
+        .with_color(node_border_color)
+        .with_width(2.0 * scale);
+    frame.stroke(&node_border, stroke);
+
+    vec![frame.into_geometry()]
+}
+
+fn _path_bounding_rect(path: Path) -> iced::Rectangle {
+    let points_iter = path
+        .raw()
+        .iter()
+        .map(|o| match o {
+            canvas::path::lyon_path::Event::Begin { at } => at,
+            canvas::path::lyon_path::Event::Line { to, .. } => to,
+            canvas::path::lyon_path::Event::Quadratic { to, .. } => to,
+            canvas::path::lyon_path::Event::Cubic { to, .. } => to,
+            canvas::path::lyon_path::Event::End { last, .. } => last,
+        })
+        .map(|p| (p.x, p.y));
+
+    let (x_min, x_max) = points_iter
+        .clone()
+        .map(|p| p.0)
+        .minmax_by(|x1, x2| x1.total_cmp(x2))
+        .into_option()
+        .unwrap_or_default();
+    let (y_min, y_max) = points_iter
+        .map(|p| p.1)
+        .minmax_by(|y1, y2| y1.total_cmp(y2))
+        .into_option()
+        .unwrap_or_default();
+
+    iced::Rectangle::new((x_min, y_min).into(), (x_max - x_min, y_max - y_min).into())
 }
 
 impl Workspace {
