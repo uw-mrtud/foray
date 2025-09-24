@@ -1,7 +1,7 @@
 use iced::{
     event,
     keyboard::Modifiers,
-    mouse::{self, ScrollDelta},
+    mouse::{self, Cursor, ScrollDelta},
     Element, Length, Rectangle, Renderer, Theme, Transformation, Vector,
 };
 
@@ -67,7 +67,7 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
-        _cursor: mouse::Cursor,
+        cursor: mouse::Cursor,
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
@@ -75,23 +75,39 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         frame.scale(self.camera.zoom);
         frame.translate((-self.camera.position).into());
 
-        //// Nodes
-        self.positions.iter().for_each(|(id, position)| {
-            frame.with_save(|frame| {
-                frame.translate((*position).into());
-                let node = self.workspace.network.graph.get_node(*id);
-                let is_selected = self.workspace.network.selected_shapes.contains(id);
-
-                draw_node(frame, self.camera.zoom, node, is_selected, self.app_theme);
-            });
-        });
-
         //// Wires
         let wire_geometry = self.positions.iter().flat_map(|(id, _p)| {
             self.workspace
                 .wire_curve(*id, self.positions, self.app_theme)
         });
         wire_geometry.for_each(|(p, s)| frame.stroke(&p, s.with_width(2.0 * self.camera.zoom)));
+
+        //// Nodes
+        self.positions.iter().for_each(|(id, position)| {
+            frame.with_save(|frame| {
+                frame.translate((*position).into());
+
+                let node_cursor_position = match cursor.position() {
+                    Some(p) => Cursor::Available(
+                        (self.camera.cursor_to_world(p.into(), bounds.size())
+                            - position.to_vector())
+                        .into(),
+                    ),
+                    None => Cursor::Unavailable,
+                };
+                let node = self.workspace.network.graph.get_node(*id);
+                let is_selected = self.workspace.network.selected_shapes.contains(id);
+
+                draw_node(
+                    frame,
+                    node_cursor_position,
+                    self.camera.zoom,
+                    node,
+                    is_selected,
+                    self.app_theme,
+                );
+            });
+        });
 
         vec![frame.into_geometry()]
     }

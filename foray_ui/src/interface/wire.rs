@@ -16,9 +16,14 @@ impl Workspace {
         app_theme: &'a AppTheme,
     ) -> Vec<(Path, Stroke<'a>)> {
         let port_position = |port: &PortRef| {
-            let node_size = template_node_size(&self.network.graph.get_node(port.node).template);
-            points[&port.node]
-                + find_port_offset(port, self.network.graph.port_index(port), node_size).into()
+            let node = self.network.graph.get_node(port.node);
+            let index = self.network.graph.port_index(port);
+
+            let port_center = match port.io {
+                IO::In => node.input_port_bounding(index).center(),
+                IO::Out => node.output_port_bounding(index).center(),
+            };
+            (port_center + points[&port.node].to_vector().into()).into()
         };
 
         //// Handle currently active wire
@@ -78,7 +83,7 @@ impl Workspace {
     }
 }
 
-use super::node::{template_node_size, NODE_RADIUS, PORT_RADIUS};
+use super::node::{NODE_RADIUS, PORT_RADIUS};
 use iced::Vector;
 
 /// Determine where a port should be positioned relative to the origin of the node

@@ -158,7 +158,7 @@ fn port_style(
 }
 
 /// Get (base, highlight) color pair for port type
-fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (Color, Color) {
+pub fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (Color, Color) {
     match port_type {
         PortType::Object(_) => app_theme.orange.color_pair(),
         PortType::Integer => app_theme.red.color_pair(),

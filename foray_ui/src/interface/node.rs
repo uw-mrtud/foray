@@ -1,17 +1,20 @@
 use std::f32::consts::PI;
 use std::time::Instant;
 
+use crate::interface::port::port_color_pair;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::widget::node_container::NodeContainer;
 use crate::workspace::{Action, Workspace, WorkspaceMessage};
 use crate::StableMap;
-use foray_data_model::node::{Dict, PortData};
+use foray_data_model::node::{Dict, PortData, PortType};
 use foray_data_model::WireDataContainer;
+use foray_graph::graph::GraphNode;
 
 use iced::font::Family;
-use iced::widget::canvas::{stroke, Geometry, Path, Text};
+use iced::mouse::Cursor;
+use iced::widget::canvas::{stroke, Path, Text};
 use iced::Alignment::Center;
 use iced::{
     border,
@@ -19,7 +22,6 @@ use iced::{
     Element,
 };
 use iced::{Font, Rectangle};
-use itertools::Itertools;
 
 use super::port::port_view;
 
@@ -52,11 +54,60 @@ impl ForayNodeInstance {
                 .into(),
         )
     }
+    pub fn port_positions(
+        &self,
+    ) -> (
+        Vec<(Rectangle, String, PortType)>,
+        Vec<(Rectangle, String, PortType)>,
+    ) {
+        fn build_port_list(
+            ports: Dict<String, PortType>,
+            position_ports: impl Fn(usize) -> Rectangle,
+        ) -> Vec<(Rectangle, String, PortType)> {
+            ports
+                .iter()
+                .enumerate()
+                .map(|(i, (port_name, port_type))| {
+                    (position_ports(i), port_name.clone(), port_type.clone())
+                })
+                .collect()
+        }
+        (
+            build_port_list(self.inputs(), |i| self.input_port_bounding(i)),
+            build_port_list(self.outputs(), |i| self.output_port_bounding(i)),
+        )
+    }
+    pub fn input_port_bounding(&self, port_index: usize) -> Rectangle {
+        let start_x = NODE_RADIUS;
+        let port_width = 12.0;
+        let port_height = 12.0;
+        let x_spacing = 4.0;
+        Rectangle::new(
+            (
+                start_x
+                    + port_index as f32 * (port_width)
+                    + port_index.saturating_sub(0) as f32 * x_spacing,
+                -port_height,
+            )
+                .into(),
+            (port_width, port_height).into(),
+        )
+    }
+
+    pub fn output_port_bounding(&self, port_index: usize) -> Rectangle {
+        let input = self.input_port_bounding(port_index);
+
+        Rectangle::new(
+            (input.x, self.node_bounding_rect().height).into(),
+            input.size(),
+        )
+    }
 }
 
 pub fn draw_node(
     // Draw directly into frame
     frame: &mut iced::widget::canvas::Frame,
+    cursor: Cursor,
     // only needed for stroke width, all other scaleing is already accounted for
     scale: f32,
     node: &ForayNodeInstance,
@@ -127,35 +178,68 @@ pub fn draw_node(
         );
         frame.draw_image(image_bounds, image_handle);
     };
+
+    //// Ports
+    let (input_ports, output_ports) = node.port_positions();
+
+    input_ports.iter().for_each(|(rect, _name, port_type)| {
+        let (base, highlight) = port_color_pair(port_type, app_theme);
+
+        let fill_color = match cursor.is_over(*rect) {
+            true => highlight,
+            false => base,
+        };
+
+        frame.stroke_rectangle(
+            rect.position(),
+            rect.size(),
+            stroke.with_color(highlight.into()),
+        );
+        frame.fill_rectangle(rect.position(), rect.size(), fill_color.iced_color());
+    });
+
+    output_ports.iter().for_each(|(rect, _name, port_type)| {
+        let (base, highlight) = port_color_pair(port_type, app_theme);
+        let fill_color = match cursor.is_over(*rect) {
+            true => highlight,
+            false => base,
+        };
+        frame.stroke_rectangle(
+            rect.position(),
+            rect.size(),
+            stroke.with_color(highlight.into()),
+        );
+        frame.fill_rectangle(rect.position(), rect.size(), fill_color.iced_color());
+    });
 }
 
-fn _path_bounding_rect(path: Path) -> iced::Rectangle {
-    let points_iter = path
-        .raw()
-        .iter()
-        .map(|o| match o {
-            canvas::path::lyon_path::Event::Begin { at } => at,
-            canvas::path::lyon_path::Event::Line { to, .. } => to,
-            canvas::path::lyon_path::Event::Quadratic { to, .. } => to,
-            canvas::path::lyon_path::Event::Cubic { to, .. } => to,
-            canvas::path::lyon_path::Event::End { last, .. } => last,
-        })
-        .map(|p| (p.x, p.y));
-
-    let (x_min, x_max) = points_iter
-        .clone()
-        .map(|p| p.0)
-        .minmax_by(|x1, x2| x1.total_cmp(x2))
-        .into_option()
-        .unwrap_or_default();
-    let (y_min, y_max) = points_iter
-        .map(|p| p.1)
-        .minmax_by(|y1, y2| y1.total_cmp(y2))
-        .into_option()
-        .unwrap_or_default();
-
-    iced::Rectangle::new((x_min, y_min).into(), (x_max - x_min, y_max - y_min).into())
-}
+// fn _path_bounding_rect(path: Path) -> iced::Rectangle {
+//     let points_iter = path
+//         .raw()
+//         .iter()
+//         .map(|o| match o {
+//             canvas::path::lyon_path::Event::Begin { at } => at,
+//             canvas::path::lyon_path::Event::Line { to, .. } => to,
+//             canvas::path::lyon_path::Event::Quadratic { to, .. } => to,
+//             canvas::path::lyon_path::Event::Cubic { to, .. } => to,
+//             canvas::path::lyon_path::Event::End { last, .. } => last,
+//         })
+//         .map(|p| (p.x, p.y));
+//
+//     let (x_min, x_max) = points_iter
+//         .clone()
+//         .map(|p| p.0)
+//         .minmax_by(|x1, x2| x1.total_cmp(x2))
+//         .into_option()
+//         .unwrap_or_default();
+//     let (y_min, y_max) = points_iter
+//         .map(|p| p.1)
+//         .minmax_by(|y1, y2| y1.total_cmp(y2))
+//         .into_option()
+//         .unwrap_or_default();
+//
+//     iced::Rectangle::new((x_min, y_min).into(), (x_max - x_min, y_max - y_min).into())
+// }
 
 impl Workspace {
     pub fn node_content<'a>(
