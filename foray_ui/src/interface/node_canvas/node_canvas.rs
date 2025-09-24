@@ -69,31 +69,31 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         bounds: Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<canvas::Geometry> {
-        let geo = self
-            .positions
-            .iter()
-            .flat_map(|(id, position)| {
-                // Create frame inside closure, because it can't be moved
-                let mut frame = canvas::Frame::new(renderer, bounds.size());
+        let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-                let center_offset = Vector::new(bounds.width / 2.0, bounds.height / 2.0);
+        frame.translate(Vector::new(bounds.width / 2.0, bounds.height / 2.0));
+        frame.scale(self.camera.zoom);
+        frame.translate((-self.camera.position).into());
 
-                let camera_translation = -self.camera.position;
-                let camera_scale = self.camera.zoom;
-
-                frame.translate(center_offset);
-                frame.scale(camera_scale);
-
-                frame.translate(camera_translation.into());
+        //// Nodes
+        self.positions.iter().for_each(|(id, position)| {
+            frame.with_save(|frame| {
                 frame.translate((*position).into());
                 let node = self.workspace.network.graph.get_node(*id);
                 let is_selected = self.workspace.network.selected_shapes.contains(id);
 
-                draw_node(frame, self.camera.zoom, node, is_selected, self.app_theme)
-            })
-            .collect();
+                draw_node(frame, self.camera.zoom, node, is_selected, self.app_theme);
+            });
+        });
 
-        geo
+        //// Wires
+        let wire_geometry = self.positions.iter().flat_map(|(id, _p)| {
+            self.workspace
+                .wire_curve(*id, self.positions, self.app_theme)
+        });
+        wire_geometry.for_each(|(p, s)| frame.stroke(&p, s.with_width(2.0 * self.camera.zoom)));
+
+        vec![frame.into_geometry()]
     }
 
     fn update(
@@ -103,7 +103,7 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         bounds: Rectangle,
         cursor: mouse::Cursor,
     ) -> (event::Status, Option<WorkspaceMessage>) {
-        let world_cursor_position = match cursor.position_in(bounds) {
+        let world_cursor_position = match cursor.position() {
             Some(p) => self.camera.cursor_to_world(p.into(), bounds.size()),
             None => return (event::Status::Ignored, None),
         };
@@ -111,14 +111,13 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         match event {
             Event::Mouse(event) => match event {
                 mouse::Event::WheelScrolled { delta } => {
-                    // if let Some(update_camera) = &self.update_camera {
                     let scroll_amount = match delta {
-                        ScrollDelta::Lines { x, y } => (-x * 2.0, -y * 2.0),
+                        ScrollDelta::Lines { x, y } => (-x * 4.0, -y * 4.0),
                         ScrollDelta::Pixels { x, y } => (-x, -y),
                     };
                     let mut new_camera = self.camera;
                     if state.modifiers.control() {
-                        let zoom_scale = 200.0;
+                        let zoom_scale = 400.0;
                         let zoom_min = 0.20;
                         let zoom_max = 8.00;
                         //// Zoom
@@ -174,9 +173,6 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                         Some(WorkspaceMessage::UpdateCamera(new_camera)),
                     );
                 }
-                // mouse::Event::CursorEntered => todo!(),
-                // mouse::Event::CursorLeft => todo!(),
-                // mouse::Event::CursorMoved { position } => todo!(),
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
                     for (id, position) in self.positions.iter() {
                         if self
@@ -193,12 +189,20 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                             );
                         }
                     }
-                    // Hit no shapes, deselect? Or start drag?
                     return (
                         event::Status::Captured,
                         Some(WorkspaceMessage::OnCanvasDown(None)),
                     );
-                } // mouse::Event::ButtonReleased(button) => todo!(),
+                }
+                mouse::Event::ButtonReleased(mouse::Button::Left) => {
+                    return (event::Status::Captured, Some(WorkspaceMessage::OnCanvasUp));
+                }
+                mouse::Event::CursorMoved { position } => {
+                    return (
+                        event::Status::Captured,
+                        Some(WorkspaceMessage::OnMove(position.into())),
+                    )
+                }
                 _ => {}
             },
             Event::Touch(_event) => {}

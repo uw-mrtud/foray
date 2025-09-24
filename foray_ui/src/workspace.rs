@@ -22,7 +22,7 @@ use foray_py::py_node::{PyConfig, PyNodeTemplate};
 use iced::event::listen_with;
 use iced::keyboard::key::Named;
 use iced::keyboard::{Event::KeyPressed, Key, Modifiers};
-use iced::widget::{column, container, mouse_area, row, stack, text, vertical_rule};
+use iced::widget::{container, horizontal_space, mouse_area, row, stack, text, vertical_rule};
 use iced::Event::Keyboard;
 use iced::Length::Fill;
 use iced::{mouse, window, Element, Renderer, Subscription, Task, Theme};
@@ -586,13 +586,20 @@ impl Workspace {
             }
         })
         .center(Fill);
-        let content = column![
-            row![side_bar(self), vertical_rule(SEPERATOR), network_panel],
-            //match self.show_palette_ui {
-            //    true => column![horizontal_rule(SEPERATOR), self.app_theme.view()],
-            //    false => column![],
-            //}
+
+        // Stack side bar over panel, to avoid canvas drawing images outside bounds (iced bug)
+        let content = stack![
+            row![network_panel],
+            row![
+                iced::widget::opaque(side_bar(self)),
+                vertical_rule(SEPERATOR),
+                horizontal_space()
+            ],
         ];
+        //match self.show_palette_ui {
+        //    true => column![horizontal_rule(SEPERATOR), self.app_theme.view()],
+        //    false => column![],
+        //}
 
         let output: Element<WorkspaceMessage, Theme, Renderer> = match &self.action {
             Action::AddingNode => stack![

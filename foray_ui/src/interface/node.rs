@@ -55,13 +55,14 @@ impl ForayNodeInstance {
 }
 
 pub fn draw_node(
-    mut frame: iced::widget::canvas::Frame,
+    // Draw directly into frame
+    frame: &mut iced::widget::canvas::Frame,
     // only needed for stroke width, all other scaleing is already accounted for
     scale: f32,
     node: &ForayNodeInstance,
     is_selected: bool,
     app_theme: &AppTheme,
-) -> Vec<Geometry> {
+) {
     let node_bounding = node.node_bounding_rect();
     //// Name
     let text = Text {
@@ -114,8 +115,18 @@ pub fn draw_node(
         .with_color(node_border_color)
         .with_width(2.0 * scale);
     frame.stroke(&node_border, stroke);
+    frame.fill(&node_border, app_theme.background.base_color.iced_color());
 
-    vec![frame.into_geometry()]
+    //// Image
+    if let Some(image_handle) = &node.visualization.image_handle {
+        let image_size = 60.0;
+        let image_bounds = Rectangle::new(
+            // (8.0, node_bounding.height).into(),
+            (node_bounding.width + 1.0, 0.0).into(),
+            (image_size, image_size).into(),
+        );
+        frame.draw_image(image_bounds, image_handle);
+    };
 }
 
 fn _path_bounding_rect(path: Path) -> iced::Rectangle {

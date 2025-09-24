@@ -6,6 +6,7 @@ use crate::style::icon::icon;
 use crate::workspace::{Workspace, WorkspaceMessage};
 use foray_data_model::node::{Dict, PortData, UIParameter};
 use foray_data_model::WireDataContainer;
+use iced::widget::container::background;
 use iced::*;
 use widget::{column, *};
 
@@ -116,6 +117,7 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
         .height(Fill)
         .width(200.),
     )
+    .style(|theme| background(theme.palette().background))
     .into()
 }
 

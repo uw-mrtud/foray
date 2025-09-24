@@ -2,17 +2,17 @@ use std::iter::once;
 
 use crate::style::theme::AppTheme;
 use crate::workspace::Workspace;
-use crate::StableMap;
 use crate::{math::Point, workspace::Action};
 use canvas::{Path, Stroke};
 use foray_graph::graph::{PortRef, IO};
 use iced::{widget::*, Size};
+use indexmap::IndexMap;
 
 impl Workspace {
     pub fn wire_curve<'a>(
         &'a self,
         wire_end_node: u32,
-        points: &StableMap<u32, Point>,
+        points: &IndexMap<u32, Point>,
         app_theme: &'a AppTheme,
     ) -> Vec<(Path, Stroke<'a>)> {
         let port_position = |port: &PortRef| {
