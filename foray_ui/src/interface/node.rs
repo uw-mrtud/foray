@@ -10,7 +10,7 @@ use crate::workspace::{Action, Workspace, WorkspaceMessage};
 use crate::StableMap;
 use foray_data_model::node::{Dict, PortData, PortType};
 use foray_data_model::WireDataContainer;
-use foray_graph::graph::GraphNode;
+use foray_graph::graph::{GraphNode, PortRef, IO};
 
 use iced::font::Family;
 use iced::mouse::Cursor;
@@ -56,25 +56,46 @@ impl ForayNodeInstance {
     }
     pub fn port_positions(
         &self,
+        node_id: u32,
     ) -> (
-        Vec<(Rectangle, String, PortType)>,
-        Vec<(Rectangle, String, PortType)>,
+        Vec<(Rectangle, PortRef, PortType)>,
+        Vec<(Rectangle, PortRef, PortType)>,
     ) {
         fn build_port_list(
             ports: Dict<String, PortType>,
             position_ports: impl Fn(usize) -> Rectangle,
-        ) -> Vec<(Rectangle, String, PortType)> {
+            node_id: u32,
+            io: IO,
+        ) -> Vec<(Rectangle, PortRef, PortType)> {
             ports
-                .iter()
+                .into_iter()
                 .enumerate()
                 .map(|(i, (port_name, port_type))| {
-                    (position_ports(i), port_name.clone(), port_type.clone())
+                    (
+                        position_ports(i),
+                        PortRef {
+                            node: node_id,
+                            name: port_name,
+                            io,
+                        },
+                        port_type,
+                    )
                 })
                 .collect()
         }
         (
-            build_port_list(self.inputs(), |i| self.input_port_bounding(i)),
-            build_port_list(self.outputs(), |i| self.output_port_bounding(i)),
+            build_port_list(
+                self.inputs(),
+                |i| self.input_port_bounding(i),
+                node_id,
+                IO::In,
+            ),
+            build_port_list(
+                self.outputs(),
+                |i| self.output_port_bounding(i),
+                node_id,
+                IO::Out,
+            ),
         )
     }
     pub fn input_port_bounding(&self, port_index: usize) -> Rectangle {
@@ -108,9 +129,11 @@ pub fn draw_node(
     // Draw directly into frame
     frame: &mut iced::widget::canvas::Frame,
     cursor: Cursor,
-    // only needed for stroke width, all other scaleing is already accounted for
+    // only needed for stroke width, all other scaling is already accounted for
     scale: f32,
     node: &ForayNodeInstance,
+    node_id: u32,
+    action: Action,
     is_selected: bool,
     app_theme: &AppTheme,
 ) {
@@ -180,37 +203,41 @@ pub fn draw_node(
     };
 
     //// Ports
-    let (input_ports, output_ports) = node.port_positions();
+    let (input_ports, output_ports) = node.port_positions(node_id);
 
-    input_ports.iter().for_each(|(rect, _name, port_type)| {
-        let (base, highlight) = port_color_pair(port_type, app_theme);
+    input_ports
+        .iter()
+        .chain(output_ports.iter())
+        .for_each(|(rect, port_ref, port_type)| {
+            let (base, highlight) = port_color_pair(port_type, app_theme);
 
-        let fill_color = match cursor.is_over(*rect) {
-            true => highlight,
-            false => base,
-        };
+            let fill_color = match cursor.is_over(*rect) {
+                true => highlight,
+                false => base,
+            };
+            let fill_alpha = match &action {
+                Action::CreatingInputWire(creation_port, _)
+                | Action::CreatingOutputWire(creation_port, _) => {
+                    if port_ref == creation_port {
+                        0.5
+                    } else {
+                        1.0
+                    }
+                }
+                _ => 1.0,
+            };
 
-        frame.stroke_rectangle(
-            rect.position(),
-            rect.size(),
-            stroke.with_color(highlight.into()),
-        );
-        frame.fill_rectangle(rect.position(), rect.size(), fill_color.iced_color());
-    });
-
-    output_ports.iter().for_each(|(rect, _name, port_type)| {
-        let (base, highlight) = port_color_pair(port_type, app_theme);
-        let fill_color = match cursor.is_over(*rect) {
-            true => highlight,
-            false => base,
-        };
-        frame.stroke_rectangle(
-            rect.position(),
-            rect.size(),
-            stroke.with_color(highlight.into()),
-        );
-        frame.fill_rectangle(rect.position(), rect.size(), fill_color.iced_color());
-    });
+            frame.stroke_rectangle(
+                rect.position(),
+                rect.size(),
+                stroke.with_color(highlight.into()),
+            );
+            frame.fill_rectangle(
+                rect.position(),
+                rect.size(),
+                fill_color.iced_color().scale_alpha(fill_alpha),
+            );
+        });
 }
 
 // fn _path_bounding_rect(path: Path) -> iced::Rectangle {

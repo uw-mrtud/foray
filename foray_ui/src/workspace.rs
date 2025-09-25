@@ -174,9 +174,28 @@ impl Workspace {
                 }
                 _ => {}
             },
-            WorkspaceMessage::PortPress(port) => match port.io {
-                IO::In => self.action = Action::CreatingInputWire(port, None),
-                IO::Out => self.action = Action::CreatingOutputWire(port, None),
+            WorkspaceMessage::PortPress(port) => match &self.action.clone() {
+                Action::Idle => match port.io {
+                    IO::In => self.action = Action::CreatingInputWire(port, None),
+                    IO::Out => self.action = Action::CreatingOutputWire(port, None),
+                },
+                Action::CreatingInputWire(input, _) => match port.io {
+                    IO::In => self.action = Action::Idle,
+                    IO::Out => {
+                        self.network.add_edge(input, &port);
+                        self.action = Action::Idle;
+                        return Task::done(WorkspaceMessage::QueueCompute(input.node));
+                    }
+                },
+                Action::CreatingOutputWire(output, _) => match port.io {
+                    IO::Out => self.action = Action::Idle,
+                    IO::In => {
+                        self.network.add_edge(&port, output);
+                        self.action = Action::Idle;
+                        return Task::done(WorkspaceMessage::QueueCompute(port.node));
+                    }
+                },
+                _ => {}
             },
             WorkspaceMessage::PortRelease => {
                 let task = match &self.action.clone() {

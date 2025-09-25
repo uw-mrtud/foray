@@ -42,7 +42,7 @@ pub struct PortRef {
     pub io: IO,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum IO {
     In,
     Out,

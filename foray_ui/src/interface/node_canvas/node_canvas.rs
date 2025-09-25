@@ -75,10 +75,16 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         frame.scale(self.camera.zoom);
         frame.translate((-self.camera.position).into());
 
+        let world_cursor_position = match cursor.position() {
+            Some(p) => {
+                Cursor::Available((self.camera.cursor_to_world(p.into(), bounds.size())).into())
+            }
+            None => Cursor::Unavailable,
+        };
         //// Wires
         let wire_geometry = self.positions.iter().flat_map(|(id, _p)| {
             self.workspace
-                .wire_curve(*id, self.positions, self.app_theme)
+                .create_wires(*id, self.positions, world_cursor_position, self.app_theme)
         });
         wire_geometry.for_each(|(p, s)| frame.stroke(&p, s.with_width(2.0 * self.camera.zoom)));
 
@@ -103,6 +109,8 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                     node_cursor_position,
                     self.camera.zoom,
                     node,
+                    *id,
+                    self.workspace.action.clone(),
                     is_selected,
                     self.app_theme,
                 );
@@ -190,25 +198,53 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                     );
                 }
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
-                    for (id, position) in self.positions.iter() {
-                        if self
-                            .workspace
-                            .network
-                            .graph
-                            .get_node(*id)
-                            .node_bounding_rect()
-                            .contains((world_cursor_position - position.to_vector()).into())
-                        {
+                    for (node_id, position) in self.positions.iter() {
+                        let node = self.workspace.network.graph.get_node(*node_id);
+                        let node_cursor_position: iced::Point =
+                            (world_cursor_position - position.to_vector()).into();
+
+                        // Node Collision
+                        if node.node_bounding_rect().contains(node_cursor_position) {
                             return (
                                 event::Status::Captured,
-                                Some(WorkspaceMessage::OnCanvasDown(Some(*id))),
+                                Some(WorkspaceMessage::OnCanvasDown(Some(*node_id))),
                             );
+                        }
+                        // Port Collision
+                        let (input_ports, output_ports) = node.port_positions(*node_id);
+                        for (port_rect, port_ref, _) in input_ports.into_iter().chain(output_ports)
+                        {
+                            if port_rect.contains(node_cursor_position) {
+                                return (
+                                    event::Status::Captured,
+                                    Some(WorkspaceMessage::PortPress(port_ref)),
+                                );
+                            }
                         }
                     }
                     return (
                         event::Status::Captured,
                         Some(WorkspaceMessage::OnCanvasDown(None)),
                     );
+                }
+                mouse::Event::ButtonPressed(mouse::Button::Right) => {
+                    for (node_id, position) in self.positions.iter() {
+                        let node = self.workspace.network.graph.get_node(*node_id);
+                        let node_cursor_position: iced::Point =
+                            (world_cursor_position - position.to_vector()).into();
+
+                        // Port Collision
+                        let (input_ports, output_ports) = node.port_positions(*node_id);
+                        for (port_rect, port_ref, _) in input_ports.into_iter().chain(output_ports)
+                        {
+                            if port_rect.contains(node_cursor_position) {
+                                return (
+                                    event::Status::Captured,
+                                    Some(WorkspaceMessage::PortDelete(port_ref)),
+                                );
+                            }
+                        }
+                    }
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left) => {
                     return (event::Status::Captured, Some(WorkspaceMessage::OnCanvasUp));
