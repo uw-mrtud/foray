@@ -12,7 +12,6 @@ use crate::python_env;
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
-use crate::widget::shapes::ShapeId;
 
 use foray_data_model::node::{Dict, PortData};
 use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
@@ -41,8 +40,8 @@ pub enum Action {
     Idle,
     DragPan(Vector),
     DragNode(Vec<(u32, Vector)>),
-    CreatingInputWire(PortRef, Option<PortRef>),
-    CreatingOutputWire(PortRef, Option<PortRef>),
+    CreatingInputWire(PortRef),
+    CreatingOutputWire(PortRef),
     AddingNode,
     LoadingNetwork,
     SavingNetwork,
@@ -71,14 +70,12 @@ pub enum WorkspaceMessage {
     UpdateCamera(Camera),
 
     //// Port
-    PortStartHover(PortRef),
-    PortEndHover(PortRef),
     PortPress(PortRef),
-    PortRelease,
+    PortMouseUp(PortRef),
     PortDelete(PortRef),
 
     //// Node
-    OnCanvasDown(Option<ShapeId>),
+    OnCanvasDown(Option<u32>),
     OnCanvasUp,
     OpenAddNodeUi,
     AddNode(ForayNodeTemplate),
@@ -151,64 +148,62 @@ impl Workspace {
             }
             WorkspaceMessage::UpdateCamera(camera) => self.network.shapes.camera = camera,
 
-            //// Port
-            WorkspaceMessage::PortStartHover(hover_port) => match &self.action {
-                Action::CreatingInputWire(input, _) => {
-                    if *input != hover_port {
-                        self.action = Action::CreatingInputWire(input.clone(), Some(hover_port))
-                    }
-                }
-                Action::CreatingOutputWire(output, _) => {
-                    if *output != hover_port {
-                        self.action = Action::CreatingOutputWire(output.clone(), Some(hover_port))
-                    }
-                }
-                _ => {}
-            },
-            WorkspaceMessage::PortEndHover(_port) => match &self.action {
-                Action::CreatingInputWire(input, _) => {
-                    self.action = Action::CreatingInputWire(input.clone(), None)
-                }
-                Action::CreatingOutputWire(output, _) => {
-                    self.action = Action::CreatingOutputWire(output.clone(), None)
-                }
-                _ => {}
-            },
             WorkspaceMessage::PortPress(port) => match &self.action.clone() {
                 Action::Idle => match port.io {
-                    IO::In => self.action = Action::CreatingInputWire(port, None),
-                    IO::Out => self.action = Action::CreatingOutputWire(port, None),
+                    IO::In => self.action = Action::CreatingInputWire(port),
+                    IO::Out => self.action = Action::CreatingOutputWire(port),
                 },
-                Action::CreatingInputWire(input, _) => match port.io {
-                    IO::In => self.action = Action::Idle,
+                Action::CreatingInputWire(input) => match port.io {
+                    IO::In => {}
                     IO::Out => {
-                        self.network.add_edge(input, &port);
-                        self.action = Action::Idle;
-                        return Task::done(WorkspaceMessage::QueueCompute(input.node));
+                        if port.node != input.node {
+                            self.network.add_edge(input, &port);
+                            self.action = Action::Idle;
+                            return Task::done(WorkspaceMessage::QueueCompute(input.node));
+                        }
                     }
                 },
-                Action::CreatingOutputWire(output, _) => match port.io {
-                    IO::Out => self.action = Action::Idle,
+                Action::CreatingOutputWire(output) => match port.io {
+                    IO::Out => {}
                     IO::In => {
-                        self.network.add_edge(&port, output);
-                        self.action = Action::Idle;
-                        return Task::done(WorkspaceMessage::QueueCompute(port.node));
+                        if port.node != output.node {
+                            self.network.add_edge(&port, output);
+                            self.action = Action::Idle;
+                            return Task::done(WorkspaceMessage::QueueCompute(port.node));
+                        }
                     }
                 },
                 _ => {}
             },
-            WorkspaceMessage::PortRelease => {
-                let task = match &self.action.clone() {
-                    Action::CreatingInputWire(input, Some(output))
-                    | Action::CreatingOutputWire(output, Some(input)) => {
-                        self.network.add_edge(input, output);
-                        Task::done(WorkspaceMessage::QueueCompute(output.node))
+            // If the user clicks, and drags a port, make the connection on mouse up
+            WorkspaceMessage::PortMouseUp(port) => match &self.action.clone() {
+                Action::Idle => {}
+                Action::CreatingInputWire(input) => {
+                    if port.node != input.node {
+                        match port.io {
+                            IO::In => {}
+                            IO::Out => {
+                                self.network.add_edge(input, &port);
+                                self.action = Action::Idle;
+                                return Task::done(WorkspaceMessage::QueueCompute(input.node));
+                            }
+                        }
                     }
-                    _ => Task::none(),
-                };
-                self.action = Action::Idle;
-                return task;
-            }
+                }
+                Action::CreatingOutputWire(output) => {
+                    if port.node != output.node {
+                        match port.io {
+                            IO::Out => {}
+                            IO::In => {
+                                self.network.add_edge(&port, output);
+                                self.action = Action::Idle;
+                                return Task::done(WorkspaceMessage::QueueCompute(port.node));
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            },
             WorkspaceMessage::PortDelete(port) => {
                 self.network.remove_edge(port);
             }
@@ -271,7 +266,6 @@ impl Workspace {
                         );
                     } else {
                         self.user_data.set_new_node_path(&selected_tree_path);
-                        //self.action = Action::AddingNode(selected_tree_path)
                     }
                 }
                 _ => error!(
@@ -582,27 +576,12 @@ impl Workspace {
         let network_panel = container(match self.action {
             Action::LoadingNetwork => container(text("loading...")),
             Action::SavingNetwork => container(text("saving...")),
-            _ => {
-                container(node_canvas::node_canvas(
-                    &self.network.shapes.shape_positions,
-                    self.network.shapes.camera,
-                    self,
-                    app_theme,
-                ))
-                // container(
-                //     workspace_canvas(
-                //         &self.network.shapes,
-                //         //// Node view
-                //         |id| self.node_content(id, app_theme),
-                //         //// Wires paths
-                //         |wire_end_node, points| self.wire_curve(wire_end_node, points, app_theme),
-                //     )
-                //     .on_cursor_move(WorkspaceMessage::OnMove)
-                //     .on_press(WorkspaceMessage::OnCanvasDown)
-                //     .on_release(WorkspaceMessage::OnCanvasUp)
-                //     .pan(WorkspaceMessage::ScrollPan),
-                // )
-            }
+            _ => container(node_canvas::node_canvas(
+                &self.network.shapes.shape_positions,
+                self.network.shapes.camera,
+                self,
+                app_theme,
+            )),
         })
         .center(Fill);
 

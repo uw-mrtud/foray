@@ -1,161 +1,49 @@
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, RwLock},
-};
-
-use foray_data_model::node::{PortData, PortType};
-use foray_graph::graph::{GraphNode, PortRef, IO};
+use foray_data_model::node::PortType;
 use iced::{
     alignment::Horizontal::Right,
-    border,
-    widget::{
-        column, container, container::background, mouse_area, row, text, tooltip, vertical_space,
-    },
+    widget::{column, container, container::background, row, text},
     Alignment::Center,
-    Border, Element, Size,
+    Border, Element,
 };
 use itertools::Itertools;
 
 use crate::{
-    math::Point,
-    node_instance::ForayNodeInstance,
     style::{color::Color, theme::AppTheme},
-    widget::{custom_button, pin::Pin},
-    workspace::WorkspaceMessage,
     CODE_FONT,
 };
 
-use super::node::{NODE_RADIUS, PORT_RADIUS};
-
-pub fn port_view<'a>(
-    node_id: u32,
-    node_data: &ForayNodeInstance,
-    input_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
-    output_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
-    node_size: Size,
-    app_theme: &'a AppTheme,
-    show_tooltip: bool,
-) -> Vec<Element<'a, WorkspaceMessage>> {
-    let port_x = |i: usize| i as f32 * (node_size.width / 4.) + NODE_RADIUS * 2.;
-
-    //TODO: Unify in/out port view creation
-    let in_port_buttons = node_data
-        .inputs()
-        .into_iter()
-        .enumerate()
-        .map(|(i, port)| (Point::new(port_x(i), -PORT_RADIUS), port))
-        .map(|(point, port)| {
-            let (name, port_type) = port;
-            let filled_port_type = get_filled_type(&name, input_data);
-            let port_tooltip = match show_tooltip {
-                true => port_tooltip(name.clone(), port_type.clone(), app_theme),
-                false => text("").into(),
-            };
-
-            let in_port = PortRef {
-                node: node_id,
-                name,
-                io: IO::In,
-            };
-
-            Pin::new(tooltip(
-                mouse_area(
-                    custom_button::Button::new("")
-                        .on_press(WorkspaceMessage::PortPress(in_port.clone()))
-                        .on_drag(WorkspaceMessage::OnMove)
-                        .on_right_press(WorkspaceMessage::PortDelete(in_port.clone()))
-                        .on_release_self(WorkspaceMessage::PortRelease)
-                        .style(move |_t, s| {
-                            port_style(port_type.clone(), filled_port_type.clone(), s, app_theme)
-                        })
-                        .width(PORT_RADIUS * 2.)
-                        .height(PORT_RADIUS * 2.),
-                )
-                .on_enter(WorkspaceMessage::PortStartHover(in_port.clone()))
-                .on_exit(WorkspaceMessage::PortEndHover(in_port.clone())),
-                port_tooltip,
-                tooltip::Position::Top,
-            ))
-            .position(point)
-            .into()
-        });
-    let out_port_buttons = node_data
-        .outputs()
-        .into_iter()
-        .enumerate()
-        .map(|(i, port)| (Point::new(port_x(i), node_size.height - PORT_RADIUS), port))
-        .map(|(point, port)| {
-            let (name, port_type) = port;
-
-            let filled_port_type = get_filled_type(&name, output_data);
-            let port_tooltip = match show_tooltip {
-                true => port_tooltip(name.clone(), port_type.clone(), app_theme),
-                false => text("").into(),
-            };
-
-            let out_port = PortRef {
-                node: node_id,
-                name,
-                io: IO::Out,
-            };
-
-            Pin::new(
-                mouse_area(tooltip(
-                    custom_button::Button::new(vertical_space())
-                        .on_press(WorkspaceMessage::PortPress(out_port.clone()))
-                        .on_drag(WorkspaceMessage::OnMove)
-                        .on_right_press(WorkspaceMessage::PortDelete(out_port.clone()))
-                        .on_release_self(WorkspaceMessage::PortRelease)
-                        .style(move |_t, s| {
-                            port_style(port_type.clone(), filled_port_type.clone(), s, app_theme)
-                        })
-                        .width(PORT_RADIUS * 2.)
-                        .height(PORT_RADIUS * 2.)
-                        .padding(2.0),
-                    port_tooltip,
-                    tooltip::Position::Bottom,
-                ))
-                .on_enter(WorkspaceMessage::PortStartHover(out_port.clone()))
-                .on_exit(WorkspaceMessage::PortEndHover(out_port.clone())),
-            )
-            .position(point)
-            .into()
-        });
-    in_port_buttons.chain(out_port_buttons).collect()
-}
-
-fn get_filled_type(
-    name: &String,
-    input_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
-) -> Option<PortType> {
-    if let Some(port_data) = input_data.get(name) {
-        Some((&*port_data.read().unwrap()).into())
-    } else {
-        None
-    }
-}
-
-fn port_style(
-    port_type: PortType,
-    filled_type: Option<PortType>,
-    s: custom_button::Status,
-    app_theme: &AppTheme,
-) -> custom_button::Style {
-    let color_pair = port_color_pair(&port_type, app_theme);
-    let filled_color = match filled_type {
-        Some(pt) => port_color_pair(&pt, app_theme).0,
-        None => app_theme.background.base_color.into(),
-    };
-
-    let mut style = custom_button::custom(
-        s,
-        color_pair.0.into(),
-        color_pair.1.into(),
-        filled_color.into(),
-    );
-    style.border.radius = border::radius(100.);
-    style
-}
+// fn get_filled_type(
+//     name: &String,
+//     input_data: &BTreeMap<String, Arc<RwLock<PortData>>>,
+// ) -> Option<PortType> {
+//     if let Some(port_data) = input_data.get(name) {
+//         Some((&*port_data.read().unwrap()).into())
+//     } else {
+//         None
+//     }
+// }
+//
+// fn port_style(
+//     port_type: PortType,
+//     filled_type: Option<PortType>,
+//     s: custom_button::Status,
+//     app_theme: &AppTheme,
+// ) -> custom_button::Style {
+//     let color_pair = port_color_pair(&port_type, app_theme);
+//     let filled_color = match filled_type {
+//         Some(pt) => port_color_pair(&pt, app_theme).0,
+//         None => app_theme.background.base_color.into(),
+//     };
+//
+//     let mut style = custom_button::custom(
+//         s,
+//         color_pair.0.into(),
+//         color_pair.1.into(),
+//         filled_color.into(),
+//     );
+//     style.border.radius = border::radius(100.);
+//     style
+// }
 
 /// Get (base, highlight) color pair for port type
 pub fn port_color_pair(port_type: &PortType, app_theme: &AppTheme) -> (Color, Color) {
@@ -196,7 +84,7 @@ fn port_type_label<'a, M: 'a>(
 }
 
 /// Display summary of port information
-fn port_tooltip<'a, M: 'a>(
+pub fn port_tooltip<'a, M: 'a>(
     port_name: String,
     port_type: PortType,
     app_theme: &'a AppTheme,

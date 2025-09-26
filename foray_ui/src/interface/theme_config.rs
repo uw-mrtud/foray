@@ -1,4 +1,6 @@
 use iced::alignment::Horizontal::Right;
+use iced::widget::container;
+use iced::widget::container::background;
 use iced::widget::horizontal_space;
 use iced::widget::scrollable::{Direction, Scrollbar};
 use iced::{
@@ -9,7 +11,6 @@ use iced::{
 use crate::app::Message;
 use crate::style::color::{Color, GuiColor};
 use crate::style::theme::AppTheme;
-use crate::widget::custom_button::{self, custom};
 
 use super::SEPERATOR;
 
@@ -52,15 +53,8 @@ impl AppTheme {
     /// Debug view for editing themes, not intended to be end user facing
     pub fn view(&'_ self) -> Element<'_, Message> {
         let color_element = move |color: Color| {
-            custom_button::Button::new("")
-                .style(move |_t, _s| {
-                    custom(
-                        custom_button::Status::Active,
-                        color.into(),
-                        color.into(),
-                        color.into(),
-                    )
-                })
+            container(text(""))
+                .style(move |_t| background(color.iced_color()))
                 .width(50.)
                 .height(20.)
         };

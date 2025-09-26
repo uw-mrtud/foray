@@ -8,27 +8,27 @@ use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    interface::node_canvas,
     math::Point,
     node_instance::{ForayNodeInstance, NodeStatus},
-    widget::{shapes::ShapeId, workspace_canvas},
     workspace::Action,
 };
 
 type UndoStash = Vec<(
     Graph<ForayNodeInstance, PortType, PortData>,
-    IndexMap<ShapeId, Point>,
+    IndexMap<u32, Point>,
 )>;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Network {
     //// Persistant data
     pub graph: Graph<ForayNodeInstance, PortType, PortData>,
-    pub shapes: workspace_canvas::State,
+    pub shapes: node_canvas::node_canvas::State,
     //// Runtime data
     #[serde(skip)]
     pub file: Option<PathBuf>,
     #[serde(skip)]
-    pub selected_shapes: HashSet<ShapeId>,
+    pub selected_shapes: HashSet<u32>,
     /// Nodes that are waiting for dependencies before executing
     /// TODO: make these cancleable
     #[serde(skip)]

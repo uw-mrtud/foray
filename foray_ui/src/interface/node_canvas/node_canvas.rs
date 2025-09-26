@@ -8,6 +8,7 @@ use iced::{
 use iced::widget::canvas;
 use iced::widget::canvas::event::Event;
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     interface::node::draw_node,
@@ -17,6 +18,27 @@ use crate::{
 };
 
 use super::camera::Camera;
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct State {
+    pub camera: Camera,
+    pub shape_positions: IndexMap<u32, Point>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::new([].into())
+    }
+}
+
+impl State {
+    pub fn new(shapes: IndexMap<u32, Point>) -> State {
+        Self {
+            camera: Camera::default(),
+            shape_positions: shapes,
+        }
+    }
+}
 
 pub fn node_canvas<'a>(
     shapes: &'a IndexMap<u32, Point>,
@@ -247,6 +269,23 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                     }
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left) => {
+                    for (node_id, position) in self.positions.iter() {
+                        let node = self.workspace.network.graph.get_node(*node_id);
+                        let node_cursor_position: iced::Point =
+                            (world_cursor_position - position.to_vector()).into();
+
+                        // Port Collision
+                        let (input_ports, output_ports) = node.port_positions(*node_id);
+                        for (port_rect, port_ref, _) in input_ports.into_iter().chain(output_ports)
+                        {
+                            if port_rect.contains(node_cursor_position) {
+                                return (
+                                    event::Status::Captured,
+                                    Some(WorkspaceMessage::PortMouseUp(port_ref)),
+                                );
+                            }
+                        }
+                    }
                     return (event::Status::Captured, Some(WorkspaceMessage::OnCanvasUp));
                 }
                 mouse::Event::CursorMoved { position } => {

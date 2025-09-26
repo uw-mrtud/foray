@@ -31,7 +31,7 @@ impl Workspace {
         //// Handle currently active wire
         // TODO: test nodes with multiple out ports
         let wire_creation_state = match (&self.action, world_cursor_position.position()) {
-            (Action::CreatingInputWire(input, _), Some(world_cursor)) => {
+            (Action::CreatingInputWire(input), Some(world_cursor)) => {
                 let hovered_output_port = self.network.graph.nodes_ref().iter().find_map(|n_id| {
                     let node = self.network.graph.get_node(*n_id);
                     let node_cursor_position = Point::from(world_cursor) - points[n_id].to_vector();
@@ -48,7 +48,7 @@ impl Workspace {
                 });
                 WireCreationState::CreatingInput(input.clone(), hovered_output_port)
             }
-            (Action::CreatingOutputWire(output, _), Some(world_cursor)) => {
+            (Action::CreatingOutputWire(output), Some(world_cursor)) => {
                 let hovered_input_port = self.network.graph.nodes_ref().iter().find_map(|n_id| {
                     let node = self.network.graph.get_node(*n_id);
                     let node_cursor_position = Point::from(world_cursor) - points[n_id].to_vector();
