@@ -37,8 +37,9 @@ pub enum Action {
     #[default]
     InitialLoad,
     Idle,
-    DragPan(Vector),
-    DragNode(Vec<(u32, Vector)>),
+    // initial camera position, initial screen space cursor posititon
+    DragPan(Vector, Point),
+    DragNode(Vec<(u32, Vector, Point)>),
     CreatingInputWire(PortRef),
     CreatingOutputWire(PortRef),
     AddingNode,
@@ -66,7 +67,6 @@ pub struct Workspace {
 pub enum WorkspaceMessage {
     //// Workspace
     OnMove(Point),
-    ScrollPan(Vector),
     UpdateCamera(Camera),
 
     //// Port
@@ -124,28 +124,29 @@ impl Workspace {
                 // Update node position if currently dragging
                 match &self.action {
                     Action::DragNode(offsets) => {
-                        offsets.iter().for_each(|(id, offset)| {
-                            *self
-                                .network
-                                .shapes
-                                .shape_positions
-                                .get_mut(id)
-                                .expect("Shape index must exist") =
-                                (cursor_position + self.network.shapes.camera.position) + *offset
-                        });
+                        offsets
+                            .iter()
+                            .for_each(|(id, initial_position, initial_cursor)| {
+                                *self
+                                    .network
+                                    .shapes
+                                    .shape_positions
+                                    .get_mut(id)
+                                    .expect("Shape index must exist") = (*initial_position
+                                    + (cursor_position - *initial_cursor)
+                                        * (1.0 / self.network.shapes.camera.zoom))
+                                    .to_point();
+                            });
                     }
-                    Action::DragPan(offset) => {
-                        self.network.shapes.camera.position =
-                            -cursor_position.to_vector() + *offset;
+                    Action::DragPan(initial_camera, initial_cursor) => {
+                        self.network.shapes.camera.position = *initial_camera
+                            - (cursor_position - *initial_cursor)
+                                * (1.0 / self.network.shapes.camera.zoom)
                     }
                     _ => (),
                 }
             }
 
-            WorkspaceMessage::ScrollPan(delta) => {
-                self.network.shapes.camera.position.x -= delta.x * 2.;
-                self.network.shapes.camera.position.y -= delta.y * 2.;
-            }
             WorkspaceMessage::UpdateCamera(camera) => self.network.shapes.camera = camera,
 
             WorkspaceMessage::PortPress(port) => match &self.action.clone() {
@@ -224,16 +225,15 @@ impl Workspace {
                     self.network.selected_shapes = Default::default();
 
                     //// Start Pan
-                    self.action = Action::DragPan(
-                        self.network.shapes.camera.position + self.cursor_position.to_vector(),
-                    );
+                    self.action =
+                        Action::DragPan(self.network.shapes.camera.position, self.cursor_position);
                 }
             }
             WorkspaceMessage::OnCanvasUp => {
                 // TODO: push undo stack if shape has moved
                 match self.action {
                     Action::DragNode(..) => self.action = Action::Idle,
-                    Action::DragPan(_) => self.action = Action::Idle,
+                    Action::DragPan(_, _) => self.action = Action::Idle,
                     _ => (),
                 }
             }
@@ -277,16 +277,21 @@ impl Workspace {
                 self.network.stash_state();
                 let id = self.network.graph.node(template.into());
                 self.network.selected_shapes = [id].into();
-                self.network.shapes.shape_positions.insert_before(
-                    0,
+
+                let initial_position = self
+                    .network
+                    .shapes
+                    .camera
+                    .cursor_to_world(self.cursor_position);
+                self.network
+                    .shapes
+                    .shape_positions
+                    .insert_before(0, id, initial_position);
+                self.action = Action::DragNode(vec![(
                     id,
-                    self.network
-                        .shapes
-                        .camera
-                        .cursor_to_world(self.cursor_position),
-                );
-                self.action =
-                    Action::DragNode(vec![(id, self.network.shapes.camera.center_offset())])
+                    initial_position.to_vector(),
+                    self.cursor_position,
+                )])
             }
             WorkspaceMessage::DeleteSelectedNodes => {
                 //TODO: move into Network
@@ -403,7 +408,7 @@ impl Workspace {
                 if Some(id) == self.main_window_id {
                     self.network.shapes.camera.bounds_size = size;
                 } else {
-                    panic!("Multiple windows not yet supported");
+                    // panic!("Multiple windows not yet supported");
                 }
             }
 

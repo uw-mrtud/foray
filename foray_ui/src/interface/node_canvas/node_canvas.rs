@@ -207,7 +207,10 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                         };
                     } else {
                         //// Pan
-                        new_camera.pan(scroll_amount)
+                        new_camera.pan((
+                            scroll_amount.0 / self.camera.zoom,
+                            scroll_amount.1 / self.camera.zoom,
+                        ))
                     }
                     return (
                         event::Status::Captured,

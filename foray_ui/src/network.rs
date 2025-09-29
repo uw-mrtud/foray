@@ -156,8 +156,8 @@ impl Network {
             .map(|id| {
                 (
                     *id,
-                    (self.shapes.shape_positions[id]
-                        - (cursor_position + self.shapes.camera.position)),
+                    self.shapes.shape_positions[id].to_vector(),
+                    cursor_position,
                 )
             })
             .collect();
