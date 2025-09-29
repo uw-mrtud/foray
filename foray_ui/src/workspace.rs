@@ -7,9 +7,8 @@ use crate::math::{Point, Vector};
 use crate::network::Network;
 use crate::node_instance::visualiztion::Visualization;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
-use crate::project::{read_python_projects, Project};
+use crate::project::{read_python_projects, rust_project, Project};
 use crate::python_env;
-use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 
@@ -56,6 +55,7 @@ pub struct Workspace {
     /// List of all known Node types, including system and user nodes
     pub projects: Vec<Project>,
 
+    pub main_window_id: Option<window::Id>,
     pub user_data: UserData,
     //// UI
     pub action: Action,
@@ -97,7 +97,7 @@ pub enum WorkspaceMessage {
     StartSaveNetwork,
     EndSaveNetwork(Option<PathBuf>),
     ReloadNodes,
-    WindowOpen,
+    ResizeWindow(window::Id, iced::Size),
 
     Cancel,
 
@@ -280,9 +280,13 @@ impl Workspace {
                 self.network.shapes.shape_positions.insert_before(
                     0,
                     id,
-                    self.cursor_position + self.network.shapes.camera.position,
+                    self.network
+                        .shapes
+                        .camera
+                        .cursor_to_world(self.cursor_position),
                 );
-                self.action = Action::DragNode(vec![(id, [0.0, 0.0].into())])
+                self.action =
+                    Action::DragNode(vec![(id, self.network.shapes.camera.center_offset())])
             }
             WorkspaceMessage::DeleteSelectedNodes => {
                 //TODO: move into Network
@@ -395,10 +399,11 @@ impl Workspace {
                 self.reload_nodes();
                 return Task::done(WorkspaceMessage::ComputeAll);
             }
-            WorkspaceMessage::WindowOpen => {
-                if self.action == Action::InitialLoad {
-                    self.action = Action::Idle;
-                    return Task::done(WorkspaceMessage::ComputeAll);
+            WorkspaceMessage::ResizeWindow(id, size) => {
+                if Some(id) == self.main_window_id {
+                    self.network.shapes.camera.bounds_size = size;
+                } else {
+                    panic!("Multiple windows not yet supported");
                 }
             }
 
@@ -514,9 +519,6 @@ impl Workspace {
                                 // might address this, and may be necessary in the future.
                                 // similar to TODO: below
                                 template: match node.template {
-                                    ForayNodeTemplate::RustNode(RustNodeTemplate::Constant(_)) => {
-                                        self.network.graph.get_node(nx).template.clone()
-                                    }
                                     ForayNodeTemplate::PyNode(_) => {
                                         self.network.graph.get_node(nx).template.clone()
                                     }
@@ -654,6 +656,7 @@ impl Workspace {
     pub fn new(
         workspace_dir: PathBuf,
         network_path: Option<PathBuf>,
+        main_window_id: Option<window::Id>,
     ) -> Result<Self, WorkspaceError> {
         if !Self::is_valid_workspace(&workspace_dir) {
             return Err(WorkspaceError::NoVenv);
@@ -688,6 +691,7 @@ impl Workspace {
             network,
             projects,
             user_data: UserData::read_user_data(),
+            main_window_id,
             action: Default::default(),
             cursor_position: Default::default(),
         };
@@ -781,7 +785,9 @@ impl Workspace {
             }
         });
         // Update list of available nodes
-        self.projects = read_python_projects();
+        let mut projects = read_python_projects();
+        projects.push(rust_project());
+        self.projects = projects;
     }
 
     pub fn subscriptions(&self) -> Subscription<WorkspaceMessage> {
@@ -798,7 +804,8 @@ impl Workspace {
                     )
                 })
                 .chain([
-                    window::open_events().map(|_| WorkspaceMessage::WindowOpen),
+                    window::resize_events()
+                        .map(|(id, size)| WorkspaceMessage::ResizeWindow(id, size)),
                     listen_with(|event, _status, _id| match event {
                         Keyboard(KeyPressed { key, modifiers, .. }) => match key {
                             Key::Named(Named::Delete) => {

@@ -2,7 +2,7 @@ use iced::{
     event,
     keyboard::Modifiers,
     mouse::{self, Cursor, ScrollDelta},
-    Element, Length, Rectangle, Renderer, Theme, Transformation, Vector,
+    Element, Length, Rectangle, Renderer, Theme, Transformation,
 };
 
 use iced::widget::canvas;
@@ -93,14 +93,12 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        frame.translate(Vector::new(bounds.width / 2.0, bounds.height / 2.0));
+        frame.translate(iced::Vector::from(self.camera.center_offset()) * -1.0);
         frame.scale(self.camera.zoom);
         frame.translate((-self.camera.position).into());
 
         let world_cursor_position = match cursor.position() {
-            Some(p) => {
-                Cursor::Available((self.camera.cursor_to_world(p.into(), bounds.size())).into())
-            }
+            Some(p) => Cursor::Available((self.camera.cursor_to_world(p.into())).into()),
             None => Cursor::Unavailable,
         };
         //// Wires
@@ -117,9 +115,7 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
 
                 let node_cursor_position = match cursor.position() {
                     Some(p) => Cursor::Available(
-                        (self.camera.cursor_to_world(p.into(), bounds.size())
-                            - position.to_vector())
-                        .into(),
+                        (self.camera.cursor_to_world(p.into()) - position.to_vector()).into(),
                     ),
                     None => Cursor::Unavailable,
                 };
@@ -150,8 +146,8 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         cursor: mouse::Cursor,
     ) -> (event::Status, Option<WorkspaceMessage>) {
         let world_cursor_position = match cursor.position() {
-            Some(p) => self.camera.cursor_to_world(p.into(), bounds.size()),
-            None => return (event::Status::Ignored, None),
+            Some(p) => self.camera.cursor_to_world(p.into()),
+            None => self.workspace.cursor_position, //return (event::Status::Ignored, None),
         };
 
         match event {
@@ -174,10 +170,9 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                         //// The cursor in world space should remain fixed, so we shift the
                         //// camera position to compensate.
                         if let Some(cursor_position) = cursor.position_in(bounds) {
-                            let center_offset =
-                                Vector::new(bounds.width / 2.0, bounds.height / 2.0);
                             let z_old = self.camera.zoom;
-                            let scaled_cursor = (cursor_position - center_offset)
+                            let scaled_cursor = (cursor_position
+                                + self.camera.center_offset().into())
                                 * Transformation::scale(1.0 / z_old);
 
                             // This was derived by finding the world_cursor_position:
@@ -302,6 +297,17 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                 _ => {}
             },
         }
+
+        if self.camera.bounds_size != bounds.size() {
+            return (
+                event::Status::Captured,
+                Some(WorkspaceMessage::UpdateCamera(Camera {
+                    bounds_size: bounds.size(),
+                    ..self.camera
+                })),
+            );
+        }
+
         (event::Status::Ignored, None)
     }
 }

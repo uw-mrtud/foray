@@ -5,7 +5,7 @@ use foray_py::{
     py_node::PyNodeTemplate,
 };
 
-use crate::node_instance::ForayNodeTemplate;
+use crate::{node_instance::ForayNodeTemplate, rust_nodes::RustNodeTemplate};
 
 #[derive(Debug)]
 pub struct NodeTree<T> {
@@ -45,6 +45,19 @@ pub fn read_python_projects() -> Vec<crate::project::Project> {
     raw.into_iter().map(python_project).collect()
 }
 
+pub fn rust_project() -> crate::project::Project {
+    let mut tree = NodeTree::new("Built In".to_string());
+
+    tree.insert(
+        vec!["display"],
+        ForayNodeTemplate::RustNode(RustNodeTemplate::Display),
+    );
+
+    Project {
+        absolute_path: Default::default(),
+        node_tree: tree,
+    }
+}
 #[derive(Debug)]
 pub struct Project {
     pub absolute_path: PathBuf,

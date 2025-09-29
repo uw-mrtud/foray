@@ -1,6 +1,6 @@
 use derive_more::Display;
 use foray_data_model::{
-    node::{Dict, NodeError, PortData, PortType},
+    node::{Dict, PortData, PortType},
     WireDataContainer, WireDataReference,
 };
 use foray_graph::graph::{ForayNodeError, GraphNode};
@@ -11,15 +11,16 @@ use strum::{EnumIter, VariantNames};
     Clone, Debug, Display, EnumIter, VariantNames, Serialize, Deserialize, PartialEq, PartialOrd,
 )]
 pub enum RustNodeTemplate {
-    Identity,
-    Constant(f64),
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Cos,
-    Sin,
-    Sinc,
+    Display,
+    // Identity,
+    // Constant(f64),
+    // Add,
+    // Subtract,
+    // Multiply,
+    // Divide,
+    // Cos,
+    // Sin,
+    // Sinc,
     // #[display("Linspace")]
     // Linspace(LinspaceConfig),
     // #[display("Plot")]
@@ -69,22 +70,22 @@ pub enum RustNodeTemplate {
 impl RustNodeTemplate {
     fn fallible_compute(
         &mut self,
-        inputs: Dict<String, WireDataReference<PortData>>,
+        _inputs: Dict<String, WireDataReference<PortData>>,
     ) -> Result<Dict<String, PortData>, ForayNodeError> {
         Ok(match self {
-            RustNodeTemplate::Identity => [(
-                "out".to_string(),
-                (**inputs
-                    .get("a")
-                    .ok_or(ForayNodeError::NodeError(NodeError::Input(
-                        "input 'a' not found".into(),
-                    )))?)
-                .clone(),
-            )]
-            .into(),
-            RustNodeTemplate::Constant(value) => {
-                [("out".to_string(), PortData::Float(*value))].into()
-            }
+            // RustNodeTemplate::Identity => [(
+            //     "out".to_string(),
+            //     (**inputs
+            //         .get("a")
+            //         .ok_or(ForayNodeError::NodeError(NodeError::Input(
+            //             "input 'a' not found".into(),
+            //         )))?)
+            //     .clone(),
+            // )]
+            // .into(),
+            // RustNodeTemplate::Constant(value) => {
+            //     [("out".to_string(), PortData::Float(*value))].into()
+            // }
             _ => [].into(), // RustNode::Add => binary_operation(inputs, Box::new(|a, b| a + b))?,
                             // RustNode::Subtract => binary_operation(inputs, Box::new(|a, b| a - b))?,
                             // RustNode::Multiply => binary_operation(inputs, Box::new(|a, b| a * b))?,
@@ -128,23 +129,24 @@ impl RustNodeTemplate {
 impl GraphNode<PortType, PortData> for RustNodeTemplate {
     fn inputs(&self) -> Dict<String, PortType> {
         let prim_float = PortType::Float;
-        let binary_in = [
-            ("a".to_string(), prim_float.clone()),
-            ("b".to_string(), prim_float.clone()),
-        ]
-        .into();
-        let unary_in = [("a".to_string(), prim_float.clone())].into();
+        // let binary_in = [
+        //     ("a".to_string(), prim_float.clone()),
+        //     ("b".to_string(), prim_float.clone()),
+        // ]
+        // .into();
+        // let unary_in = [("a".to_string(), prim_float.clone())].into();
 
         match &self {
-            RustNodeTemplate::Identity => [("a".to_string(), prim_float)].into(),
-            RustNodeTemplate::Constant(_constant_node) => [].into(),
-            RustNodeTemplate::Add => binary_in,
-            RustNodeTemplate::Subtract => binary_in,
-            RustNodeTemplate::Multiply => binary_in,
-            RustNodeTemplate::Divide => binary_in,
-            RustNodeTemplate::Cos => unary_in,
-            RustNodeTemplate::Sin => unary_in,
-            RustNodeTemplate::Sinc => unary_in,
+            RustNodeTemplate::Display => [("in".to_string(), prim_float)].into(),
+            // RustNodeTemplate::Identity => [("a".to_string(), prim_float)].into(),
+            // RustNodeTemplate::Constant(_constant_node) => [].into(),
+            // RustNodeTemplate::Add => binary_in,
+            // RustNodeTemplate::Subtract => binary_in,
+            // RustNodeTemplate::Multiply => binary_in,
+            // RustNodeTemplate::Divide => binary_in,
+            // RustNodeTemplate::Cos => unary_in,
+            // RustNodeTemplate::Sin => unary_in,
+            // RustNodeTemplate::Sinc => unary_in,
             // RustNode::Linspace(_) => [].into(),
             // RustNode::Plot(_) => [
             //     ("x".to_string(), PortType::Real),
@@ -157,23 +159,8 @@ impl GraphNode<PortType, PortData> for RustNodeTemplate {
     }
 
     fn outputs(&self) -> Dict<String, PortType> {
-        let prim_float = PortType::Float;
-        let real_out = [("out".to_string(), prim_float)].into();
-        // let array_out = [("out".to_string(), PortType::ArrayReal)].into();
         match self {
-            RustNodeTemplate::Identity => real_out,
-            RustNodeTemplate::Constant(_constant_node) => real_out,
-            RustNodeTemplate::Add => real_out,
-            RustNodeTemplate::Subtract => real_out,
-            RustNodeTemplate::Multiply => real_out,
-            RustNodeTemplate::Divide => real_out,
-            RustNodeTemplate::Cos => real_out,
-            RustNodeTemplate::Sin => real_out,
-            RustNodeTemplate::Sinc => real_out,
-            //     RustNode::Linspace(_) => real_out,
-            //     RustNode::Plot(_) => array_out,
-            //     RustNode::Plot2D(_) => array_out,
-            //     RustNode::VectorField(_) => [].into(),
+            Self::Display => [].into(),
         }
     }
 

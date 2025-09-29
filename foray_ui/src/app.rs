@@ -8,7 +8,7 @@ use iced::advanced::graphics::core::Element;
 use iced::event::listen_with;
 use iced::Event::Keyboard;
 use iced::Length::Fill;
-use iced::{keyboard, Font, Renderer, Subscription, Task, Theme};
+use iced::{keyboard, window, Font, Renderer, Subscription, Task, Theme};
 use iced::{
     keyboard::{key::Named, Event::KeyPressed, Key, Modifiers},
     widget::{
@@ -26,6 +26,7 @@ pub struct App {
 
     pub app_theme: AppTheme,
 
+    pub main_window_id: Option<window::Id>,
     /// Currently held keyboard modifiers, used for shortcuts
     pub modifiers: Modifiers,
 
@@ -36,7 +37,7 @@ pub struct App {
 }
 impl App {
     pub fn new(working_dir: PathBuf, cli_network_path: Option<PathBuf>) -> Self {
-        let workspace = match Workspace::new(working_dir, cli_network_path) {
+        let workspace = match Workspace::new(working_dir, cli_network_path, None) {
             Ok(workspace) => Some(workspace),
             Err(e) => {
                 warn!("Workspace Initialialization Error: {:?}", e);
@@ -50,6 +51,7 @@ impl App {
             show_palette_ui: false,
 
             app_theme: Config::load_theme(),
+            main_window_id: None,
             modifiers: Default::default(),
             markdown: markdown::parse("First time?\n\nFollow the [guide](https://uw-mrtud.github.io/foray/book/installation.html#quick-start) for info on creating a workspace").collect()
         }
@@ -75,6 +77,7 @@ pub enum Message {
     FocusPrevious,
 
     WorkspaceMessage(crate::workspace::WorkspaceMessage),
+    OpenWindow(window::Id),
 }
 
 impl App {
@@ -110,7 +113,7 @@ impl App {
             }
             Message::EndWorkspaceSelect(Some(workspace_path)) => {
                 self.workspace = match Workspace::is_valid_workspace(&workspace_path) {
-                    true => match Workspace::new(workspace_path, None) {
+                    true => match Workspace::new(workspace_path, None, self.main_window_id) {
                         Ok(workspace) => Some(workspace),
                         Err(_e) => {
                             warn!("Current directory is not a valid workspace");
@@ -135,7 +138,11 @@ impl App {
                         .to_path_buf();
 
                     self.workspace = match Workspace::is_valid_workspace(&workspace_path) {
-                        true => match Workspace::new(workspace_path, Some(network_path)) {
+                        true => match Workspace::new(
+                            workspace_path,
+                            Some(network_path),
+                            self.main_window_id,
+                        ) {
                             Ok(workspace) => Some(workspace),
                             Err(_e) => {
                                 warn!("Current directory is not a valid workspace");
@@ -150,6 +157,15 @@ impl App {
             },
             Message::LinkClicked(link) => {
                 let _ = open::that_in_background(link.to_string());
+            }
+            Message::OpenWindow(id) => {
+                if self.main_window_id == None {
+                    self.main_window_id = Some(id);
+                    if let Some(workspace) = &mut self.workspace {
+                        workspace.main_window_id = Some(id);
+                        return Task::done(Message::WorkspaceMessage(WorkspaceMessage::ComputeAll));
+                    }
+                }
             }
         };
         Task::none()
@@ -210,6 +226,7 @@ pub fn subscriptions(state: &App) -> Subscription<Message> {
     };
     Subscription::batch([
         worksace_sub,
+        window::open_events().map(|id| Message::OpenWindow(id)),
         listen_with(|event, _status, _id| match event {
             Keyboard(keyboard::Event::ModifiersChanged(m)) => Some(Message::ModifiersChanged(m)),
             Keyboard(KeyPressed { key, modifiers, .. }) => match key {

@@ -240,3 +240,8 @@
 - [ ] Add node search filter
 - [ ] Modify parameters when they are updated
 
+## 25/9/29
+- [ ] warning when node tries to execute before all input ports are filled
+- [ ] undo/redo issues
+- [ ] display node
+

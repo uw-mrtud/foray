@@ -7,6 +7,8 @@ use crate::math::{Point, Vector};
 pub struct Camera {
     pub position: Vector,
     pub zoom: f32,
+    #[serde(skip)]
+    pub bounds_size: Size,
 }
 
 impl Default for Camera {
@@ -14,6 +16,7 @@ impl Default for Camera {
         Self {
             position: [0., 0.].into(),
             zoom: 1.0,
+            bounds_size: Size::new(100.0, 100.0),
         }
     }
 }
@@ -22,11 +25,12 @@ impl Camera {
         self.position.x += movement.0;
         self.position.y += movement.1;
     }
-    pub fn cursor_to_world(&self, point: Point, canvas_size: Size) -> Point {
-        let center_offset = Vector::new(canvas_size.width, canvas_size.height) * 0.5;
-
+    pub fn cursor_to_world(&self, point: Point) -> Point {
         let camera_translation = Vector::new(self.position.x, self.position.y);
 
-        (point - center_offset) * (1.0 / self.zoom) + camera_translation
+        (point + self.center_offset()) * (1.0 / self.zoom) + camera_translation
+    }
+    pub fn center_offset(&self) -> Vector {
+        Vector::new(-self.bounds_size.width, -self.bounds_size.height) * 0.5
     }
 }
