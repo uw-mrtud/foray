@@ -35,7 +35,6 @@ use std::time::{Duration, Instant};
 #[derive(Default, Clone, PartialEq)]
 pub enum Action {
     #[default]
-    InitialLoad,
     Idle,
     // initial camera position, initial screen space cursor posititon
     DragPan(Vector, Point),
@@ -634,8 +633,14 @@ impl Workspace {
 
         // Potentially add a specific mouse cursor
         let output = match self.action {
+            Action::CreatingInputWire(_) | Action::CreatingOutputWire(_) => mouse_area(output)
+                .interaction(mouse::Interaction::Grabbing)
+                .into(),
             Action::DragNode(_) => mouse_area(output)
                 .interaction(mouse::Interaction::Grabbing)
+                .into(),
+            Action::DragPan(_, _) => mouse_area(output)
+                .interaction(mouse::Interaction::Move)
                 .into(),
             _ => output,
         };
