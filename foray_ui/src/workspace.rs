@@ -580,21 +580,21 @@ impl Workspace {
         &'a self,
         app_theme: &'a AppTheme,
     ) -> Element<'a, WorkspaceMessage, Theme, Renderer> {
-        let network_panel = container(match self.action {
-            Action::LoadingNetwork => container(text("loading...")),
-            Action::SavingNetwork => container(text("saving...")),
-            _ => container(node_canvas::node_canvas(
+        let network_panel: Element<WorkspaceMessage, Theme, Renderer> = match self.action {
+            Action::LoadingNetwork => container(text("loading...")).center(Fill).into(),
+            Action::SavingNetwork => container(text("saving...")).center(Fill).into(),
+            _ => node_canvas::node_canvas(
                 &self.network.shapes.shape_positions,
                 self.network.shapes.camera,
                 self,
                 app_theme,
-            )),
-        })
-        .center(Fill);
+            )
+            .into(),
+        };
 
         // Stack side bar over panel, to avoid canvas drawing images outside bounds (iced bug)
         let content = stack![
-            row![network_panel],
+            network_panel,
             row![
                 iced::widget::opaque(side_bar(self)),
                 vertical_rule(SEPERATOR),
@@ -635,7 +635,7 @@ impl Workspace {
         // Potentially add a specific mouse cursor
         let output = match self.action {
             Action::DragNode(_) => mouse_area(output)
-                .interaction(mouse::Interaction::Move)
+                .interaction(mouse::Interaction::Grabbing)
                 .into(),
             _ => output,
         };
