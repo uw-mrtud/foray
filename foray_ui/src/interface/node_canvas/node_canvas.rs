@@ -153,9 +153,14 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
         match event {
             Event::Mouse(event) => match event {
                 mouse::Event::WheelScrolled { delta } => {
+                    let pixels_per_line = 4.0;
+                    let scroll_speed = 2.0;
                     let scroll_amount = match delta {
-                        ScrollDelta::Lines { x, y } => (-x * 4.0, -y * 4.0),
-                        ScrollDelta::Pixels { x, y } => (-x, -y),
+                        ScrollDelta::Lines { x, y } => (
+                            -x * pixels_per_line * scroll_speed,
+                            -y * pixels_per_line * scroll_speed,
+                        ),
+                        ScrollDelta::Pixels { x, y } => (-x * scroll_speed, -y * scroll_speed),
                     };
                     let mut new_camera = self.camera;
                     if state.modifiers.control() {

@@ -1,6 +1,6 @@
 use crate::interface::status::node_status_widget;
 use crate::interface::SEPERATOR;
-use crate::node_instance::visualiztion::{Visualization, VisualizationParameters, RIMP};
+use crate::node_instance::visualiztion::{VisualizationParameters, RIMP};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::button::{primary_icon, secondary_icon};
@@ -135,17 +135,12 @@ pub fn config_view<'a>(
                 horizontal_space(),
                 pick_list(
                     RIMP::VARIANTS,
-                    Some(
-                        node_instance
-                            .visualization
-                            .visualization_parameters
-                            .complex_map
-                    ),
+                    Some(node_instance.visualization.parameters.complex_map),
                     move |value| WorkspaceMessage::UpdateVisualization(
                         id,
                         VisualizationParameters {
                             complex_map: value,
-                            ..node_instance.visualization.visualization_parameters
+                            ..node_instance.visualization.parameters
                         }
                     )
                 )

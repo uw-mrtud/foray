@@ -538,7 +538,7 @@ impl Workspace {
                             }
                             _ => node.template.clone(),
                         };
-                        let visualization_parameters = node.visualization.visualization_parameters;
+                        let visualization_parameters = node.visualization.parameters;
 
                         //// Update wire
                         self.network.graph.update_wire_data(nx, output);

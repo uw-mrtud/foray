@@ -296,7 +296,8 @@ pub fn draw_node_image(
 ) {
     if let Some(image_handle) = &node.visualization.image_handle {
         let img = iced::advanced::image::Image::from(image_handle)
-            .filter_method(image::FilterMethod::Nearest);
+            .filter_method(image::FilterMethod::Nearest)
+            .snap(true);
         frame.draw_image(image_bounds, img);
     };
 }

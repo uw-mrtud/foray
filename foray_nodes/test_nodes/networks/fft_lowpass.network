@@ -96,6 +96,90 @@
                 template: RustNode(Display),
                 parameters_values: {},
             ),
+            11: (
+                template: PyNode((
+                    name: "example_phase",
+                    py_path: "test_nodes.foray.example_phase",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "image_size": Float(256.0),
+                },
+            ),
+            12: (
+                template: RustNode(Display),
+                parameters_values: {},
+            ),
+            13: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
+            14: (
+                template: RustNode(Display),
+                parameters_values: {},
+            ),
+            15: (
+                template: PyNode((
+                    name: "shift",
+                    py_path: "test_nodes.foray.shift",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "x-shift": Slider(0.0, 1.0, 100.0),
+                            "y-shift": Slider(0.0, 1.0, 100.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "x-shift": Float(0.01),
+                    "y-shift": Float(0.01),
+                },
+            ),
+            16: (
+                template: RustNode(Display),
+                parameters_values: {},
+            ),
+            17: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+            ),
         },
         edges: [((
             node: 0,
@@ -145,29 +229,113 @@
             node: 10,
             name: "in",
             io: In,
+        )), ((
+            node: 11,
+            name: "out",
+            io: Out,
+        ), (
+            node: 12,
+            name: "in",
+            io: In,
+        )), ((
+            node: 1,
+            name: "out",
+            io: Out,
+        ), (
+            node: 13,
+            name: "a",
+            io: In,
+        )), ((
+            node: 13,
+            name: "out",
+            io: Out,
+        ), (
+            node: 14,
+            name: "in",
+            io: In,
+        )), ((
+            node: 1,
+            name: "out",
+            io: Out,
+        ), (
+            node: 15,
+            name: "a",
+            io: In,
+        )), ((
+            node: 15,
+            name: "out",
+            io: Out,
+        ), (
+            node: 17,
+            name: "a",
+            io: In,
+        )), ((
+            node: 17,
+            name: "out",
+            io: Out,
+        ), (
+            node: 16,
+            name: "in",
+            io: In,
         ))],
-        next_id: 11,
+        next_id: 18,
     ),
     shapes: (
         camera: (
             position: (
-                x: 449.56445,
-                y: 369.57437,
+                x: -168.34224,
+                y: 636.1034,
             ),
-            zoom: 0.938237,
+            zoom: 0.808617,
         ),
         shape_positions: {
+            0: (
+                x: -52.834793,
+                y: 328.18903,
+            ),
+            12: (
+                x: 702.3009,
+                y: 95.64506,
+            ),
+            16: (
+                x: -42.68769,
+                y: 683.7826,
+            ),
+            15: (
+                x: -38.59748,
+                y: 539.4739,
+            ),
+            1: (
+                x: -39.489975,
+                y: 462.21423,
+            ),
+            17: (
+                x: -39.283638,
+                y: 604.95435,
+            ),
+            14: (
+                x: -309.50128,
+                y: 686.1457,
+            ),
+            13: (
+                x: -274.03207,
+                y: 500.89462,
+            ),
             9: (
                 x: 562.97314,
                 y: 383.92285,
+            ),
+            5: (
+                x: 165.77359,
+                y: 552.2566,
             ),
             10: (
                 x: 782.7215,
                 y: 383.20236,
             ),
-            1: (
-                x: 112.12402,
-                y: 286.97772,
+            11: (
+                x: 658.97485,
+                y: 4.4988766,
             ),
             8: (
                 x: 288.33606,
@@ -176,14 +344,6 @@
             3: (
                 x: 166.52933,
                 y: 427.05078,
-            ),
-            5: (
-                x: 165.77359,
-                y: 552.2566,
-            ),
-            0: (
-                x: 138.58966,
-                y: 137.85635,
             ),
         },
     ),

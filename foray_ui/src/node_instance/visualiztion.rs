@@ -1,12 +1,21 @@
+use std::f64::consts::TAU;
+
 use derive_more::Display;
 use foray_data_model::node::{ForayArray, PortData, PortType};
 use foray_graph::graph::{Graph, GraphNode};
 use iced::widget::image::Handle;
 
+use ndarray::Array3;
+use palette::{hsv, FromColor, Srgb};
+use strum::VariantArray;
+
+use crate::rust_nodes::RustNodeTemplate;
+
+use super::ForayNodeInstance;
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Visualization {
     pub image_handle: Option<Handle>,
-    pub visualization_parameters: VisualizationParameters,
+    pub parameters: VisualizationParameters,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -31,7 +40,7 @@ impl Visualization {
     ) -> Self {
         let mut visualization = Self {
             image_handle: None,
-            visualization_parameters: parameters,
+            parameters,
         };
         visualization.create_image_handle(node_id, graph);
         visualization
@@ -47,7 +56,7 @@ impl Visualization {
         graph: &Graph<ForayNodeInstance, PortType, PortData>,
     ) {
         let input_data = graph.get_input_data(&node_id);
-        let output_data = graph.get_input_data(&node_id);
+        let output_data = graph.get_output_data(&node_id);
         let node = graph.get_node(node_id);
 
         let port_data = match node.template {
@@ -84,13 +93,20 @@ impl Visualization {
                             a.indexed_iter()
                                 .flat_map(|(_, v)| {
                                     // let normalized = v.norm().log10();
-                                    let value = match self.visualization_parameters.complex_map {
-                                        RIMP::Real => v.re,
-                                        RIMP::Imaginary => v.im,
-                                        RIMP::Magnitude => v.norm(),
-                                        RIMP::Phase => (v.im).atan2(v.re),
-                                    };
-                                    [value, value, value]
+                                    match self.parameters.complex_map {
+                                        RIMP::Real => [v.re; 3],
+                                        RIMP::Imaginary => [v.im; 3],
+                                        RIMP::Magnitude => [v.norm(); 3],
+                                        RIMP::Phase => {
+                                            let angle = (v.im).atan2(v.re);
+                                            let hsl: hsv::Hsv<_, f64> =
+                                                hsv::Hsv::new(360.0 * angle / (TAU), 1.0, v.norm());
+                                            // let rgb: [f64; 3] = hsv.into();
+                                            // rgb
+                                            let (r, g, b) = Srgb::from_color(hsl).into_components();
+                                            [r, g, b]
+                                        }
+                                    }
                                 })
                                 .collect::<Vec<_>>(),
                         )
@@ -105,13 +121,6 @@ impl Visualization {
     }
 }
 
-use ndarray::Array3;
-use strum::VariantArray;
-
-use crate::rust_nodes::RustNodeTemplate;
-
-use super::ForayNodeInstance;
-
 //fn create_grayscale_handle(data: &Array3<f64>) -> Handle {}
 fn create_rgb_handle(data: &Array3<f64>) -> Handle {
     // trace!("Creating image handle for plot2d, {:?}", data.shape());
@@ -119,7 +128,7 @@ fn create_rgb_handle(data: &Array3<f64>) -> Handle {
     // let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
     let min = 0.0;
     let brightness = |p: f64| {
-        // return (p * 255.0).round() as u8;
+        return (p * 255.0).round() as u8;
         let p = ((p - min) / (max - min)) as f32;
         let p = if p.is_nan() { 0.0 } else { p };
         (p * 255.0).round() as u8

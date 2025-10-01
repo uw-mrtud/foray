@@ -7,12 +7,13 @@ def config():
         ForayConfig()
         .inputs(
             {
-                "a": Port.array(Port.complex, [None, None]),
+                "a": Port.array(Port.float, [None, None]),
+                "b": Port.array(Port.float, [None, None]),
             }
         )
         .outputs(
             {
-                "out": Port.array(Port.complex, [None, None]),
+                "out": Port.array(Port.float, [None, None]),
             }
         )
     )
@@ -20,5 +21,6 @@ def config():
 
 def compute(input, _):
     a = input["a"]
-    out = np.fft.ifft2(np.fft.ifftshift(a))
+    b = input["b"]
+    out = np.add(a, b)
     return {"out": out}
