@@ -1,6 +1,8 @@
 use crate::interface::status::node_status_widget;
 use crate::interface::SEPERATOR;
+use crate::node_instance::visualiztion::{Visualization, VisualizationParameters, RIMP};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
+use crate::rust_nodes::RustNodeTemplate;
 use crate::style::button::{primary_icon, secondary_icon};
 use crate::style::icon::icon;
 use crate::workspace::{Workspace, WorkspaceMessage};
@@ -8,6 +10,7 @@ use foray_data_model::node::{Dict, PortData, UIParameter};
 use foray_data_model::WireDataContainer;
 use iced::widget::container::background;
 use iced::*;
+use strum::VariantArray;
 use widget::{column, *};
 
 use super::numeric_input::{self, PartialUIValue};
@@ -127,7 +130,30 @@ pub fn config_view<'a>(
     _input_data: Dict<String, WireDataContainer<PortData>>,
 ) -> Option<iced::Element<'a, WorkspaceMessage>> {
     match &node_instance.template {
-        ForayNodeTemplate::RustNode(_rn) => None,
+        ForayNodeTemplate::RustNode(RustNodeTemplate::Display) => Some(
+            row![
+                horizontal_space(),
+                pick_list(
+                    RIMP::VARIANTS,
+                    Some(
+                        node_instance
+                            .visualization
+                            .visualization_parameters
+                            .complex_map
+                    ),
+                    move |value| WorkspaceMessage::UpdateVisualization(
+                        id,
+                        VisualizationParameters {
+                            complex_map: value,
+                            ..node_instance.visualization.visualization_parameters
+                        }
+                    )
+                )
+            ]
+            .align_y(Center)
+            .into(),
+        ),
+        // ForayNodeTemplate::RustNode(_rn) => None,
         // match rn {
         // RustNode::Plot(plot) => plot.config_view(id, input_data),
         // RustNode::Plot2D(plot) => plot.config_view(id, input_data),

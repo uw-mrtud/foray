@@ -85,10 +85,14 @@
                 )),
                 parameters_values: {
                     "image_size": Float(256.0),
-                    "radius": Float(11.31),
+                    "radius": Float(20.57),
                 },
             ),
             9: (
+                template: RustNode(Display),
+                parameters_values: {},
+            ),
+            10: (
                 template: RustNode(Display),
                 parameters_values: {},
             ),
@@ -126,48 +130,60 @@
             name: "b",
             io: In,
         )), ((
-            node: 8,
+            node: 5,
             name: "out",
             io: Out,
         ), (
             node: 9,
             name: "in",
             io: In,
+        )), ((
+            node: 0,
+            name: "out",
+            io: Out,
+        ), (
+            node: 10,
+            name: "in",
+            io: In,
         ))],
-        next_id: 10,
+        next_id: 11,
     ),
     shapes: (
         camera: (
             position: (
-                x: 271.26706,
-                y: 349.24188,
+                x: 449.56445,
+                y: 369.57437,
             ),
-            zoom: 0.93300235,
+            zoom: 0.938237,
         ),
         shape_positions: {
+            9: (
+                x: 562.97314,
+                y: 383.92285,
+            ),
+            10: (
+                x: 782.7215,
+                y: 383.20236,
+            ),
             1: (
-                x: -18.11792,
-                y: 185.7016,
-            ),
-            3: (
-                x: 111.06018,
-                y: 411.11096,
-            ),
-            5: (
-                x: 70.38904,
-                y: 542.86255,
-            ),
-            0: (
-                x: -40.46875,
-                y: 37.79297,
+                x: 112.12402,
+                y: 286.97772,
             ),
             8: (
-                x: 275.7649,
-                y: 287.94254,
+                x: 288.33606,
+                y: 294.5905,
             ),
-            9: (
-                x: 491.3955,
-                y: 449.9043,
+            3: (
+                x: 166.52933,
+                y: 427.05078,
+            ),
+            5: (
+                x: 165.77359,
+                y: 552.2566,
+            ),
+            0: (
+                x: 138.58966,
+                y: 137.85635,
             ),
         },
     ),

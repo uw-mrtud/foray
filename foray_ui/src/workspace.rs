@@ -5,7 +5,7 @@ use crate::interface::node_canvas::node_canvas;
 use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
-use crate::node_instance::visualiztion::Visualization;
+use crate::node_instance::visualiztion::{Visualization, VisualizationParameters};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::project::{read_python_projects, rust_project, Project};
 use crate::python_env;
@@ -82,6 +82,7 @@ pub enum WorkspaceMessage {
 
     UpdateNodeTemplate(u32, ForayNodeTemplate),
     UpdateNodeParameter(u32, String, PortData),
+    UpdateVisualization(u32, VisualizationParameters),
     DeleteSelectedNodes,
 
     QueueCompute(u32),
@@ -254,6 +255,19 @@ impl Workspace {
                 let old_template = &mut self.network.graph.get_mut_node(id);
                 old_template.parameters_values.insert(name, updated_widget);
                 return Task::done(WorkspaceMessage::QueueCompute(id));
+            }
+            WorkspaceMessage::UpdateVisualization(id, visualization_parameters) => {
+                self.network.stash_state();
+                let node = self.network.graph.get_node(id);
+                let new_node = ForayNodeInstance {
+                    visualization: Visualization::new(
+                        id,
+                        &self.network.graph,
+                        visualization_parameters,
+                    ),
+                    ..node.clone()
+                };
+                self.network.graph.set_node_data(id, new_node);
             }
             WorkspaceMessage::OpenAddNodeUi => self.action = Action::AddingNode,
             WorkspaceMessage::SelectNodeGroup(selected_tree_path) => match &self.action {
@@ -508,30 +522,42 @@ impl Workspace {
                             node.template,
                         );
 
+                        // Grab values early to satisfy borrow checker
+                        //
+                        let parameters_values = node.parameters_values.clone();
+
+                        // We *don't* update template here for some nodes
+                        // because that causes stuttery behaviour for
+                        // fast update scenarios like the slider of the 'constant'
+                        // node. alternatively, canceling in progress compute tasks
+                        // might address this, and may be necessary in the future.
+                        // similar to TODO: below
+                        let template = match node.template {
+                            ForayNodeTemplate::PyNode(_) => {
+                                self.network.graph.get_node(nx).template.clone()
+                            }
+                            _ => node.template.clone(),
+                        };
+                        let visualization_parameters = node.visualization.visualization_parameters;
+
+                        //// Update wire
+                        self.network.graph.update_wire_data(nx, output);
+
+                        // Must be done after graph wire data has been set
+                        let visualization =
+                            Visualization::new(nx, &self.network.graph, visualization_parameters);
+
                         //// Update node
                         self.network.graph.set_node_data(
                             nx,
                             ForayNodeInstance {
                                 status: NodeStatus::Idle,
-                                parameters_values: node.parameters_values.clone(),
-                                visualization: Visualization::new(node, &output),
+                                parameters_values,
+                                visualization,
                                 // run_time: Some(run_time),
-                                // We *don't* update template here for some nodes
-                                // because that causes stuttery behaviour for
-                                // fast update scenarios like the slider of the 'constant'
-                                // node. alternatively, canceling in progress compute tasks
-                                // might address this, and may be necessary in the future.
-                                // similar to TODO: below
-                                template: match node.template {
-                                    ForayNodeTemplate::PyNode(_) => {
-                                        self.network.graph.get_node(nx).template.clone()
-                                    }
-                                    _ => node.template.clone(),
-                                },
+                                template,
                             },
                         );
-                        //// Update wire
-                        self.network.graph.update_wire_data(nx, output);
 
                         //// Queue children for compute
                         let to_queue: Vec<_> = self
