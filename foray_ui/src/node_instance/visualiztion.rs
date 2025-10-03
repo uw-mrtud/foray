@@ -1,4 +1,4 @@
-use std::f64::consts::TAU;
+use std::f64::consts::{PI, TAU};
 
 use derive_more::Display;
 use foray_data_model::node::{ForayArray, PortData, PortType};
@@ -28,8 +28,12 @@ pub enum RIMP {
     Real,
     Imaginary,
     #[default]
-    Magnitude,
+    MagnitudeGray,
+    MagnitudeLinear,
     Phase,
+    PhaseRawHue,
+    PhaseRawHueWeighted,
+    PhaseWeighted,
 }
 
 impl Visualization {
@@ -87,31 +91,45 @@ impl Visualization {
                         )
                         .expect("square matrix"),
                     ),
-                    PortData::Array(ForayArray::Complex(a)) => Some(
-                        Array3::<f64>::from_shape_vec(
-                            (a.shape()[0], a.shape()[1], 3),
-                            a.indexed_iter()
-                                .flat_map(|(_, v)| {
-                                    // let normalized = v.norm().log10();
-                                    match self.parameters.complex_map {
-                                        RIMP::Real => [v.re; 3],
-                                        RIMP::Imaginary => [v.im; 3],
-                                        RIMP::Magnitude => [v.norm(); 3],
-                                        RIMP::Phase => {
-                                            let angle = (v.im).atan2(v.re);
-                                            let hsl: hsv::Hsv<_, f64> =
-                                                hsv::Hsv::new(360.0 * angle / (TAU), 1.0, v.norm());
-                                            // let rgb: [f64; 3] = hsv.into();
-                                            // rgb
-                                            let (r, g, b) = Srgb::from_color(hsl).into_components();
-                                            [r, g, b]
+                    PortData::Array(ForayArray::Complex(a)) => {
+                        let max_mag = a.iter().map(|v| v.norm()).reduce(f64::max).unwrap_or(0.0);
+                        Some(
+                            Array3::<f64>::from_shape_vec(
+                                (a.shape()[0], a.shape()[1], 3),
+                                a.indexed_iter()
+                                    .flat_map(|(_, v)| {
+                                        // let normalized = v.norm().log10();
+                                        match self.parameters.complex_map {
+                                            RIMP::Real => [v.re; 3],
+                                            RIMP::Imaginary => [v.im; 3],
+                                            RIMP::MagnitudeGray => [v.norm() / max_mag; 3],
+                                            RIMP::MagnitudeLinear => {
+                                                linear_color_map(v.norm() / max_mag)
+                                            }
+                                            RIMP::Phase => {
+                                                let angle = (v.im).atan2(v.re) + PI;
+                                                // hsv_color_map(angle, v.norm())
+                                                cyclic_color_map(angle)
+                                            }
+                                            RIMP::PhaseRawHue => {
+                                                let angle = (v.im).atan2(v.re) + PI;
+                                                hsv_color_map(angle, 1.0)
+                                            }
+                                            RIMP::PhaseRawHueWeighted => {
+                                                let angle = (v.im).atan2(v.re) + PI;
+                                                hsv_color_map(angle, v.norm() / max_mag)
+                                            }
+                                            RIMP::PhaseWeighted => {
+                                                let angle = (v.im).atan2(v.re) + PI;
+                                                weighted_cyclic_color_map(angle, v.norm() / max_mag)
+                                            }
                                         }
-                                    }
-                                })
-                                .collect::<Vec<_>>(),
+                                    })
+                                    .collect::<Vec<_>>(),
+                            )
+                            .expect("square matrix"),
                         )
-                        .expect("square matrix"),
-                    ),
+                    }
                     _ => None,
                 };
                 data.map(|data| create_rgb_handle(&data))
@@ -124,14 +142,14 @@ impl Visualization {
 //fn create_grayscale_handle(data: &Array3<f64>) -> Handle {}
 fn create_rgb_handle(data: &Array3<f64>) -> Handle {
     // trace!("Creating image handle for plot2d, {:?}", data.shape());
-    let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
+    // let max = data.iter().fold(-f64::INFINITY, |a, &b| a.max(b));
     // let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
-    let min = 0.0;
+    // let min = 0.0;
     let brightness = |p: f64| {
         return (p * 255.0).round() as u8;
-        let p = ((p - min) / (max - min)) as f32;
-        let p = if p.is_nan() { 0.0 } else { p };
-        (p * 255.0).round() as u8
+        // let p = ((p - min) / (max - min)) as f32;
+        // let p = if p.is_nan() { 0.0 } else { p };
+        // (p * 255.0).round() as u8
     };
     let img: Vec<u8> = data
         .outer_iter()
@@ -151,4 +169,54 @@ fn create_rgb_handle(data: &Array3<f64>) -> Handle {
         })
         .collect();
     Handle::from_rgba(data.dim().0 as u32, data.dim().1 as u32, img)
+}
+
+/// angle in radians
+fn hsv_color_map(angle: f64, lightness: f64) -> [f64; 3] {
+    let hsv: hsv::Hsv<_, f64> = hsv::Hsv::new(360.0 * angle / (TAU), 1.0, lightness);
+    // let rgb: [f64; 3] = hsv.into();
+    // rgb
+    let (r, g, b) = Srgb::from_color(hsv).into_components();
+    [r, g, b]
+}
+
+/// angle in positive radians, brightness 0.0-1.0
+fn weighted_cyclic_color_map(angle: f64, brightness: f64) -> [f64; 3] {
+    let img = include_bytes!("../../data/colormap/CET-C7.bin");
+    let len = img.len() / 3;
+    let cycles = (angle / TAU).fract();
+    let r_index = (cycles * len as f64).floor() as usize * 3;
+
+    let scale = (1.0 / 255.0) * brightness;
+    [
+        img[r_index] as f64 * scale,
+        img[r_index + 1] as f64 * scale,
+        img[r_index + 2] as f64 * scale,
+    ]
+}
+fn cyclic_color_map(angle: f64) -> [f64; 3] {
+    let img = include_bytes!("../../data/colormap/CET-C7.bin");
+    let len = img.len() / 3;
+    let cycles = (angle / TAU).fract();
+    let r_index = (cycles * len as f64).floor() as usize * 3;
+
+    let scale = 1.0 / 255.0;
+    [
+        img[r_index] as f64 * scale,
+        img[r_index + 1] as f64 * scale,
+        img[r_index + 2] as f64 * scale,
+    ]
+}
+// value: 0.0 to 1.0
+fn linear_color_map(value: f64) -> [f64; 3] {
+    let img = include_bytes!("../../data/colormap/CET-L20.bin");
+    let len = img.len() / 3;
+    let r_index = (value * (len - 1) as f64).floor() as usize * 3;
+
+    let scale = 1.0 / 255.0;
+    [
+        img[r_index] as f64 * scale,
+        img[r_index + 1] as f64 * scale,
+        img[r_index + 2] as f64 * scale,
+    ]
 }
