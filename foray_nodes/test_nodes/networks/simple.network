@@ -1,0 +1,223 @@
+(
+    graph: (
+        nodes: {
+            4: (
+                template: PyNode((
+                    name: "3d_test",
+                    py_path: "test_nodes.foray.examples.3d_test",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 4), (X, 5), (Slice(0), 2)],
+                        complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+            5: (
+                template: RustNode(Display),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 4), (X, 5), (Slice(0), 2)],
+                        complex_map: Phase,
+                    ),
+                ),
+            ),
+            6: (
+                template: PyNode((
+                    name: "shepp_logan",
+                    py_path: "test_nodes.foray.examples.shepp_logan",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "image_size": Float(256.0),
+                },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+            7: (
+                template: PyNode((
+                    name: "fft",
+                    py_path: "test_nodes.foray.fft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+            8: (
+                template: PyNode((
+                    name: "ifft",
+                    py_path: "test_nodes.foray.ifft",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Complex, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+            9: (
+                template: RustNode(Display),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        complex_map: Phase,
+                    ),
+                ),
+            ),
+            10: (
+                template: PyNode((
+                    name: "shift",
+                    py_path: "test_nodes.foray.shift",
+                    config: Ok((
+                        inputs: Ok({
+                            "a": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "x-shift": Slider(0.0, 1.0, 100.0),
+                            "y-shift": Slider(0.0, 1.0, 100.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "x-shift": Float(0.01),
+                    "y-shift": Float(0.0),
+                },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+        },
+        edges: [((
+            node: 4,
+            name: "out",
+            io: Out,
+        ), (
+            node: 5,
+            name: "in",
+            io: In,
+        )), ((
+            node: 6,
+            name: "out",
+            io: Out,
+        ), (
+            node: 7,
+            name: "a",
+            io: In,
+        )), ((
+            node: 8,
+            name: "out",
+            io: Out,
+        ), (
+            node: 9,
+            name: "in",
+            io: In,
+        )), ((
+            node: 7,
+            name: "out",
+            io: Out,
+        ), (
+            node: 10,
+            name: "a",
+            io: In,
+        )), ((
+            node: 10,
+            name: "out",
+            io: Out,
+        ), (
+            node: 8,
+            name: "a",
+            io: In,
+        ))],
+        next_id: 11,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: 72.47558,
+                y: 357.25912,
+            ),
+            zoom: 1.7847943,
+        ),
+        shape_positions: {
+            9: (
+                x: 137.83081,
+                y: 361.1266,
+            ),
+            10: (
+                x: 218.15048,
+                y: 208.81418,
+            ),
+            8: (
+                x: 174.41205,
+                y: 269.3237,
+            ),
+            7: (
+                x: 168.93541,
+                y: 123.74464,
+            ),
+            6: (
+                x: 143.28941,
+                y: 11.865829,
+            ),
+            4: (
+                x: -90.80782,
+                y: -3.1791744,
+            ),
+            5: (
+                x: -106.27178,
+                y: 128.8474,
+            ),
+        },
+    ),
+)

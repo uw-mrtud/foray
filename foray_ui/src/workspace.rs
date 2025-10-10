@@ -5,7 +5,8 @@ use crate::interface::node_canvas::node_canvas;
 use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
-use crate::node_instance::visualiztion::{Visualization, VisualizationParameters};
+use crate::node_instance::visualization_parameters::VisualizationParameters;
+use crate::node_instance::visualiztion::Visualization;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::project::{read_python_projects, rust_project, Project};
 use crate::python_env;
@@ -538,7 +539,7 @@ impl Workspace {
                             }
                             _ => node.template.clone(),
                         };
-                        let visualization_parameters = node.visualization.parameters;
+                        let visualization_parameters = node.visualization.parameters.clone();
 
                         //// Update wire
                         self.network.graph.update_wire_data(nx, output);

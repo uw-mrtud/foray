@@ -33,8 +33,7 @@ impl ForayNodeInstance {
     pub fn node_bounding_rect(&self) -> Rectangle {
         match self.template {
             crate::node_instance::ForayNodeTemplate::RustNode(RustNodeTemplate::Display) => {
-                let image_size = 200.0;
-                Rectangle::new((0.0, 0.0).into(), (image_size, image_size).into())
+                self.visualization.parameters.image_bounds(200.0)
             }
             _ => {
                 let estimated_text_width =
@@ -149,10 +148,13 @@ pub fn draw_node(
         // Draw Display Node
         crate::node_instance::ForayNodeTemplate::RustNode(RustNodeTemplate::Display) => {
             let img_padding = 1.0;
-            let image_size = node_bounding.size().width - img_padding;
+            let (image_width, image_height) = (
+                node_bounding.size().width - img_padding,
+                node_bounding.size().height - img_padding,
+            );
             let image_bounds = Rectangle::new(
                 (img_padding / 2.0, img_padding / 2.0).into(),
-                (image_size, image_size).into(),
+                (image_width, image_height).into(),
             );
 
             draw_node_border(frame, node_bounding, 1.0, stroke, node_border_color);
@@ -161,12 +163,8 @@ pub fn draw_node(
         }
         // Draw Default Node
         _ => {
-            let image_size = 60.0;
-            let image_bounds = Rectangle::new(
-                // (8.0, node_bounding.height).into(),
-                (node_bounding.width + 1.0, 0.0).into(),
-                (image_size, image_size).into(),
-            );
+            let image_size = node.visualization.parameters.image_bounds(60.0).size();
+            let image_bounds = Rectangle::new((node_bounding.width, 0.0).into(), image_size);
 
             draw_node_text(frame, app_theme, node_bounding, node.template.name());
             draw_node_border(

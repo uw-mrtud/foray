@@ -1,3 +1,4 @@
+pub mod visualization_parameters;
 pub mod visualiztion;
 
 use std::time::Instant;
@@ -56,8 +57,7 @@ pub struct ForayNodeInstance {
     // in one spot, refering to them when necessary?
     pub template: ForayNodeTemplate,
     pub parameters_values: Dict<String, PortData>,
-
-    #[serde(skip)]
+    #[serde(default)]
     pub visualization: Visualization,
     #[serde(skip)]
     // If there are errors for any of NodeDefinition fields, the field will be empty,

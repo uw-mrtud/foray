@@ -232,6 +232,22 @@ impl<'py> IntoPyObject<'py> for ForayArray {
     }
 }
 
+impl PortData {
+    pub fn dimensions(&self) -> Vec<usize> {
+        match self {
+            PortData::Array(foray_array) => match foray_array {
+                ForayArray::Integer(array_base) => array_base.shape().into(),
+                ForayArray::Float(array_base) => array_base.shape().into(),
+                ForayArray::Complex(array_base) => array_base.shape().into(),
+                ForayArray::Boolean(array_base) => array_base.shape().into(),
+                ForayArray::String(array_base) => array_base.shape().into(),
+                ForayArray::Object(array_base) => array_base.shape().into(),
+            },
+            _ => vec![1],
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Display, Debug, PartialOrd)]
 pub enum NodeError {
     Input(String),
