@@ -85,18 +85,18 @@ fn port_data_to_image_handle(
         PortData::Array(ForayArray::Float(a)) => {
             let array_slice = parameters.slice_array_2d(a);
             let (x_len, y_len) = parameters.xy_length();
-            let max_mag = array_slice
-                .iter()
-                .max_by(|a: &&f64, b: &&f64| a.total_cmp(b))
-                .unwrap_or(&0.0);
+            // let max_mag = array_slice
+            //     .iter()
+            //     .max_by(|a: &&f64, b: &&f64| a.total_cmp(b))
+            //     .unwrap_or(&0.0);
 
             let img = array_slice
                 .outer_iter()
                 .flat_map(|row| {
                     row.iter()
                         .flat_map(|v| match parameters.complex_map {
-                            RIMP::MagnitudeLinear => linear_color_map(*v),
-                            _ => linear_grayscale(*v),
+                            RIMP::MagnitudeLinear => linear_color_map(parameters.map_value(*v)),
+                            _ => linear_grayscale(parameters.map_value(*v)),
                         })
                         .collect::<Vec<_>>()
                 })
@@ -106,21 +106,23 @@ fn port_data_to_image_handle(
         PortData::Array(ForayArray::Complex(a)) => {
             let array_slice = parameters.slice_array_2d(a);
             let (x_len, y_len) = parameters.xy_length();
-            let max_mag = array_slice
-                .iter()
-                .map(|v| v.norm())
-                .reduce(f64::max)
-                .unwrap_or(0.0);
+            // let max_mag = array_slice
+            //     .iter()
+            //     .map(|v| v.norm())
+            //     .reduce(f64::max)
+            //     .unwrap_or(0.0);
 
             let img = array_slice
                 .outer_iter()
                 .flat_map(|row| {
                     row.iter()
                         .flat_map(|v| match parameters.complex_map {
-                            RIMP::Real => linear_grayscale(v.re),
-                            RIMP::Imaginary => linear_grayscale(v.im),
-                            RIMP::MagnitudeGray => linear_grayscale(v.norm() / max_mag),
-                            RIMP::MagnitudeLinear => linear_color_map(v.norm() / max_mag),
+                            RIMP::Real => linear_grayscale(parameters.map_value(v.re)),
+                            RIMP::Imaginary => linear_grayscale(parameters.map_value(v.im)),
+                            RIMP::MagnitudeGray => linear_grayscale(parameters.map_value(v.norm())),
+                            RIMP::MagnitudeLinear => {
+                                linear_color_map(parameters.map_value(v.norm()))
+                            }
                             RIMP::Phase => {
                                 let angle = (v.im).atan2(v.re) + PI;
                                 cyclic_color_map(angle)
@@ -131,11 +133,11 @@ fn port_data_to_image_handle(
                             }
                             RIMP::PhaseRawHueWeighted => {
                                 let angle = (v.im).atan2(v.re) + PI;
-                                hsv_color_map(angle, v.norm() / max_mag)
+                                hsv_color_map(angle, parameters.map_value(v.norm()))
                             }
                             RIMP::PhaseWeighted => {
                                 let angle = (v.im).atan2(v.re) + PI;
-                                weighted_cyclic_color_map(angle, v.norm() / max_mag)
+                                weighted_cyclic_color_map(angle, parameters.map_value(v.norm()))
                             }
                         })
                         .collect::<Vec<_>>()

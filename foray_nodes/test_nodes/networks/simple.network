@@ -1,7 +1,7 @@
 (
     graph: (
         nodes: {
-            4: (
+            0: (
                 template: PyNode((
                     name: "3d_test",
                     py_path: "test_nodes.foray.examples.3d_test",
@@ -17,206 +17,104 @@
                 visualization: (
                     parameters: (
                         ndim_mapping: [(Y, 4), (X, 5), (Slice(0), 2)],
+                        value_mapping: (0.0, 1.0),
                         complex_map: MagnitudeGray,
                     ),
                 ),
             ),
-            5: (
+            1: (
                 template: RustNode(Display),
                 parameters_values: {},
                 visualization: (
                     parameters: (
                         ndim_mapping: [(Y, 4), (X, 5), (Slice(0), 2)],
-                        complex_map: Phase,
+                        value_mapping: (0.0, 1.0),
+                        complex_map: MagnitudeGray,
                     ),
                 ),
             ),
-            6: (
+            2: (
                 template: PyNode((
-                    name: "shepp_logan",
-                    py_path: "test_nodes.foray.examples.shepp_logan",
+                    name: "coulomb",
+                    py_path: "test_nodes.foray.examples.coulomb",
                     config: Ok((
                         inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "image_size": NumberField(256.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "image_size": Float(256.0),
-                },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        complex_map: MagnitudeGray,
-                    ),
-                ),
-            ),
-            7: (
-                template: PyNode((
-                    name: "fft",
-                    py_path: "test_nodes.foray.fft",
-                    config: Ok((
-                        inputs: Ok({
-                            "a": Array(Complex, [None, None]),
-                        }),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({}),
-                    )),
-                )),
-                parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        complex_map: MagnitudeGray,
-                    ),
-                ),
-            ),
-            8: (
-                template: PyNode((
-                    name: "ifft",
-                    py_path: "test_nodes.foray.ifft",
-                    config: Ok((
-                        inputs: Ok({
-                            "a": Array(Complex, [None, None]),
-                        }),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({}),
-                    )),
-                )),
-                parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        complex_map: MagnitudeGray,
-                    ),
-                ),
-            ),
-            9: (
-                template: RustNode(Display),
-                parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        complex_map: Phase,
-                    ),
-                ),
-            ),
-            10: (
-                template: PyNode((
-                    name: "shift",
-                    py_path: "test_nodes.foray.shift",
-                    config: Ok((
-                        inputs: Ok({
-                            "a": Array(Float, [None, None]),
-                        }),
                         outputs: Ok({
                             "out": Array(Float, [None, None]),
                         }),
                         parameters: Ok({
-                            "x-shift": Slider(0.0, 1.0, 100.0),
-                            "y-shift": Slider(0.0, 1.0, 100.0),
+                            "length": Slider(0.1, 10.0, 1.0),
+                            "size": NumberField(4.0),
                         }),
                     )),
                 )),
                 parameters_values: {
-                    "x-shift": Float(0.01),
-                    "y-shift": Float(0.0),
+                    "length": Float(9.08),
+                    "size": Float(20.0),
                 },
                 visualization: (
                     parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
+                        ndim_mapping: [(Y, 20), (X, 20), (Slice(0), 10)],
+                        value_mapping: (0.0, 1.0),
                         complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+            3: (
+                template: RustNode(Display),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 20), (X, 20), (Slice(5), 10)],
+                        value_mapping: (0.0, 1.0),
+                        complex_map: MagnitudeLinear,
                     ),
                 ),
             ),
         },
         edges: [((
-            node: 4,
+            node: 0,
             name: "out",
             io: Out,
         ), (
-            node: 5,
+            node: 1,
             name: "in",
             io: In,
         )), ((
-            node: 6,
+            node: 2,
             name: "out",
             io: Out,
         ), (
-            node: 7,
-            name: "a",
-            io: In,
-        )), ((
-            node: 8,
-            name: "out",
-            io: Out,
-        ), (
-            node: 9,
+            node: 3,
             name: "in",
-            io: In,
-        )), ((
-            node: 7,
-            name: "out",
-            io: Out,
-        ), (
-            node: 10,
-            name: "a",
-            io: In,
-        )), ((
-            node: 10,
-            name: "out",
-            io: Out,
-        ), (
-            node: 8,
-            name: "a",
             io: In,
         ))],
-        next_id: 11,
+        next_id: 4,
     ),
     shapes: (
         camera: (
             position: (
-                x: 72.47558,
-                y: 357.25912,
+                x: -8.4670105,
+                y: 1.0502319,
             ),
-            zoom: 1.7847943,
+            zoom: 1.0,
         ),
         shape_positions: {
-            9: (
-                x: 137.83081,
-                y: 361.1266,
+            3: (
+                x: 188.49179,
+                y: -12.102356,
             ),
-            10: (
-                x: 218.15048,
-                y: 208.81418,
+            2: (
+                x: 210.19138,
+                y: -202.04904,
             ),
-            8: (
-                x: 174.41205,
-                y: 269.3237,
+            1: (
+                x: -160.19583,
+                y: -38.751892,
             ),
-            7: (
-                x: 168.93541,
-                y: 123.74464,
-            ),
-            6: (
-                x: 143.28941,
-                y: 11.865829,
-            ),
-            4: (
-                x: -90.80782,
-                y: -3.1791744,
-            ),
-            5: (
-                x: -106.27178,
-                y: 128.8474,
+            0: (
+                x: -43.16162,
+                y: -262.66306,
             ),
         },
     ),

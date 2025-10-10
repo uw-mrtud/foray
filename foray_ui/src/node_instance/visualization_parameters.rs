@@ -9,12 +9,23 @@ use strum::VariantArray;
 use crate::workspace::WorkspaceMessage;
 use iced::widget::{column, *};
 
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VisualizationParameters {
     // #[serde(skip)]
     // pub array_shape: Vec<usize>,
     pub ndim_mapping: Vec<(DimMapping, usize)>,
+    pub value_mapping: (f64, f64),
     pub complex_map: RIMP,
+}
+
+impl Default for VisualizationParameters {
+    fn default() -> Self {
+        Self {
+            ndim_mapping: Default::default(),
+            value_mapping: (0.0, 1.0),
+            complex_map: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -267,6 +278,30 @@ impl VisualizationParameters {
         .spacing(2.0)
         .into();
 
+        // Value mapping
+
+        let floor_row = row![
+            text("floor").width(40),
+            slider(0.0..=2.0, self.value_mapping.0, move |value| {
+                let mut new_parameters = self.clone();
+                new_parameters.value_mapping.0 = value;
+                WorkspaceMessage::UpdateVisualization(node_id, new_parameters)
+            })
+            .step(0.1)
+        ]
+        .align_y(Center);
+
+        let ceil_row = row![
+            text("ceil").width(40),
+            slider(0.0..=2.0, self.value_mapping.1, move |value| {
+                let mut new_parameters = self.clone();
+                new_parameters.value_mapping.1 = value;
+                WorkspaceMessage::UpdateVisualization(node_id, new_parameters)
+            })
+            .step(0.1)
+        ]
+        .align_y(Center);
+
         column![
             row![rimp_widget].align_y(Center),
             vertical_space().height(10.0),
@@ -275,8 +310,22 @@ impl VisualizationParameters {
             row!["Size: ", size_dim_display],
             row!["Slice: ", slice_dim_display],
             slice_widget,
+            vertical_space().height(10.0),
+            row!["Value Mapping"],
+            horizontal_rule(1.0),
+            floor_row,
+            ceil_row,
         ]
         .spacing(2.0)
         .into()
+    }
+
+    pub(crate) fn map_value(&self, x: f64) -> f64 {
+        let (floor, ceil) = self.value_mapping;
+
+        let m = 1.0 / (ceil - floor);
+        let b = floor / (floor - ceil);
+        let y = m * x + b;
+        y.clamp(0.0, 1.0)
     }
 }
