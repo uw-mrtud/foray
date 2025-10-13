@@ -1,3 +1,4 @@
+pub mod histogram;
 pub mod visualization_parameters;
 pub mod visualiztion;
 

@@ -16,10 +16,10 @@ def config():
 
 def compute(_, p):
     N = int(p["size"])
-    l = 20
 
     q = 5
-    # Define 3D grid of points
+    l = 20
+
     x = np.linspace(-l, l, N)
     y = np.linspace(-l, l, N)
 
@@ -36,10 +36,4 @@ def compute(_, p):
     min_dist = 2.4
     f = q / np.maximum(d1sr, min_dist) - q / np.maximum(d2sr, min_dist)
 
-    f_norm = (f - f.min()) / np.ptp(f)
-    print(f_norm.min())
-    print(f_norm.max())
-    print(np.ptp(f_norm))
-
-    # return {"out": f_norm[:, N // 4 : (N // 4) * 3, :]}
-    return {"out": f_norm}
+    return {"out": f}

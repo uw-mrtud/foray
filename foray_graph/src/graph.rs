@@ -452,8 +452,6 @@ mod test {
             self,
             inputs: Dict<String, WireDataContainer<u32>>,
         ) -> Result<Dict<String, u32>, ForayNodeError> {
-            dbg!(&inputs);
-            dbg!(&self);
             Ok(match &self {
                 Node::Identity(_node) => {
                     [("out".to_string(), *inputs["in"].read().unwrap())].into()

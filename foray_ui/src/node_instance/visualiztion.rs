@@ -8,7 +8,10 @@ use palette::{hsv, FromColor, Srgb};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    node_instance::visualization_parameters::{VisualizationParameters, RIMP},
+    node_instance::{
+        histogram::Histogram,
+        visualization_parameters::{VisualizationParameters, RIMP},
+    },
     rust_nodes::RustNodeTemplate,
 };
 
@@ -30,7 +33,7 @@ impl Visualization {
             image_handle: None,
             parameters,
         };
-        visualization.create_image_handle(node_id, graph);
+        visualization.create_cached_data(node_id, graph);
         visualization
     }
 
@@ -38,7 +41,7 @@ impl Visualization {
         self.image_handle = None;
     }
 
-    pub(crate) fn create_image_handle(
+    pub(crate) fn create_cached_data(
         &mut self,
         node_id: u32,
         graph: &Graph<ForayNodeInstance, PortType, PortData>,
@@ -66,12 +69,14 @@ impl Visualization {
         match port_data {
             None => {
                 self.image_handle = None;
+                self.parameters.histogram = None;
             }
             Some(port_data) => {
                 let dimensions = port_data.dimensions();
                 self.parameters.update_dimension_lengths(dimensions);
 
                 self.image_handle = port_data_to_image_handle(port_data, &self.parameters);
+                self.parameters.histogram = Histogram::new(port_data)
             }
         }
     }
