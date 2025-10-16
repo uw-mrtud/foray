@@ -1,4 +1,5 @@
 pub mod histogram;
+pub(super) mod value_mapping;
 pub mod visualization_parameters;
 pub mod visualiztion;
 

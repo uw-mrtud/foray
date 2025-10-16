@@ -1,16 +1,13 @@
-use std::f64::consts::{PI, TAU};
-
 use foray_data_model::node::{ForayArray, PortData, PortType};
 use foray_graph::graph::{Graph, GraphNode};
 use iced::widget::image::Handle;
 
-use palette::{hsv, FromColor, Srgb};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     node_instance::{
         histogram::Histogram,
-        visualization_parameters::{VisualizationParameters, RIMP},
+        visualization_parameters::VisualizationParameters,
     },
     rust_nodes::RustNodeTemplate,
 };
@@ -66,6 +63,10 @@ impl Visualization {
             },
         };
 
+        // Enforce constraints on visualization given a new port_data, wich may have a different
+        // type
+        //
+        // This is a bit messy, but I don't currently have a better approach in mind.
         match port_data {
             None => {
                 self.image_handle = None;
@@ -75,8 +76,9 @@ impl Visualization {
                 let dimensions = port_data.dimensions();
                 self.parameters.update_dimension_lengths(dimensions);
 
+                self.parameters.value_mapping.enforce_constraint(&port_data);
                 self.image_handle = port_data_to_image_handle(port_data, &self.parameters);
-                self.parameters.histogram = Histogram::new(port_data)
+                self.parameters.histogram = Histogram::new(port_data);
             }
         }
     }
@@ -99,10 +101,12 @@ fn port_data_to_image_handle(
                 .outer_iter()
                 .flat_map(|row| {
                     row.iter()
-                        .flat_map(|v| match parameters.complex_map {
-                            RIMP::MagnitudeLinear => linear_color_map(parameters.map_value(*v)),
-                            _ => linear_grayscale(parameters.map_value(*v)),
-                        })
+                        .flat_map(
+                            |v| parameters.value_mapping.color_map_real(*v), //     match parameters.complex_map {
+                                                                             //     RIMP::MagColor => linear_color_map(parameters.map_value(*v)),
+                                                                             //     _ => linear_grayscale(parameters.map_value(*v)),
+                                                                             // }
+                        )
                         .collect::<Vec<_>>()
                 })
                 .collect::<Vec<_>>();
@@ -121,30 +125,7 @@ fn port_data_to_image_handle(
                 .outer_iter()
                 .flat_map(|row| {
                     row.iter()
-                        .flat_map(|v| match parameters.complex_map {
-                            RIMP::Real => linear_grayscale(parameters.map_value(v.re)),
-                            RIMP::Imaginary => linear_grayscale(parameters.map_value(v.im)),
-                            RIMP::MagnitudeGray => linear_grayscale(parameters.map_value(v.norm())),
-                            RIMP::MagnitudeLinear => {
-                                linear_color_map(parameters.map_value(v.norm()))
-                            }
-                            RIMP::Phase => {
-                                let angle = (v.im).atan2(v.re) + PI;
-                                cyclic_color_map(angle)
-                            }
-                            RIMP::PhaseRawHue => {
-                                let angle = (v.im).atan2(v.re) + PI;
-                                hsv_color_map(angle, 1.0)
-                            }
-                            RIMP::PhaseRawHueWeighted => {
-                                let angle = (v.im).atan2(v.re) + PI;
-                                hsv_color_map(angle, parameters.map_value(v.norm()))
-                            }
-                            RIMP::PhaseWeighted => {
-                                let angle = (v.im).atan2(v.re) + PI;
-                                weighted_cyclic_color_map(angle, parameters.map_value(v.norm()))
-                            }
-                        })
+                        .flat_map(|v| parameters.value_mapping.color_map_complex(*v))
                         .collect::<Vec<_>>()
                 })
                 .collect::<Vec<_>>();
@@ -153,49 +134,4 @@ fn port_data_to_image_handle(
         }
         _ => None,
     }
-}
-
-/// angle in radians
-fn hsv_color_map(angle: f64, lightness: f64) -> [u8; 4] {
-    let hsv: hsv::Hsv<_, f64> = hsv::Hsv::new(360.0 * angle / (TAU), 1.0, lightness);
-    let (r, g, b) = Srgb::from_color(hsv).into_format().into_components();
-    [r, g, b, 255]
-}
-
-/// angle in positive radians, brightness 0.0-1.0
-fn weighted_cyclic_color_map(angle: f64, brightness: f64) -> [u8; 4] {
-    let img = include_bytes!("../../data/colormap/CET-C7.bin");
-    let len = img.len() / 3;
-    let cycles = (angle / TAU).fract();
-    let r_index = (cycles * len as f64).floor() as usize * 3;
-
-    [
-        (img[r_index] as f64 * brightness) as u8,
-        (img[r_index + 1] as f64 * brightness) as u8,
-        (img[r_index + 2] as f64 * brightness) as u8,
-        255,
-    ]
-}
-
-fn cyclic_color_map(angle: f64) -> [u8; 4] {
-    let img = include_bytes!("../../data/colormap/CET-C7.bin");
-    let len = img.len() / 3;
-    let cycles = (angle / TAU).fract();
-    let r_index = (cycles * len as f64).floor() as usize * 3;
-
-    [img[r_index], img[r_index + 1], img[r_index + 2], 255]
-}
-
-// value: 0.0 to 1.0
-fn linear_color_map(value: f64) -> [u8; 4] {
-    let img = include_bytes!("../../data/colormap/CET-L20.bin");
-    let len = img.len() / 3;
-    let r_index = (value * (len - 1) as f64).floor() as usize * 3;
-
-    [img[r_index], img[r_index + 1], img[r_index + 2], 255]
-}
-
-fn linear_grayscale(value: f64) -> [u8; 4] {
-    let gray_level = (value * 255.0).round() as u8;
-    [gray_level, gray_level, gray_level, 255]
 }

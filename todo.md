@@ -243,5 +243,20 @@
 ## 25/9/29
 - [ ] warning when node tries to execute before all input ports are filled
 - [ ] undo/redo issues
-- [ ] display node
+- [x] display node
+
+## 25/10/13
+- [ ] color bar
+- [x] available color map options adjusts to current port type (hide complex only variants)
+- [ ] executing node status color
+- [ ] wire fire animation
+- [ ] error node status color
+- [ ] bugs when deleting nodes? port/edge data cleanup?
+- [ ] UI for actions that currently only have keyboard shortcuts
+  - [ ] add node
+  - [ ] duplicate node
+  - [ ] zoom
+- [ ] node reload don't re-run all nodes
+- [ ] don't re-run nodes on click
+- [ ] plot node
 

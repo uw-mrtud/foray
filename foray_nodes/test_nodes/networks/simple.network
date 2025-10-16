@@ -3,94 +3,6 @@
         nodes: {
             0: (
                 template: PyNode((
-                    name: "coulomb",
-                    py_path: "test_nodes.foray.examples.coulomb",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Float, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "length": Slider(0.1, 10.0, 1.0),
-                            "size": NumberField(4.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "length": Float(6.15),
-                    "size": Float(20.0),
-                },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 20), (X, 20), (Slice(0), 10)],
-                        value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                        ),
-                        complex_map: MagnitudeGray,
-                    ),
-                ),
-            ),
-            1: (
-                template: RustNode(Display),
-                parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 20), (X, 20), (Slice(5), 10)],
-                        value_mapping: (
-                            floor: -0.66020197,
-                            ceil: 0.63979805,
-                        ),
-                        complex_map: MagnitudeLinear,
-                    ),
-                ),
-            ),
-            2: (
-                template: PyNode((
-                    name: "gaussian",
-                    py_path: "test_nodes.foray.examples.gaussian",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Float, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "size": NumberField(10.0),
-                            "width": Slider(0.1, 100.0, 1.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "size": Float(100.0),
-                    "width": Float(87.26),
-                },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 100), (X, 100)],
-                        value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                        ),
-                        complex_map: MagnitudeGray,
-                    ),
-                ),
-            ),
-            3: (
-                template: RustNode(Display),
-                parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 100), (X, 100)],
-                        value_mapping: (
-                            floor: 0.26789555,
-                            ceil: 0.66789556,
-                        ),
-                        complex_map: MagnitudeGray,
-                    ),
-                ),
-            ),
-            4: (
-                template: PyNode((
                     name: "shepp_logan",
                     py_path: "test_nodes.foray.examples.shepp_logan",
                     config: Ok((
@@ -112,12 +24,12 @@
                         value_mapping: (
                             floor: 0.0,
                             ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
                         ),
-                        complex_map: MagnitudeGray,
                     ),
                 ),
             ),
-            5: (
+            1: (
                 template: RustNode(Display),
                 parameters_values: {},
                 visualization: (
@@ -126,8 +38,52 @@
                         value_mapping: (
                             floor: 0.0,
                             ceil: 1.0,
+                            color_map: Complex(Real(Color)),
                         ),
-                        complex_map: MagnitudeGray,
+                    ),
+                ),
+            ),
+            2: (
+                template: PyNode((
+                    name: "gaussian",
+                    py_path: "test_nodes.foray.examples.gaussian",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "fwhm": Slider(0.1, 100.0, 1.0),
+                            "size": NumberField(10.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "fwhm": Float(55.03),
+                    "size": Float(100.0),
+                },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 100), (X, 100)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Real(Color),
+                        ),
+                    ),
+                ),
+            ),
+            3: (
+                template: RustNode(Display),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 100), (X, 100)],
+                        value_mapping: (
+                            floor: 0.011257757,
+                            ceil: 0.9995423,
+                            color_map: Real(Color),
+                        ),
                     ),
                 ),
             ),
@@ -148,49 +104,33 @@
             node: 3,
             name: "in",
             io: In,
-        )), ((
-            node: 4,
-            name: "out",
-            io: Out,
-        ), (
-            node: 5,
-            name: "in",
-            io: In,
         ))],
         next_id: 6,
     ),
     shapes: (
         camera: (
             position: (
-                x: 75.83794,
-                y: 8.310562,
+                x: -62.304688,
+                y: -50.527344,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
             1: (
-                x: -201.44507,
-                y: -34.870422,
+                x: -258.07813,
+                y: -147.08984,
             ),
             3: (
-                x: 25.879974,
-                y: -31.791626,
-            ),
-            5: (
-                x: 318.27094,
-                y: 51.338318,
-            ),
-            4: (
-                x: 332.44714,
-                y: -33.808167,
+                x: 90.07422,
+                y: -100.234375,
             ),
             2: (
-                x: 267.5807,
-                y: -143.17288,
+                x: 135.89063,
+                y: -292.67188,
             ),
             0: (
-                x: -63.57605,
-                y: -180.84647,
+                x: -196.89844,
+                y: -332.69922,
             ),
         },
     ),
