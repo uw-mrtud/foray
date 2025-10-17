@@ -5,11 +5,7 @@ use iced::widget::image::Handle;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    node_instance::{
-        histogram::Histogram,
-        visualization_parameters::VisualizationParameters,
-    },
-    rust_nodes::RustNodeTemplate,
+    node_instance::visualization_parameters::VisualizationParameters, rust_nodes::RustNodeTemplate,
 };
 
 use super::ForayNodeInstance;
@@ -70,15 +66,19 @@ impl Visualization {
         match port_data {
             None => {
                 self.image_handle = None;
-                self.parameters.histogram = None;
+                self.parameters.value_mapping.histogram = None;
             }
             Some(port_data) => {
                 let dimensions = port_data.dimensions();
                 self.parameters.update_dimension_lengths(dimensions);
 
-                self.parameters.value_mapping.enforce_constraint(&port_data);
+                self.parameters
+                    .value_mapping
+                    .enforce_color_map_constaints(&port_data);
+                self.parameters.value_mapping.create_histogram(port_data);
+                self.parameters.value_mapping.clamp_floor_ceil();
+
                 self.image_handle = port_data_to_image_handle(port_data, &self.parameters);
-                self.parameters.histogram = Histogram::new(port_data);
             }
         }
     }

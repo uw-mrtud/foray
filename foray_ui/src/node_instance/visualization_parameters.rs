@@ -4,18 +4,13 @@ use itertools::Itertools;
 use ndarray::{ArrayD, ArrayViewD, Slice};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    node_instance::{histogram::Histogram, value_mapping::ValueMapping},
-    workspace::WorkspaceMessage,
-};
+use crate::{node_instance::value_mapping::ValueMapping, workspace::WorkspaceMessage};
 use iced::widget::{column, *};
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct VisualizationParameters {
     pub ndim_mapping: Vec<(DimMapping, usize)>,
     pub value_mapping: ValueMapping,
-    #[serde(skip)]
-    pub histogram: Option<Histogram>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

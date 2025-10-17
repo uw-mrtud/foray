@@ -1,4 +1,4 @@
-use std::f64::consts::{PI, TAU};
+use std::f64::consts::PI;
 
 use derive_more::Display;
 use foray_data_model::node::{ForayArray, PortData};
@@ -9,9 +9,7 @@ use serde::{Deserialize, Serialize};
 use strum::{VariantArray, VariantNames};
 
 use crate::{
-    node_instance::{
-        histogram::HistogramWidget, visualization_parameters::VisualizationParameters,
-    },
+    node_instance::{histogram::Histogram, visualization_parameters::VisualizationParameters},
     workspace::WorkspaceMessage,
 };
 use iced::widget::{column, *};
@@ -21,6 +19,8 @@ pub struct ValueMapping {
     pub floor: f32,
     pub ceil: f32,
     pub color_map: ColorMap,
+    #[serde(skip)]
+    pub histogram: Option<Histogram>,
 }
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Serialize, Deserialize)]
@@ -71,10 +71,10 @@ pub enum CyclicMap {
     Weighted,
 }
 impl CyclicMap {
-    fn map_color(&self, radians: f64, brightness: f64) -> [u8; 4] {
+    fn map_color(&self, cycles: f64, brightness: f64) -> [u8; 4] {
         match self {
-            CyclicMap::Cyclic => cyclic_color_map(radians),
-            CyclicMap::Weighted => weighted_cyclic_color_map(radians, brightness),
+            CyclicMap::Cyclic => cyclic_color_map(cycles),
+            CyclicMap::Weighted => weighted_cyclic_color_map(cycles, brightness),
         }
     }
 }
@@ -85,11 +85,27 @@ impl Default for ValueMapping {
             floor: 0.0,
             ceil: 1.0,
             color_map: ColorMap::Real(RealMap::Color),
+            histogram: None,
         }
     }
 }
 
 impl ValueMapping {
+    pub(super) fn create_histogram(&mut self, port_data: &PortData) {
+        self.histogram = Histogram::new(port_data, &self);
+    }
+
+    // clamp floor and ceil based on histogram max/min
+    pub(super) fn clamp_floor_ceil(&mut self) {
+        self.floor = self
+            .floor
+            .max(self.histogram.as_ref().map(|h| h.min).unwrap_or(0.0));
+        self.ceil = self
+            .ceil
+            .min(self.histogram.as_ref().map(|h| h.max).unwrap_or(1.0));
+    }
+
+    /// map a raw data value to between 0.0 and 1.0 based on current floor/ciel setting
     pub(crate) fn map_value(&self, x: f64) -> f64 {
         let (floor, ceil) = (self.floor as f64, self.ceil as f64);
 
@@ -99,26 +115,63 @@ impl ValueMapping {
         y.clamp(0.0, 1.0)
     }
 
+    /// map a value between 0.0 and 1.0 to a color value
     pub fn color_map_real(&self, v: f64) -> [u8; 4] {
         match self.color_map {
             ColorMap::Real(real_map) => match real_map {
                 RealMap::Gray => linear_grayscale(self.map_value(v)),
                 RealMap::Color => linear_color_map(self.map_value(v)),
             },
-            ColorMap::Complex(_rimp) => todo!(),
+            // When drawing histogram, we map a real value, even if the underlying data is complex
+            ColorMap::Complex(rimp) => match rimp {
+                RIMP::Real(rmap) => rmap.map_color(self.map_value(v)),
+                RIMP::Imag(rmap) => rmap.map_color(self.map_value(v)),
+                RIMP::Mag(rmap) => rmap.map_color(self.map_value(v)),
+                RIMP::Phase(cymap) => match cymap {
+                    // Cylcic color, show the difference in hue
+                    CyclicMap::Cyclic => cymap.map_color(v, 1.0),
+                    // Weighted colors, show the difference in brighntes
+                    CyclicMap::Weighted => RealMap::Gray.map_color(v),
+                },
+            },
         }
     }
 
+    fn complex_to_cycles(v: Complex64) -> f64 {
+        ((v.im).atan2(v.re) + PI) / (2.0 * PI)
+    }
+
+    /// map a raw complex value a color value
     pub fn color_map_complex(&self, v: Complex64) -> [u8; 4] {
         match self.color_map {
             ColorMap::Complex(rimp) => match rimp {
                 RIMP::Real(rmap) => rmap.map_color(self.map_value(v.re)),
                 RIMP::Imag(rmap) => rmap.map_color(self.map_value(v.im)),
                 RIMP::Mag(rmap) => rmap.map_color(self.map_value(v.norm())),
-                RIMP::Phase(cymap) => {
-                    let angle = (v.im).atan2(v.re) + PI;
-                    cymap.map_color(angle, self.map_value(v.norm()))
-                }
+                RIMP::Phase(cymap) => match cymap {
+                    CyclicMap::Cyclic => {
+                        cymap.map_color(self.map_value(Self::complex_to_cycles(v)), 1.0)
+                    }
+                    CyclicMap::Weighted => {
+                        cymap.map_color(Self::complex_to_cycles(v), self.map_value(v.norm()))
+                    }
+                },
+            },
+            ColorMap::Real(_real_map) => todo!(),
+        }
+    }
+
+    /// map a raw complex value a scaler value
+    pub fn value_map_complex(&self, v: Complex64) -> f64 {
+        match self.color_map {
+            ColorMap::Complex(rimp) => match rimp {
+                RIMP::Real(_rmap) => self.map_value(v.re),
+                RIMP::Imag(_rmap) => self.map_value(v.im),
+                RIMP::Mag(_rmap) => self.map_value(v.norm()),
+                RIMP::Phase(cymap) => match cymap {
+                    CyclicMap::Cyclic => self.map_value(Self::complex_to_cycles(v)),
+                    CyclicMap::Weighted => self.map_value(v.norm()),
+                },
             },
             ColorMap::Real(_real_map) => todo!(),
         }
@@ -152,6 +205,7 @@ impl ValueMapping {
                         VisualizationParameters {
                             value_mapping: ValueMapping {
                                 color_map: ColorMap::Complex(value),
+                                histogram: None,
                                 ..self.clone()
                             },
                             ..visualization_parameters.clone()
@@ -179,12 +233,18 @@ impl ValueMapping {
 
                     RIMP::Phase(cyclic_map) => {
                         pick_list(CyclicMap::VARIANTS, Some(cyclic_map), move |value| {
+                            let (new_floor, new_ceil) = match value {
+                                CyclicMap::Cyclic => (0.0, 1.0),
+                                CyclicMap::Weighted => (self.floor, self.ceil),
+                            };
                             WorkspaceMessage::UpdateVisualization(
                                 node_id,
                                 VisualizationParameters {
                                     value_mapping: ValueMapping {
                                         color_map: ColorMap::Complex(RIMP::Phase(value)),
-                                        ..self.clone()
+                                        histogram: None,
+                                        floor: new_floor,
+                                        ceil: new_ceil,
                                     },
                                     ..visualization_parameters.clone()
                                 },
@@ -216,31 +276,49 @@ impl ValueMapping {
         };
 
         let value_mapping_widgets: Element<'_, WorkspaceMessage> = match &visualization_parameters
+            .value_mapping
             .histogram
         {
             Some(histogram) => {
-                let histogram_view = canvas(HistogramWidget::new(histogram, self.floor, self.ceil));
-                let floor_row = row![
-                    text("floor").width(40),
-                    slider(histogram.min..=histogram.max, self.floor, move |value| {
-                        let mut new_parameters = visualization_parameters.clone();
-                        new_parameters.value_mapping.floor = value;
-                        WorkspaceMessage::UpdateVisualization(node_id, new_parameters)
-                    })
-                    .step(0.1)
-                ]
-                .align_y(Center);
+                let histogram_view = canvas(self);
 
-                let ceil_row = row![
-                    text("ceil").width(40),
-                    slider(histogram.min..=histogram.max, self.ceil, move |value| {
-                        let mut new_parameters = visualization_parameters.clone();
-                        new_parameters.value_mapping.ceil = value;
-                        WorkspaceMessage::UpdateVisualization(node_id, new_parameters)
-                    })
-                    .step(0.1)
-                ]
-                .align_y(Center);
+                let n_steps = 50;
+                let step_size = (histogram.max - histogram.min) / n_steps as f32;
+                let (floor_row, ceil_row): (Element<WorkspaceMessage>, Element<WorkspaceMessage>) =
+                    // Don't create floor/ceil controls for clyclic maps
+                    match self.color_map {
+                        ColorMap::Complex(RIMP::Phase(CyclicMap::Cyclic)) => {
+                            (horizontal_space().into(), horizontal_space().into())
+                        }
+                        _ => (// Floor Row
+                            row![
+                                text("floor").width(40),
+                                slider(histogram.min..=histogram.max, self.floor, move |new_floor| {
+                                    let mut new_parameters = visualization_parameters.clone();
+                                    new_parameters.value_mapping.floor = f32::min(new_floor,histogram.max - step_size);
+                                    new_parameters.value_mapping.ceil = f32::max(visualization_parameters.value_mapping.ceil,new_floor+step_size);
+                                    WorkspaceMessage::UpdateVisualization(node_id, new_parameters)
+                                })
+                                .step(step_size)
+                            ]
+                            .align_y(Center)
+                            .into(),
+                            // Ceil Row 
+                            row![
+                                text("ceil").width(40),
+                                slider(histogram.min..=histogram.max, self.ceil, move |new_ceil| {
+                                    let mut new_parameters = visualization_parameters.clone();
+                                    new_parameters.value_mapping.ceil = f32::max(new_ceil,histogram.min + step_size);
+                                    new_parameters.value_mapping.floor = f32::min(visualization_parameters.value_mapping.floor,new_ceil-step_size);
+                                    WorkspaceMessage::UpdateVisualization(node_id, new_parameters)
+                                })
+                                .step(step_size)
+                            ]
+                            .align_y(Center)
+                            .into(),
+                        ),
+                    };
+
                 column![
                     row!["Value Mapping"],
                     horizontal_rule(1.0),
@@ -258,7 +336,10 @@ impl ValueMapping {
 
     /// Sets color map to a valid type given a new port_Data type.
     /// Trys to match the old color map as closely as possible
-    pub(crate) fn enforce_constraint(&mut self, port_data: &foray_data_model::node::PortData) {
+    pub(crate) fn enforce_color_map_constaints(
+        &mut self,
+        port_data: &foray_data_model::node::PortData,
+    ) {
         match port_data {
             PortData::Array(foray_array) => match foray_array {
                 ForayArray::Integer(_) | ForayArray::Float(_) | ForayArray::Boolean(_) => {
@@ -301,11 +382,11 @@ impl ValueMapping {
 // }
 
 /// angle in positive radians, brightness 0.0-1.0
-fn weighted_cyclic_color_map(angle: f64, brightness: f64) -> [u8; 4] {
+fn weighted_cyclic_color_map(cycles: f64, brightness: f64) -> [u8; 4] {
     let img = include_bytes!("../../data/colormap/CET-C7.bin");
     let len = img.len() / 3;
-    let cycles = (angle / TAU).fract();
-    let r_index = (cycles * len as f64).floor() as usize * 3;
+    let parital_cycles = (cycles).fract();
+    let r_index = (parital_cycles * len as f64).floor() as usize * 3;
 
     [
         (img[r_index] as f64 * brightness) as u8,
@@ -315,11 +396,11 @@ fn weighted_cyclic_color_map(angle: f64, brightness: f64) -> [u8; 4] {
     ]
 }
 
-fn cyclic_color_map(angle: f64) -> [u8; 4] {
+fn cyclic_color_map(cycles: f64) -> [u8; 4] {
     let img = include_bytes!("../../data/colormap/CET-C7.bin");
     let len = img.len() / 3;
-    let cycles = (angle / TAU).fract();
-    let r_index = (cycles * len as f64).floor() as usize * 3;
+    let partial_cycles = (cycles).fract();
+    let r_index = (partial_cycles * len as f64).floor() as usize * 3;
 
     [img[r_index], img[r_index + 1], img[r_index + 2], 255]
 }

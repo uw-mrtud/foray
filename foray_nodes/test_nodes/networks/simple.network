@@ -66,8 +66,8 @@
                     parameters: (
                         ndim_mapping: [(Y, 100), (X, 100)],
                         value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
+                            floor: 0.011257757,
+                            ceil: 0.9995423,
                             color_map: Real(Color),
                         ),
                     ),
@@ -83,6 +83,48 @@
                             floor: 0.011257757,
                             ceil: 0.9995423,
                             color_map: Real(Color),
+                        ),
+                    ),
+                ),
+            ),
+            6: (
+                template: PyNode((
+                    name: "example_phase",
+                    py_path: "test_nodes.foray.examples.example_phase",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "image_size": Float(256.0),
+                },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
+            ),
+            7: (
+                template: RustNode(Display),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Phase(Cyclic)),
                         ),
                     ),
                 ),
@@ -104,25 +146,41 @@
             node: 3,
             name: "in",
             io: In,
+        )), ((
+            node: 6,
+            name: "out",
+            io: Out,
+        ), (
+            node: 7,
+            name: "in",
+            io: In,
         ))],
-        next_id: 6,
+        next_id: 8,
     ),
     shapes: (
         camera: (
             position: (
-                x: -62.304688,
-                y: -50.527344,
+                x: -2.5003052,
+                y: 67.25897,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
-            1: (
-                x: -258.07813,
-                y: -147.08984,
+            7: (
+                x: -75.042175,
+                y: 226.80731,
             ),
             3: (
                 x: 90.07422,
                 y: -100.234375,
+            ),
+            6: (
+                x: -177.81766,
+                y: 145.94446,
+            ),
+            1: (
+                x: -258.07813,
+                y: -147.08984,
             ),
             2: (
                 x: 135.89063,
