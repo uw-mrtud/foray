@@ -237,6 +237,7 @@ pub fn config_view<'a>(
                                 .spacing(4.0)
                                 .into()
                             }
+                            UIParameter::TextDisplay(content) => text(content).into(),
                         };
                         row![text(name_3.clone()), widget] //widget_type.view(message)]
                             .spacing(8.0)

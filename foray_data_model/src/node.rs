@@ -13,6 +13,7 @@ pub enum UIParameter {
     NumberField(f64),
     CheckBox(bool),
     Slider(f64, f64, f64),
+    TextDisplay(String),
 }
 impl UIParameter {
     pub fn default_value(&self) -> PortData {
@@ -20,6 +21,7 @@ impl UIParameter {
             UIParameter::NumberField(v) => PortData::Float(*v),
             UIParameter::CheckBox(v) => PortData::Boolean(*v),
             UIParameter::Slider(_, _, v) => PortData::Float(*v),
+            UIParameter::TextDisplay(v) => PortData::String(v.clone()),
         }
     }
 }
@@ -66,6 +68,16 @@ impl<'py> FromPyObject<'py> for UIParameter {
                     };
 
                     UIParameter::Slider(start, stop, default)
+                }
+                "TextDisplay" => {
+                    let content = match o.get("content") {
+                        Some(o) => match o.extract::<String>() {
+                            Ok(v) => v,
+                            Err(_) => Err(PyTypeError::new_err("expected a string value"))?,
+                        },
+                        None => Err(PyTypeError::new_err("expected a 'content' key"))?,
+                    };
+                    UIParameter::TextDisplay(content)
                 }
                 _ => Err(PyTypeError::new_err(format!("Unsupported data type: {s}")))?,
             }),

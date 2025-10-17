@@ -41,6 +41,10 @@ def CheckBox(default_value: bool):
     return ("CheckBox", {"default": default_value})
 
 
+def TextDisplay(content: str):
+    return ("TextDisplay", {"content": content})
+
+
 class ForayConfig(dict):
     def inputs(self, input_ports: dict[str, PortType]):
         self["inputs"] = input_ports
