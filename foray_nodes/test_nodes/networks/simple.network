@@ -129,6 +129,40 @@
                     ),
                 ),
             ),
+            8: (
+                template: PyNode((
+                    name: "ui_widget_gallery",
+                    py_path: "test_nodes.foray.examples.ui_widget_gallery",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({}),
+                        parameters: Ok({
+                            "checkbox": CheckBox(true),
+                            "file picker": FilePicker(""),
+                            "number field": NumberField(4.0),
+                            "slider": Slider(0.1, 10.0, 1.0),
+                            "text display": TextDisplay("hello world!!"),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "checkbox": Boolean(true),
+                    "file picker": String("./asdfasdfa"),
+                    "number field": Float(4.0),
+                    "slider": Float(1.0),
+                    "text display": String("hello world!!"),
+                },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Real(Color),
+                        ),
+                    ),
+                ),
+            ),
         },
         edges: [((
             node: 0,
@@ -155,24 +189,36 @@
             name: "in",
             io: In,
         ))],
-        next_id: 8,
+        next_id: 9,
     ),
     shapes: (
         camera: (
             position: (
-                x: -2.5003052,
+                x: -3.409668,
                 y: 67.25897,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
+            0: (
+                x: -212.47815,
+                y: -293.58438,
+            ),
+            2: (
+                x: 158.7511,
+                y: -231.71829,
+            ),
+            3: (
+                x: 129.81177,
+                y: -115.01077,
+            ),
+            8: (
+                x: 230.39795,
+                y: 189.76373,
+            ),
             7: (
                 x: -75.042175,
                 y: 226.80731,
-            ),
-            3: (
-                x: 90.07422,
-                y: -100.234375,
             ),
             6: (
                 x: -177.81766,
@@ -181,14 +227,6 @@
             1: (
                 x: -258.07813,
                 y: -147.08984,
-            ),
-            2: (
-                x: 135.89063,
-                y: -292.67188,
-            ),
-            0: (
-                x: -196.89844,
-                y: -332.69922,
             ),
         },
     ),

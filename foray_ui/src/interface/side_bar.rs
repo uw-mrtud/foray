@@ -141,6 +141,7 @@ pub fn config_view<'a>(
                     column(parameters.clone().into_iter().map(|(name, widget_type)| {
                         let name_2 = name.clone();
                         let name_3 = name.clone();
+                        let name_4 = name.clone();
                         let message = move |widget_value| {
                             WorkspaceMessage::UpdateNodeParameter(id, name.clone(), widget_value)
                         };
@@ -238,6 +239,22 @@ pub fn config_view<'a>(
                                 .into()
                             }
                             UIParameter::TextDisplay(content) => text(content).into(),
+                            UIParameter::FilePicker(path) => {
+                                let current_path =
+                                    match &node_instance.parameters_values[&name_2.clone()] {
+                                        PortData::String(content) => content.clone(),
+                                        _ => panic!("filepicker value should be a string"),
+                                    };
+                                text_input("path", &current_path)
+                                    .on_input(move |widget_value| {
+                                        WorkspaceMessage::UpdateNodeParameter(
+                                            id,
+                                            name_4.clone(),
+                                            PortData::String(widget_value.into()),
+                                        )
+                                    })
+                                    .into()
+                            }
                         };
                         row![text(name_3.clone()), widget] //widget_type.view(message)]
                             .spacing(8.0)

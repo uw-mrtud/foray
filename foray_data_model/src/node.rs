@@ -14,6 +14,7 @@ pub enum UIParameter {
     CheckBox(bool),
     Slider(f64, f64, f64),
     TextDisplay(String),
+    FilePicker(String),
 }
 impl UIParameter {
     pub fn default_value(&self) -> PortData {
@@ -22,6 +23,7 @@ impl UIParameter {
             UIParameter::CheckBox(v) => PortData::Boolean(*v),
             UIParameter::Slider(_, _, v) => PortData::Float(*v),
             UIParameter::TextDisplay(v) => PortData::String(v.clone()),
+            UIParameter::FilePicker(v) => PortData::String(v.clone()),
         }
     }
 }
@@ -78,6 +80,16 @@ impl<'py> FromPyObject<'py> for UIParameter {
                         None => Err(PyTypeError::new_err("expected a 'content' key"))?,
                     };
                     UIParameter::TextDisplay(content)
+                }
+                "FilePicker" => {
+                    let path = match o.get("path") {
+                        Some(o) => match o.extract::<String>() {
+                            Ok(v) => v,
+                            Err(_) => Err(PyTypeError::new_err("expected a string value"))?,
+                        },
+                        None => Err(PyTypeError::new_err("expected a 'path' key"))?,
+                    };
+                    UIParameter::FilePicker(path)
                 }
                 _ => Err(PyTypeError::new_err(format!("Unsupported data type: {s}")))?,
             }),

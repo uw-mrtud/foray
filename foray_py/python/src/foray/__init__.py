@@ -45,6 +45,10 @@ def TextDisplay(content: str):
     return ("TextDisplay", {"content": content})
 
 
+def FilePicker():
+    return ("FilePicker", {"path": ""})
+
+
 class ForayConfig(dict):
     def inputs(self, input_ports: dict[str, PortType]):
         self["inputs"] = input_ports
