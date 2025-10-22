@@ -283,3 +283,12 @@ async fn select_workspace_dialog() -> Option<PathBuf> {
         .await
         .map(|fh| fh.into())
 }
+
+/// Open a generic dialog
+pub async fn file_dialog(default_path: PathBuf) -> Option<PathBuf> {
+    rfd::AsyncFileDialog::new()
+        .set_directory(default_path)
+        .pick_file()
+        .await
+        .map(|fh| fh.into())
+}

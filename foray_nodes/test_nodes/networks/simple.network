@@ -147,7 +147,7 @@
                 )),
                 parameters_values: {
                     "checkbox": Boolean(true),
-                    "file picker": String("./asdfasdfa"),
+                    "file picker": String("/Users/jechristens3/projects/foray/foray_nodes/test_nodes/uv.lock"),
                     "number field": Float(4.0),
                     "slider": Float(1.0),
                     "text display": String("hello world!!"),
@@ -195,11 +195,15 @@
         camera: (
             position: (
                 x: -3.409668,
-                y: 67.25897,
+                y: 65.610535,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
+            8: (
+                x: 230.39795,
+                y: 189.76373,
+            ),
             0: (
                 x: -212.47815,
                 y: -293.58438,
@@ -211,10 +215,6 @@
             3: (
                 x: 129.81177,
                 y: -115.01077,
-            ),
-            8: (
-                x: 230.39795,
-                y: 189.76373,
             ),
             7: (
                 x: -75.042175,

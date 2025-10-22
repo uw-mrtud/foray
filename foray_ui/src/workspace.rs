@@ -1,3 +1,4 @@
+use crate::app::file_dialog;
 use crate::file_watch::file_watch_subscription;
 use crate::interface::add_node::add_node_tree_panel;
 use crate::interface::node_canvas::camera::Camera;
@@ -84,6 +85,7 @@ pub enum WorkspaceMessage {
     UpdateNodeTemplate(u32, ForayNodeTemplate),
     UpdateNodeParameter(u32, String, PortData),
     UpdateVisualization(u32, VisualizationParameters),
+    StartWidgetFilePicker(u32, String),
     DeleteSelectedNodes,
 
     QueueCompute(u32),
@@ -269,6 +271,19 @@ impl Workspace {
                     ..node.clone()
                 };
                 self.network.graph.set_node_data(id, new_node);
+            }
+            WorkspaceMessage::StartWidgetFilePicker(id, param_name) => {
+                return Task::perform(file_dialog(self.workspace_dir.clone()), move |maybe_path| {
+                    if let Some(path) = maybe_path {
+                        WorkspaceMessage::UpdateNodeParameter(
+                            id,
+                            param_name.clone(),
+                            PortData::String(path.to_string_lossy().to_string()),
+                        )
+                    } else {
+                        WorkspaceMessage::Cancel
+                    }
+                })
             }
             WorkspaceMessage::OpenAddNodeUi => self.action = Action::AddingNode,
             WorkspaceMessage::SelectNodeGroup(selected_tree_path) => match &self.action {

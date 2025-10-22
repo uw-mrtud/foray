@@ -41,6 +41,7 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
     //''
     //''
     //''
+    //
     let file_commands = row![
         file_button('󰝒', WorkspaceMessage::New),
         file_button('󰝰', WorkspaceMessage::StartLoadNetwork),
@@ -239,24 +240,36 @@ pub fn config_view<'a>(
                                 .into()
                             }
                             UIParameter::TextDisplay(content) => text(content).into(),
-                            UIParameter::FilePicker(path) => {
+                            UIParameter::FilePicker(_path) => {
                                 let current_path =
                                     match &node_instance.parameters_values[&name_2.clone()] {
                                         PortData::String(content) => content.clone(),
                                         _ => panic!("filepicker value should be a string"),
                                     };
-                                text_input("path", &current_path)
-                                    .on_input(move |widget_value| {
-                                        WorkspaceMessage::UpdateNodeParameter(
+                                row![
+                                    text_input("path", &current_path)
+                                        .on_input(move |widget_value| {
+                                            WorkspaceMessage::UpdateNodeParameter(
+                                                id,
+                                                name_4.clone(),
+                                                PortData::String(widget_value.into()),
+                                            )
+                                        })
+                                        .align_x(Right),
+                                    button(icon(""))
+                                        .on_press(WorkspaceMessage::StartWidgetFilePicker(
                                             id,
-                                            name_4.clone(),
-                                            PortData::String(widget_value.into()),
-                                        )
-                                    })
-                                    .into()
+                                            name_3.clone()
+                                        ))
+                                        .height(30.0)
+                                        .padding(4.0)
+                                ]
+                                .align_y(Center)
+                                .spacing(2.0)
+                                .into()
                             }
                         };
-                        row![text(name_3.clone()), widget] //widget_type.view(message)]
+                        row![text(name_3.clone()), widget,]
                             .spacing(8.0)
                             .align_y(Center)
                             .width(Fill)

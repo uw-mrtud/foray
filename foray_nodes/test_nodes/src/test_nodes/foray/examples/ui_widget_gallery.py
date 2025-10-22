@@ -9,7 +9,7 @@ def config():
             "slider": Slider(0.1, 10, 1),
             "checkbox": CheckBox(True),
             "text display": TextDisplay("hello world!!"),
-            "file picker": FilePicker(),
+            "file": FilePicker(),
         }
     )
 

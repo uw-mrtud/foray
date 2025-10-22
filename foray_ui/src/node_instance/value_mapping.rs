@@ -97,12 +97,25 @@ impl ValueMapping {
 
     // clamp floor and ceil based on histogram max/min
     pub(super) fn clamp_floor_ceil(&mut self) {
-        self.floor = self
-            .floor
-            .max(self.histogram.as_ref().map(|h| h.min).unwrap_or(0.0));
-        self.ceil = self
-            .ceil
-            .min(self.histogram.as_ref().map(|h| h.max).unwrap_or(1.0));
+        match self.color_map {
+            ColorMap::Complex(RIMP::Phase(CyclicMap::Cyclic)) => {
+                self.floor = 0.0;
+                self.ceil = 1.0;
+            }
+            _ => {
+                self.floor = self
+                    .floor
+                    .max(self.histogram.as_ref().map(|h| h.min).unwrap_or(0.0));
+                self.ceil = self.ceil.min(
+                    self.histogram
+                        .as_ref()
+                        .map(|h| h.max)
+                        .unwrap_or(1.0)
+                        // force ceil to be at least slightly larger than floor
+                        .max(self.floor + 0.00001),
+                );
+            }
+        }
     }
 
     /// map a raw data value to between 0.0 and 1.0 based on current floor/ciel setting
@@ -165,12 +178,12 @@ impl ValueMapping {
     pub fn value_map_complex(&self, v: Complex64) -> f64 {
         match self.color_map {
             ColorMap::Complex(rimp) => match rimp {
-                RIMP::Real(_rmap) => self.map_value(v.re),
-                RIMP::Imag(_rmap) => self.map_value(v.im),
-                RIMP::Mag(_rmap) => self.map_value(v.norm()),
+                RIMP::Real(_rmap) => v.re,
+                RIMP::Imag(_rmap) => v.im,
+                RIMP::Mag(_rmap) => v.norm(),
                 RIMP::Phase(cymap) => match cymap {
-                    CyclicMap::Cyclic => self.map_value(Self::complex_to_cycles(v)),
-                    CyclicMap::Weighted => self.map_value(v.norm()),
+                    CyclicMap::Cyclic => Self::complex_to_cycles(v),
+                    CyclicMap::Weighted => v.norm(),
                 },
             },
             ColorMap::Real(_real_map) => todo!(),
