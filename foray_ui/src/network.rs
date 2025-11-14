@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs::read_to_string, iter::once, path::PathBuf};
+use std::{collections::HashSet, fs::read_to_string, iter::once, path::PathBuf, time::Instant};
 
 use foray_data_model::node::{PortData, PortType};
 use foray_graph::graph::{Graph, PortRef};
@@ -18,6 +18,8 @@ type UndoStash = Vec<(
     Graph<ForayNodeInstance, PortType, PortData>,
     IndexMap<u32, Point>,
 )>;
+
+pub const NODE_FIRE_ANIMATION_DUR: f32 = 1.0;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Network {
@@ -90,7 +92,9 @@ impl Network {
             })
             .collect();
         for nx in running_nodes {
-            graph_snap_shot.get_mut_node(nx).status = NodeStatus::Idle;
+            graph_snap_shot.get_mut_node(nx).status = NodeStatus::Idle {
+                last_finished: None,
+            };
         }
 
         self.undo_stack
@@ -174,11 +178,26 @@ impl Network {
         Action::DragNode(offsets)
     }
 
-    pub fn any_nodes_running(&self) -> bool {
+    /// Determines if any animation needs to be running
+    pub fn any_nodes_running_or_recently_completed(&self) -> bool {
         self.graph
             .nodes_ref()
             .into_iter()
             .map(|nx| self.graph.get_node(nx))
-            .any(|node| matches!(node.status, NodeStatus::Running { .. }))
+            .any(|node| match &node.status {
+                NodeStatus::Idle {
+                    last_finished: Some(finished_time),
+                } =>
+                //only animate for the first second after finishing
+                {
+                    (Instant::now() - *finished_time).as_secs_f32() < NODE_FIRE_ANIMATION_DUR
+                }
+
+                NodeStatus::Idle {
+                    last_finished: None,
+                } => false,
+                NodeStatus::Running { .. } => true,
+                NodeStatus::Error(foray_node_errors) => false,
+            })
     }
 }

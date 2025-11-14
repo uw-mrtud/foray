@@ -9,7 +9,7 @@ use crate::{node_instance::NodeStatus, style::icon::icon};
 
 pub fn node_status_widget<'a, M: 'a>(status: &'a NodeStatus) -> Element<'a, M> {
     match status {
-        NodeStatus::Idle => text("").into(),
+        NodeStatus::Idle { .. } => text("").into(),
         NodeStatus::Running { start: _ } => text("").into(),
         NodeStatus::Error(errs) => column(errs.iter().map(|e| {
             let (summary, detailed) = match e {

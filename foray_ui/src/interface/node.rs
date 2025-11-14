@@ -1,3 +1,6 @@
+use std::f32::consts::TAU;
+use std::time::Instant;
+
 use crate::interface::port::port_color_pair;
 use crate::node_instance::ForayNodeInstance;
 use crate::rust_nodes::RustNodeTemplate;
@@ -134,10 +137,31 @@ pub fn draw_node(
     is_selected: bool,
     app_theme: &AppTheme,
 ) {
-    let node_border_color = match is_selected {
-        true => app_theme.primary.strong_color().into(),
-        false => app_theme.text.strong_color().into(),
+    let node_border_color = match &node.status {
+        crate::node_instance::NodeStatus::Idle { .. } => match is_selected {
+            true => app_theme.primary.strong_color().into(),
+            false => app_theme.text.weak_color().into(),
+        },
+        crate::node_instance::NodeStatus::Running { start } => {
+            let duration = (Instant::now() - *start).as_secs_f32();
+            let base_color = match is_selected {
+                true => app_theme.primary.strong_color(),
+                false => app_theme.text.weak_color(),
+            };
+            // Osciallation parameters
+            let pulse_per_second = 0.5;
+            let min_alpha = 0.1;
+            // cos wave starting at 1.0, varies from 1.0 to min_alpha
+            let alpha = ((duration * pulse_per_second * TAU).cos() + 1.0 + min_alpha)
+                / ((1.0 + min_alpha) * 2.0);
+            base_color.iced_color().scale_alpha(alpha)
+        }
+        crate::node_instance::NodeStatus::Error(_foray_node_errors) => match is_selected {
+            true => app_theme.red.strong_color().into(),
+            false => app_theme.red.weak_color().into(),
+        },
     };
+    //    true => app_theme.primary.strong_color().into(),
     let stroke = stroke::Stroke::default()
         .with_color(node_border_color)
         .with_width(2.0 * scale);

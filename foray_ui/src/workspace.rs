@@ -524,7 +524,7 @@ impl Workspace {
                     Ok(output) => {
                         // Assert that status is what is expected
                         let run_time = match &node.status {
-                            NodeStatus::Idle => panic!("Node should not be idle here!"),
+                            NodeStatus::Idle { .. } => panic!("Node should not be idle here!"),
                             NodeStatus::Running { start: start_inst } => {
                                 Instant::now() - *start_inst
                             }
@@ -567,7 +567,9 @@ impl Workspace {
                         self.network.graph.set_node_data(
                             nx,
                             ForayNodeInstance {
-                                status: NodeStatus::Idle,
+                                status: NodeStatus::Idle {
+                                    last_finished: Some(Instant::now()),
+                                },
                                 parameters_values,
                                 visualization,
                                 // run_time: Some(run_time),
@@ -876,7 +878,7 @@ impl Workspace {
                         _ => None,
                     }),
                     // Refresh for animation while nodes are actively running
-                    if self.network.any_nodes_running() {
+                    if self.network.any_nodes_running_or_recently_completed() {
                         iced::time::every(Duration::from_micros(1_000_000 / 16))
                             .map(|_| WorkspaceMessage::AnimationTick)
                     } else {

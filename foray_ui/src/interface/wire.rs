@@ -1,5 +1,8 @@
 use std::iter::once;
+use std::time::Instant;
 
+use crate::network::NODE_FIRE_ANIMATION_DUR;
+use crate::node_instance::NodeStatus;
 use crate::style::theme::AppTheme;
 use crate::workspace::Workspace;
 use crate::{math::Point, workspace::Action};
@@ -73,7 +76,19 @@ impl Workspace {
         incoming_wires
             .iter()
             .map(|(output, input)| {
-                let stroke = wire_status(output, input, &wire_creation_state, app_theme);
+                let time_since_fire = match self.network.graph.get_node(output.node).status {
+                    NodeStatus::Idle { last_finished } => last_finished
+                        .map(|inst| (Instant::now() - inst).as_secs_f32())
+                        .unwrap_or(NODE_FIRE_ANIMATION_DUR),
+                    _ => NODE_FIRE_ANIMATION_DUR,
+                };
+                let stroke = wire_status(
+                    output,
+                    input,
+                    &wire_creation_state,
+                    time_since_fire,
+                    app_theme,
+                );
                 ((port_position(input), port_position(output)), stroke)
             })
             //// include the active wire
@@ -81,11 +96,23 @@ impl Workspace {
                 once(match &wire_creation_state {
                     WireCreationState::CreatingInput(input, Some(output)) => Some((
                         (port_position(&input), port_position(&output)),
-                        wire_status(&output, &input, &wire_creation_state, app_theme),
+                        wire_status(
+                            &output,
+                            &input,
+                            &wire_creation_state,
+                            NODE_FIRE_ANIMATION_DUR,
+                            app_theme,
+                        ),
                     )),
                     WireCreationState::CreatingOutput(output, Some(input)) => Some((
                         (port_position(&input), port_position(&output)),
-                        wire_status(&output, &input, &wire_creation_state, app_theme),
+                        wire_status(
+                            &output,
+                            &input,
+                            &wire_creation_state,
+                            NODE_FIRE_ANIMATION_DUR,
+                            app_theme,
+                        ),
                     )),
                     WireCreationState::CreatingInput(input, None) => Some((
                         (
@@ -227,14 +254,18 @@ fn wire_status<'a>(
     output: &PortRef,
     input: &PortRef,
     current_action: &WireCreationState,
+    sec_since_fire: f32,
     theme: &'a AppTheme,
 ) -> Stroke<'a> {
     assert!(output.io == IO::Out);
     assert!(input.io == IO::In);
 
     //let p = theme.extended_palette();
+    //
 
-    let default_stroke = default_wire_stroke(theme);
+    let fire_amount = 1.0 - (sec_since_fire / NODE_FIRE_ANIMATION_DUR).min(1.0);
+
+    let default_stroke = default_wire_stroke(theme, fire_amount);
     let maybe_delete = default_stroke.with_color(theme.danger.weak_color().into());
     let will_delete = with_dashed_stroke(maybe_delete);
 
@@ -282,7 +313,7 @@ fn wire_status<'a>(
 
 /// active wire color
 pub fn active_wire_stroke(t: &'_ AppTheme, is_tentative_connection: bool) -> Stroke<'_> {
-    let stroke = default_wire_stroke(t).with_color(t.green.weak_color().into());
+    let stroke = default_wire_stroke(t, 0.0).with_color(t.green.weak_color().into());
     if !is_tentative_connection {
         with_dashed_stroke(stroke)
     } else {
@@ -300,9 +331,15 @@ fn with_dashed_stroke(stroke: Stroke) -> Stroke {
     }
 }
 
-pub fn default_wire_stroke(theme: &'_ AppTheme) -> Stroke<'_> {
+pub fn default_wire_stroke(theme: &'_ AppTheme, fire_amount: f32) -> Stroke<'_> {
     Stroke::default()
         .with_width(3.0)
-        .with_color(theme.secondary.base_color.into())
+        .with_color(
+            theme
+                .secondary
+                .base_color
+                .iced_color()
+                .scale_alpha((fire_amount).max(0.2)),
+        )
         .with_line_cap(canvas::LineCap::Round)
 }

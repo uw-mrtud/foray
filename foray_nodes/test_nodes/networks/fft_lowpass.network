@@ -1,24 +1,6 @@
 (
     graph: (
         nodes: {
-            0: (
-                template: PyNode((
-                    name: "shepp_logan",
-                    py_path: "test_nodes.foray.shepp_logan",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "image_size": NumberField(256.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "image_size": Float(256.0),
-                },
-            ),
             1: (
                 template: PyNode((
                     name: "fft",
@@ -34,28 +16,16 @@
                     )),
                 )),
                 parameters_values: {},
-            ),
-            11: (
-                template: PyNode((
-                    name: "example_phase",
-                    py_path: "test_nodes.foray.example_phase",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "image_size": NumberField(256.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "image_size": Float(256.0),
-                },
-            ),
-            12: (
-                template: RustNode(Display),
-                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.08355981,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
             ),
             15: (
                 template: PyNode((
@@ -78,10 +48,30 @@
                     "x-shift": Float(0.01),
                     "y-shift": Float(0.0),
                 },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.08355981,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
             ),
             16: (
                 template: RustNode(Display),
                 parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
             ),
             17: (
                 template: PyNode((
@@ -98,29 +88,115 @@
                     )),
                 )),
                 parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
             ),
             18: (
                 template: RustNode(Display),
                 parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Phase(Weighted)),
+                        ),
+                    ),
+                ),
             ),
             19: (
                 template: RustNode(Display),
                 parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Gray)),
+                        ),
+                    ),
+                ),
             ),
             20: (
                 template: RustNode(Display),
                 parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Phase(Cyclic)),
+                        ),
+                    ),
+                ),
+            ),
+            21: (
+                template: PyNode((
+                    name: "shepp_logan",
+                    py_path: "test_nodes.foray.examples.shepp_logan",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Complex, [None, None]),
+                        }),
+                        parameters: Ok({
+                            "image_size": NumberField(256.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "image_size": Float(256.0),
+                },
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
+            ),
+            22: (
+                template: PyNode((
+                    name: "sleep",
+                    py_path: "test_nodes.foray.examples.sleep",
+                    config: Ok((
+                        inputs: Ok({
+                            "in": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: (
+                    parameters: (
+                        ndim_mapping: [(Y, 256), (X, 256)],
+                        value_mapping: (
+                            floor: 0.0,
+                            ceil: 1.0,
+                            color_map: Complex(Mag(Color)),
+                        ),
+                    ),
+                ),
             ),
         },
         edges: [((
-            node: 11,
-            name: "out",
-            io: Out,
-        ), (
-            node: 12,
-            name: "in",
-            io: In,
-        )), ((
             node: 1,
             name: "out",
             io: Out,
@@ -169,7 +245,15 @@
             name: "in",
             io: In,
         )), ((
-            node: 0,
+            node: 21,
+            name: "out",
+            io: Out,
+        ), (
+            node: 22,
+            name: "in",
+            io: In,
+        )), ((
+            node: 22,
             name: "out",
             io: Out,
         ), (
@@ -177,56 +261,52 @@
             name: "a",
             io: In,
         ))],
-        next_id: 21,
+        next_id: 23,
     ),
     shapes: (
         camera: (
             position: (
-                x: 314.14984,
-                y: 840.6079,
+                x: -69.60057,
+                y: 777.2509,
             ),
-            zoom: 1.5720468,
+            zoom: 0.72402626,
         ),
         shape_positions: {
-            15: (
-                x: 13.384974,
-                y: 616.59607,
+            21: (
+                x: 8.866333,
+                y: 330.1304,
             ),
-            18: (
-                x: 105.798386,
-                y: 778.65405,
-            ),
-            0: (
-                x: -95.84219,
-                y: 465.38004,
+            22: (
+                x: 129.45988,
+                y: 421.70877,
             ),
             1: (
-                x: 47.57585,
-                y: 543.83594,
+                x: 54.6813,
+                y: 498.74847,
             ),
-            11: (
-                x: 658.97485,
-                y: 4.4988766,
+            15: (
+                x: 104.034744,
+                y: 583.119,
             ),
             17: (
-                x: 31.593544,
-                y: 696.32306,
-            ),
-            20: (
-                x: 107.5207,
-                y: 1007.2217,
-            ),
-            16: (
-                x: -112.690926,
-                y: 781.2249,
+                x: 44.24874,
+                y: 666.1154,
             ),
             19: (
-                x: -112.50321,
-                y: 1007.0311,
+                x: -186.85849,
+                y: 1062.582,
             ),
-            12: (
-                x: 702.3009,
-                y: 95.64506,
+            20: (
+                x: 237.58424,
+                y: 1054.7124,
+            ),
+            18: (
+                x: 243.89775,
+                y: 779.8396,
+            ),
+            16: (
+                x: -192.42273,
+                y: 785.2645,
             ),
         },
     ),

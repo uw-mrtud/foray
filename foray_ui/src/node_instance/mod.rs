@@ -43,14 +43,19 @@ impl ForayNodeTemplate {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd)]
 pub enum NodeStatus {
-    #[default]
-    Idle,
-    Running {
-        start: Instant,
-    },
+    Idle { last_finished: Option<Instant> },
+    Running { start: Instant },
     Error(Vec<ForayNodeError>),
+}
+
+impl Default for NodeStatus {
+    fn default() -> Self {
+        NodeStatus::Idle {
+            last_finished: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

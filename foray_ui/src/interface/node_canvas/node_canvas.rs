@@ -1,8 +1,8 @@
 use iced::{
     event,
-    keyboard::Modifiers,
+    keyboard::{self, Modifiers},
     mouse::{self, Cursor, ScrollDelta},
-    Element, Length, Rectangle, Renderer, Theme, Transformation,
+    Element, Length, Rectangle, Renderer, Theme, Transformation, Vector,
 };
 
 use iced::widget::canvas;
@@ -93,7 +93,7 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        frame.translate(iced::Vector::from(self.camera.center_offset()) * -1.0);
+        frame.translate(Vector::from(self.camera.center_offset()) * -1.0);
         frame.scale(self.camera.zoom);
         frame.translate((-self.camera.position).into());
 
@@ -181,22 +181,18 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                                 * Transformation::scale(1.0 / z_old);
 
                             // This was derived by finding the world_cursor_position:
-                            //
-                            // world_cursor_position = ((cursor_position-center_offset)/z_old) + camera_position
+                            //      world_cursor_position = ((cursor_position-center_offset)/z_old) + camera_position
                             //
                             // The amount to shift the camera position, should be somewhere in
                             // this direction:
+                            //      camera_shift = (world_cursor_position-camera_position) *
+                            //      correction_factor
                             //
-                            // camera_shift = (world_cursor_position-camera_position) *
-                            // correction_factor
-                            //
-                            // new_camera_position = camera_position - camera_shift
-                            //
-                            // new_world_cursor_position = ((cursor_position-center_offset)/z_new) + new_camera_position
+                            //      new_camera_position = camera_position - camera_shift
+                            //      new_world_cursor_position = ((cursor_position-center_offset)/z_new) + new_camera_position
                             //
                             // we can solve for correction_factor by setting
-                            //
-                            // new_world_cursor_position - world_cursor_position = 0
+                            //      new_world_cursor_position - world_cursor_position = 0
                             //
                             // (we want to the cursor to stay in the same world position as we zoom in)
                             let correction_factor = Transformation::scale((z_old / z_new) - 1.0);
@@ -301,7 +297,7 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
             },
             Event::Touch(_event) => {}
             Event::Keyboard(event) => match event {
-                iced::keyboard::Event::ModifiersChanged(modifiers) => state.modifiers = modifiers,
+                keyboard::Event::ModifiersChanged(modifiers) => state.modifiers = modifiers,
                 _ => {}
             },
         }
