@@ -12,6 +12,7 @@ use strum::{EnumIter, VariantNames};
 )]
 pub enum RustNodeTemplate {
     Display,
+    DisplaySeries,
     // Identity,
     // Constant(f64),
     // Add,
@@ -138,6 +139,7 @@ impl GraphNode<PortType, PortData> for RustNodeTemplate {
 
         match &self {
             RustNodeTemplate::Display => [("in".to_string(), prim_float)].into(),
+            RustNodeTemplate::DisplaySeries => [("in".to_string(), prim_float)].into(),
             // RustNodeTemplate::Identity => [("a".to_string(), prim_float)].into(),
             // RustNodeTemplate::Constant(_constant_node) => [].into(),
             // RustNodeTemplate::Add => binary_in,
@@ -161,6 +163,7 @@ impl GraphNode<PortType, PortData> for RustNodeTemplate {
     fn outputs(&self) -> Dict<String, PortType> {
         match self {
             Self::Display => [].into(),
+            Self::DisplaySeries => [].into(),
         }
     }
 

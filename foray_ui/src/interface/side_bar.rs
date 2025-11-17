@@ -1,5 +1,6 @@
 use crate::interface::status::node_status_widget;
 use crate::interface::SEPERATOR;
+use crate::node_instance::visualiztion::Visualization;
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::button::{primary_icon, secondary_icon};
@@ -129,8 +130,15 @@ pub fn config_view<'a>(
     _input_data: Dict<String, WireDataContainer<PortData>>,
 ) -> Option<iced::Element<'a, WorkspaceMessage>> {
     match &node_instance.template {
-        ForayNodeTemplate::RustNode(RustNodeTemplate::Display) => {
-            Some(node_instance.visualization.parameters.view(id))
+        ForayNodeTemplate::RustNode(RustNodeTemplate::Display)
+        | ForayNodeTemplate::RustNode(RustNodeTemplate::DisplaySeries) => {
+            match &node_instance.visualization {
+                Some(vis) => match vis {
+                    Visualization::NDimVis(ndim_vis) => Some(ndim_vis.parameters.view(id)),
+                    Visualization::Series(series_vis) => Some(text("series params...").into()),
+                },
+                None => None,
+            }
         }
         // TODO: data is awkwardly stored in two locations, defaults are in the widget_type,
         // current values are stored in node_instance.parameter_values. these values are less

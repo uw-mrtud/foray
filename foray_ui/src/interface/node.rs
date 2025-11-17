@@ -2,7 +2,8 @@ use std::f32::consts::TAU;
 use std::time::Instant;
 
 use crate::interface::port::port_color_pair;
-use crate::node_instance::ForayNodeInstance;
+use crate::node_instance::visualiztion::{NDimVis, SeriesVis, Visualization};
+use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::workspace::{Action, WorkspaceMessage};
@@ -34,14 +35,25 @@ pub fn default_node_size() -> iced::Size {
 
 impl ForayNodeInstance {
     pub fn node_bounding_rect(&self) -> Rectangle {
+        let node_padding = 8.0;
         match self.template {
-            crate::node_instance::ForayNodeTemplate::RustNode(RustNodeTemplate::Display) => {
-                self.visualization.parameters.image_bounds(200.0)
-            }
+            ForayNodeTemplate::RustNode(
+                RustNodeTemplate::Display | RustNodeTemplate::DisplaySeries,
+            ) => match &self.visualization {
+                Some(vis) => match vis {
+                    Visualization::NDimVis(ndim_vis) => ndim_vis.parameters.image_bounds(200.0),
+                    Visualization::Series(series_vis) => {
+                        Rectangle::new((0.0, 0.0).into(), (300.0, 300.0).into())
+                    }
+                },
+                None => Rectangle::new(
+                    (0.0, 0.0).into(),
+                    (200.0, NODE_TEXT_SIZE + node_padding).into(),
+                ),
+            },
             _ => {
                 let estimated_text_width =
                     NODE_TEXT_SIZE * self.template.name().len() as f32 * 0.75;
-                let node_padding = 8.0;
 
                 Rectangle::new(
                     (0.0, 0.0).into(),
@@ -170,7 +182,9 @@ pub fn draw_node(
 
     match node.template {
         // Draw Display Node
-        crate::node_instance::ForayNodeTemplate::RustNode(RustNodeTemplate::Display) => {
+        ForayNodeTemplate::RustNode(
+            RustNodeTemplate::Display | RustNodeTemplate::DisplaySeries,
+        ) => {
             let img_padding = 1.0;
             let (image_width, image_height) = (
                 node_bounding.size().width - img_padding,
@@ -182,14 +196,21 @@ pub fn draw_node(
             );
 
             draw_node_border(frame, node_bounding, 1.0, stroke, node_border_color);
-            draw_node_image(frame, node, image_bounds);
+            match &node.visualization {
+                Some(vis) => match vis {
+                    Visualization::NDimVis(ndim_vis) => {
+                        draw_node_image(frame, ndim_vis, image_bounds);
+                    }
+                    Visualization::Series(series_vis) => {
+                        draw_node_svg(frame, series_vis, image_bounds);
+                    }
+                },
+                None => {}
+            };
             draw_node_ports(frame, app_theme, node, node_id, action, cursor, stroke);
         }
         // Draw Default Node
         _ => {
-            let image_size = node.visualization.parameters.image_bounds(60.0).size();
-            let image_bounds = Rectangle::new((node_bounding.width, 0.0).into(), image_size);
-
             draw_node_text(frame, app_theme, node_bounding, node.template.name());
             draw_node_border(
                 frame,
@@ -198,7 +219,18 @@ pub fn draw_node(
                 stroke,
                 app_theme.background.base_color.iced_color(),
             );
-            draw_node_image(frame, node, image_bounds);
+            match &node.visualization {
+                Some(vis) => match vis {
+                    Visualization::NDimVis(ndim_vis) => {
+                        let image_size = ndim_vis.parameters.image_bounds(60.0).size();
+                        let image_bounds =
+                            Rectangle::new((node_bounding.width, 0.0).into(), image_size);
+                        draw_node_image(frame, ndim_vis, image_bounds);
+                    }
+                    Visualization::Series(series_vis) => {}
+                },
+                None => {}
+            };
             draw_node_ports(frame, app_theme, node, node_id, action, cursor, stroke);
         }
     };
@@ -261,7 +293,7 @@ pub fn draw_node_border(
     );
 
     frame.stroke(&node_border, stroke);
-    frame.fill(&node_border, fill);
+    // frame.fill(&node_border, fill);
 }
 pub fn draw_node_ports(
     // Draw directly into frame
@@ -313,14 +345,26 @@ pub fn draw_node_ports(
 pub fn draw_node_image(
     // Draw directly into frame
     frame: &mut iced::widget::canvas::Frame,
-    node: &ForayNodeInstance,
+    ndim_vis: &NDimVis,
     image_bounds: Rectangle,
 ) {
-    if let Some(image_handle) = &node.visualization.image_handle {
+    if let Some(image_handle) = &ndim_vis.image_handle {
         let img = iced::advanced::image::Image::from(image_handle)
             .filter_method(image::FilterMethod::Nearest)
             .snap(true);
         frame.draw_image(image_bounds, img);
+    };
+}
+pub fn draw_node_svg(
+    // Draw directly into frame
+    frame: &mut iced::widget::canvas::Frame,
+    series_vis: &SeriesVis,
+    svg_bounds: Rectangle,
+) {
+    if let Some(svg) = &series_vis.svg {
+        // dbg!(svg);
+        //TODO: Do I have to clone?
+        frame.draw_svg(svg_bounds, &svg.handle);
     };
 }
 

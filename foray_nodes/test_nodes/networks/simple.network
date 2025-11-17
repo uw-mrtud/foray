@@ -1,47 +1,19 @@
 (
     graph: (
         nodes: {
-            0: (
-                template: PyNode((
-                    name: "shepp_logan",
-                    py_path: "test_nodes.foray.examples.shepp_logan",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Complex, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "image_size": NumberField(256.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "image_size": Float(256.0),
-                },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                            color_map: Complex(Mag(Color)),
-                        ),
-                    ),
-                ),
-            ),
             1: (
                 template: RustNode(Display),
                 parameters_values: {},
-                visualization: (
+                visualization: Some(NDimVis((
                     parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
+                        ndim_mapping: [(Y, 100), (X, 100)],
                         value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                            color_map: Complex(Real(Color)),
+                            floor: 0.008801573,
+                            ceil: 0.99559474,
+                            color_map: Real(Color),
                         ),
                     ),
-                ),
+                ))),
             ),
             2: (
                 template: PyNode((
@@ -59,113 +31,42 @@
                     )),
                 )),
                 parameters_values: {
-                    "fwhm": Float(55.03),
+                    "fwhm": Float(38.56),
                     "size": Float(100.0),
                 },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 100), (X, 100)],
-                        value_mapping: (
-                            floor: 0.011257757,
-                            ceil: 0.9995423,
-                            color_map: Real(Color),
-                        ),
-                    ),
-                ),
+                visualization: None,
             ),
             3: (
-                template: RustNode(Display),
+                template: RustNode(DisplaySeries),
                 parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 100), (X, 100)],
-                        value_mapping: (
-                            floor: 0.011257757,
-                            ceil: 0.9995423,
-                            color_map: Real(Color),
-                        ),
-                    ),
-                ),
+                visualization: Some(Series((
+                    parameters: (),
+                ))),
             ),
-            6: (
+            4: (
                 template: PyNode((
-                    name: "example_phase",
-                    py_path: "test_nodes.foray.examples.example_phase",
+                    name: "sin",
+                    py_path: "test_nodes.foray.examples.sin",
                     config: Ok((
                         inputs: Ok({}),
                         outputs: Ok({
-                            "out": Array(Complex, [None, None]),
+                            "out": Array(Float, [None]),
                         }),
                         parameters: Ok({
-                            "image_size": NumberField(256.0),
+                            "freq": NumberField(10.0),
+                            "length": NumberField(100.0),
                         }),
                     )),
                 )),
                 parameters_values: {
-                    "image_size": Float(256.0),
+                    "freq": Float(10.0),
+                    "length": Float(100.0),
                 },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                            color_map: Complex(Mag(Color)),
-                        ),
-                    ),
-                ),
-            ),
-            7: (
-                template: RustNode(Display),
-                parameters_values: {},
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [(Y, 256), (X, 256)],
-                        value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                            color_map: Complex(Phase(Cyclic)),
-                        ),
-                    ),
-                ),
-            ),
-            8: (
-                template: PyNode((
-                    name: "ui_widget_gallery",
-                    py_path: "test_nodes.foray.examples.ui_widget_gallery",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({}),
-                        parameters: Ok({
-                            "checkbox": CheckBox(true),
-                            "file picker": FilePicker(""),
-                            "number field": NumberField(4.0),
-                            "slider": Slider(0.1, 10.0, 1.0),
-                            "text display": TextDisplay("hello world!!"),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "checkbox": Boolean(true),
-                    "file picker": String("/Users/jechristens3/projects/foray/foray_nodes/test_nodes/uv.lock"),
-                    "number field": Float(4.0),
-                    "slider": Float(1.0),
-                    "text display": String("hello world!!"),
-                },
-                visualization: (
-                    parameters: (
-                        ndim_mapping: [],
-                        value_mapping: (
-                            floor: 0.0,
-                            ceil: 1.0,
-                            color_map: Real(Color),
-                        ),
-                    ),
-                ),
+                visualization: None,
             ),
         },
         edges: [((
-            node: 0,
+            node: 2,
             name: "out",
             io: Out,
         ), (
@@ -173,60 +74,40 @@
             name: "in",
             io: In,
         )), ((
-            node: 2,
+            node: 4,
             name: "out",
             io: Out,
         ), (
             node: 3,
             name: "in",
             io: In,
-        )), ((
-            node: 6,
-            name: "out",
-            io: Out,
-        ), (
-            node: 7,
-            name: "in",
-            io: In,
         ))],
-        next_id: 9,
+        next_id: 5,
     ),
     shapes: (
         camera: (
             position: (
-                x: -3.409668,
-                y: 65.610535,
+                x: 100.55664,
+                y: 0.0,
             ),
             zoom: 1.0,
         ),
         shape_positions: {
-            8: (
-                x: 230.39795,
-                y: 189.76373,
+            3: (
+                x: 9.402344,
+                y: 146.90234,
             ),
-            0: (
-                x: -212.47815,
-                y: -293.58438,
+            4: (
+                x: 138.70117,
+                y: -231.85938,
             ),
             2: (
-                x: 158.7511,
-                y: -231.71829,
-            ),
-            3: (
-                x: 129.81177,
-                y: -115.01077,
-            ),
-            7: (
-                x: -75.042175,
-                y: 226.80731,
-            ),
-            6: (
-                x: -177.81766,
-                y: 145.94446,
+                x: -179.5586,
+                y: -257.64844,
             ),
             1: (
-                x: -258.07813,
-                y: -147.08984,
+                x: -207.3711,
+                y: -78.57031,
             ),
         },
     ),

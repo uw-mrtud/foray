@@ -48,9 +48,14 @@ pub fn read_python_projects() -> Vec<crate::project::Project> {
 pub fn rust_project() -> crate::project::Project {
     let mut tree = NodeTree::new("Built In".to_string());
 
+    //TODO: dynamically create from enum
     tree.insert(
         vec!["display"],
         ForayNodeTemplate::RustNode(RustNodeTemplate::Display),
+    );
+    tree.insert(
+        vec!["display series"],
+        ForayNodeTemplate::RustNode(RustNodeTemplate::DisplaySeries),
     );
 
     Project {

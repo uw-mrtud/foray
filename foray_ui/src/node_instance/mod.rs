@@ -13,9 +13,8 @@ use foray_data_model::{
 use foray_graph::graph::{ForayNodeError, GraphNode, PortName};
 use foray_py::py_node::{py_compute, PyNodeTemplate};
 use serde::{Deserialize, Serialize};
-use visualiztion::Visualization;
 
-use crate::rust_nodes::RustNodeTemplate;
+use crate::{node_instance::visualiztion::Visualization, rust_nodes::RustNodeTemplate};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum ForayNodeTemplate {
@@ -65,7 +64,7 @@ pub struct ForayNodeInstance {
     pub template: ForayNodeTemplate,
     pub parameters_values: Dict<String, PortData>,
     #[serde(default)]
-    pub visualization: Visualization,
+    pub visualization: Option<Visualization>,
     #[serde(skip)]
     // If there are errors for any of NodeDefinition fields, the field will be empty,
     // The error will be noted in NodeStatus

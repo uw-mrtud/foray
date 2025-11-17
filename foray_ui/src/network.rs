@@ -197,7 +197,7 @@ impl Network {
                     last_finished: None,
                 } => false,
                 NodeStatus::Running { .. } => true,
-                NodeStatus::Error(foray_node_errors) => false,
+                NodeStatus::Error(_foray_node_errors) => false,
             })
     }
 }

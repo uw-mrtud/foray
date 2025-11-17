@@ -24,6 +24,10 @@ impl Color {
     pub fn iced_color(&self) -> iced::Color {
         Into::<iced::Color>::into(*self)
     }
+    pub fn into_rbg8(&self) -> (u8, u8, u8) {
+        let to_u8 = |v| (v * 255.0) as u8;
+        (to_u8(self.r), to_u8(self.g), to_u8(self.b))
+    }
 }
 
 impl From<iced::Color> for Color {

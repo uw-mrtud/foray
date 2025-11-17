@@ -7,10 +7,11 @@ use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
 use crate::node_instance::visualization_parameters::VisualizationParameters;
-use crate::node_instance::visualiztion::Visualization;
+use crate::node_instance::visualiztion::{NDimVis, SeriesVis, Visualization};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::project::{read_python_projects, rust_project, Project};
 use crate::python_env;
+use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 
@@ -263,11 +264,11 @@ impl Workspace {
                 self.network.stash_state();
                 let node = self.network.graph.get_node(id);
                 let new_node = ForayNodeInstance {
-                    visualization: Visualization::new(
+                    visualization: Some(Visualization::NDimVis(NDimVis::new(
                         id,
                         &self.network.graph,
                         visualization_parameters,
-                    ),
+                    ))),
                     ..node.clone()
                 };
                 self.network.graph.set_node_data(id, new_node);
@@ -554,14 +555,50 @@ impl Workspace {
                             }
                             _ => node.template.clone(),
                         };
-                        let visualization_parameters = node.visualization.parameters.clone();
+
+                        let old_vis = node.visualization.clone();
 
                         //// Update wire
                         self.network.graph.update_wire_data(nx, output);
 
                         // Must be done after graph wire data has been set
-                        let visualization =
-                            Visualization::new(nx, &self.network.graph, visualization_parameters);
+                        // TODO: Handle this more clearly/generally
+                        // The first time data is availble, defaults might be set strangely?
+                        let visualization = match &template {
+                            ForayNodeTemplate::RustNode(rt) => match rt {
+                                RustNodeTemplate::Display => match old_vis {
+                                    Some(Visualization::NDimVis(ndim_vis)) => {
+                                        Some(Visualization::NDimVis(NDimVis::new(
+                                            nx,
+                                            &self.network.graph,
+                                            ndim_vis.parameters,
+                                        )))
+                                    }
+                                    Some(Visualization::Series(_ndim_vis)) => todo!(),
+                                    None => Some(Visualization::NDimVis(NDimVis::new(
+                                        nx,
+                                        &self.network.graph,
+                                        Default::default(),
+                                    ))),
+                                },
+                                RustNodeTemplate::DisplaySeries => match old_vis {
+                                    Some(Visualization::NDimVis(_ndim_vis)) => todo!(),
+                                    Some(Visualization::Series(series_vis)) => {
+                                        Some(Visualization::Series(SeriesVis::new(
+                                            nx,
+                                            &self.network.graph,
+                                            series_vis.parameters,
+                                        )))
+                                    }
+                                    None => Some(Visualization::Series(SeriesVis::new(
+                                        nx,
+                                        &self.network.graph,
+                                        Default::default(),
+                                    ))),
+                                },
+                            },
+                            ForayNodeTemplate::PyNode(_pt) => None,
+                        };
 
                         //// Update node
                         self.network.graph.set_node_data(
@@ -605,7 +642,9 @@ impl Workspace {
                         warn!("Compute failed {node:?},{node_error:?}");
 
                         node.status = NodeStatus::Error(vec![node_error]);
-                        node.visualization.image_handle = None;
+                        if let Some(vis) = &mut node.visualization {
+                            vis.clear();
+                        }
 
                         //// Update wire
                         self.network.graph.clear_outputs(nx);
