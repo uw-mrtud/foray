@@ -69,7 +69,7 @@ pub fn styled_text_input<'a, M: Clone + 'a>(input: TextInput<'a, M>) -> Element<
                 }
             })
             .align_x(Center),
-        container(horizontal_rule(0)).padding(4.).height(1),
+        container(rule::horizontal(0)).padding(4.).height(1),
     ]
     .height(Shrink)
     .width(Fill)

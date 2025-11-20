@@ -97,9 +97,9 @@ pub fn port_tooltip<'a, M: 'a>(
     .into()
 }
 
-const VERTICAL_SPACING: u16 = 2;
-const NESTED_PADDING: u16 = 2;
-const BORDER_RADIUS: u16 = 4;
+const VERTICAL_SPACING: u32 = 2;
+const NESTED_PADDING: f32 = 2.0;
+const BORDER_RADIUS: u32 = 4;
 
 fn port_tooltip_recurse<'a, M: 'a>(
     //port_name: String,

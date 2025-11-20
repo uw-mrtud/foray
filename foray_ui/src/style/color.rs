@@ -1,4 +1,4 @@
-use palette::{rgb::Rgb, Mix};
+use palette::{rgb::Rgb, Mix, Srgb};
 use serde::{Deserialize, Serialize};
 const WHITE: Color = Color {
     r: 15. / 16.,
@@ -43,6 +43,23 @@ impl From<Color> for iced::Color {
     }
 }
 
+impl From<Rgb> for Color {
+    fn from(v: Rgb) -> Color {
+        Color {
+            r: v.red,
+            g: v.green,
+            b: v.blue,
+            a: 1.0,
+        }
+    }
+}
+
+impl Into<Rgb> for Color {
+    fn into(self) -> Rgb {
+        Rgb::new(self.r, self.g, self.b)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct GuiColor {
     pub base_color: Color,
@@ -72,12 +89,5 @@ impl GuiColor {
 }
 
 pub fn mix(a: Color, b: Color, factor: f32) -> Color {
-    let a: iced::Color = a.into();
-    let b: iced::Color = b.into();
-    let a_lin = Rgb::from(a).into_linear();
-    let b_lin = Rgb::from(b).into_linear();
-
-    let mixed = a_lin.mix(b_lin, factor);
-    let ic: iced::Color = Rgb::from_linear(mixed).into();
-    ic.into()
+    Srgb::mix(a.into(), b.into(), factor).into()
 }

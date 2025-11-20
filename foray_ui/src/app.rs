@@ -12,8 +12,9 @@ use iced::{keyboard, window, Font, Renderer, Subscription, Task, Theme};
 use iced::{
     keyboard::{key::Named, Event::KeyPressed, Key, Modifiers},
     widget::{
-        button, column, container, focus_next, focus_previous, horizontal_rule, markdown, row,
-        text, vertical_space,
+        button, column, container, markdown,
+        operation::{focus_next, focus_previous},
+        row, rule, space, text,
     },
     Alignment::Center,
 };
@@ -181,7 +182,7 @@ impl App {
                     //     include_bytes!("../data/resources/Foray.svg").as_slice()
                     // )),
                     text("Foray").font(Font::with_name("Courier New")).size(120),
-                    vertical_space(),
+                    space(),
                     row![
                         button("Load Workspace").on_press(Message::StartWorkspaceSelect),
                         text("or"),
@@ -189,17 +190,11 @@ impl App {
                     ]
                     .align_y(Center)
                     .spacing(20),
-                    vertical_space(),
-                    horizontal_rule(1),
+                    space::vertical(),
+                    rule::horizontal(1),
                     container(
-                        markdown::view(
-                            &self.markdown,
-                            markdown::Settings::default(),
-                            markdown::Style::from_palette(
-                                Theme::from(self.app_theme.clone()).palette()
-                            )
-                        )
-                        .map(Message::LinkClicked)
+                        markdown::view(&self.markdown, Theme::from(self.app_theme.clone()))
+                            .map(Message::LinkClicked)
                     )
                     .padding([20, 20])
                 ]

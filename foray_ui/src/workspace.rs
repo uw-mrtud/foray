@@ -1,5 +1,5 @@
 use crate::app::file_dialog;
-use crate::file_watch::file_watch_subscription;
+use crate::file_watch::make_file_watch_sub;
 use crate::interface::add_node::add_node_tree_panel;
 use crate::interface::node_canvas::camera::Camera;
 use crate::interface::node_canvas::node_canvas;
@@ -23,7 +23,7 @@ use foray_py::py_node::{PyConfig, PyNodeTemplate};
 use iced::event::listen_with;
 use iced::keyboard::key::Named;
 use iced::keyboard::{Event::KeyPressed, Key, Modifiers};
-use iced::widget::{container, horizontal_space, mouse_area, row, stack, text, vertical_rule};
+use iced::widget::{container, mouse_area, row, rule, space, stack, text};
 use iced::Event::Keyboard;
 use iced::Length::Fill;
 use iced::{mouse, window, Element, Renderer, Subscription, Task, Theme};
@@ -679,8 +679,8 @@ impl Workspace {
             network_panel,
             row![
                 iced::widget::opaque(side_bar(self)),
-                vertical_rule(SEPERATOR),
-                horizontal_space()
+                rule::vertical(SEPERATOR),
+                space::horizontal()
             ],
         ];
         //match self.show_palette_ui {
@@ -888,13 +888,13 @@ impl Workspace {
             self.projects
                 .iter()
                 .filter(|p| !p.absolute_path.to_string_lossy().is_empty())
-                .enumerate()
-                .map(|(id, p)| {
-                    file_watch_subscription(
-                        id,
-                        p.absolute_path.clone(),
-                        WorkspaceMessage::ReloadNodes,
-                    )
+                // .take(1)
+                .map(|p| {
+                    make_file_watch_sub(p.absolute_path.clone()).map(|_| {
+                        // dbg!(a);
+                        // WorkspaceMessage::ReloadNodes
+                        WorkspaceMessage::Cancel
+                    })
                 })
                 .chain([
                     window::resize_events()

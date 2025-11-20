@@ -50,8 +50,9 @@ impl From<AppTheme> for Theme {
             primary: app_theme.primary.base_color.into(),
             success: app_theme.success.base_color.into(),
             danger: app_theme.danger.base_color.into(),
+            warning: app_theme.orange.base_color.into(),
         };
-        iced::Theme::custom_with_fn("flexoki".into(), palette, move |palette| {
+        iced::Theme::custom_with_fn("flexoki", palette, move |palette| {
             extended(palette, app_theme)
         })
     }
@@ -65,6 +66,8 @@ pub fn extended(_palette: Palette, app_theme: AppTheme) -> Extended {
         secondary,
         success,
         danger,
+        orange,
+        cyan,
         ..
     } = app_theme;
 
@@ -98,6 +101,12 @@ pub fn extended(_palette: Palette, app_theme: AppTheme) -> Extended {
             base: base(background),
             weak: weak(background),
             strong: strong(background),
+            //TODO: Fix up new color fields
+            weakest: base(cyan),
+            weaker: base(cyan),
+            neutral: base(cyan),
+            stronger: base(cyan),
+            strongest: base(cyan),
         },
         primary: Primary {
             base: base(primary),
@@ -114,6 +123,12 @@ pub fn extended(_palette: Palette, app_theme: AppTheme) -> Extended {
             weak: weak(success),
             strong: strong(success),
         },
+        warning: iced::theme::palette::Warning {
+            base: base(orange),
+            weak: weak(orange),
+            strong: strong(orange),
+        },
+
         danger: iced::theme::palette::Danger {
             base: base(danger),
             weak: weak(danger),

@@ -301,7 +301,7 @@ impl ValueMapping {
                     // Don't create floor/ceil controls for clyclic maps
                     match self.color_map {
                         ColorMap::Complex(RIMP::Phase(CyclicMap::Cyclic)) => {
-                            (horizontal_space().into(), horizontal_space().into())
+                            (space::horizontal().into(), space::horizontal().into())
                         }
                         _ => (// Floor Row
                             row![
@@ -334,7 +334,7 @@ impl ValueMapping {
 
                 column![
                     row!["Value Mapping"],
-                    horizontal_rule(1.0),
+                    rule::horizontal(1.0),
                     container(histogram_view.width(Length::Fill).height(50.0)).padding(6.0),
                     floor_row,
                     ceil_row,

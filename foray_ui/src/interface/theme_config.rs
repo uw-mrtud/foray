@@ -1,10 +1,9 @@
 use iced::alignment::Horizontal::Right;
-use iced::widget::container;
 use iced::widget::container::background;
-use iced::widget::horizontal_space;
 use iced::widget::scrollable::{Direction, Scrollbar};
+use iced::widget::{container, rule, space};
 use iced::{
-    widget::{column, row, scrollable, slider, text, vertical_rule},
+    widget::{column, row, scrollable, slider, text},
     Element,
 };
 
@@ -62,7 +61,7 @@ impl AppTheme {
             column![
                 row![
                     text(lbl),
-                    horizontal_space(),
+                    space::horizontal(),
                     color_element(gui_color.base_color),
                     color_element(gui_color.weak_color()),
                     color_element(gui_color.strong_color()),
@@ -77,23 +76,23 @@ impl AppTheme {
         scrollable(
             row![
                 color_control(self.primary, "Primary".into(), AppThemeMessage::Primary),
-                vertical_rule(SEPERATOR),
+                rule::vertical(SEPERATOR),
                 color_control(
                     self.secondary,
                     "Secondary".into(),
                     AppThemeMessage::Secondary
                 ),
-                vertical_rule(SEPERATOR),
+                rule::vertical(SEPERATOR),
                 color_control(self.success, "Success".into(), AppThemeMessage::Sucess),
-                vertical_rule(SEPERATOR),
+                rule::vertical(SEPERATOR),
                 color_control(self.danger, "Danger".into(), AppThemeMessage::Danger),
-                vertical_rule(SEPERATOR),
+                rule::vertical(SEPERATOR),
                 color_control(
                     self.background,
                     "Background".into(),
                     AppThemeMessage::Background
                 ),
-                vertical_rule(SEPERATOR),
+                rule::vertical(SEPERATOR),
                 color_control(self.text, "Text".into(), AppThemeMessage::Text),
             ]
             .height(130),

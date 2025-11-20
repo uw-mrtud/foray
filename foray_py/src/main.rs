@@ -5,6 +5,7 @@ use pyo3::ffi::c_str;
 
 fn main() {
     println!("Node check!");
+    pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
         py.run(

@@ -6,7 +6,7 @@ use plotters::{
     chart::ChartBuilder,
     prelude::IntoDrawingArea,
     series::LineSeries,
-    style::{RGBAColor, RGBColor, ShapeStyle, WHITE},
+    style::{RGBColor, ShapeStyle, WHITE},
 };
 use serde::{Deserialize, Serialize};
 
@@ -85,20 +85,26 @@ impl SeriesVis {
         match port_data {
             PortData::Array(ForayArray::Float(a)) => {
                 let root_drawing_area =
-                    plotters::backend::SVGBackend::with_string(&mut svg_buffer, (300, 300))
+                    plotters::backend::SVGBackend::with_string(&mut svg_buffer, (3000, 3000))
                         .into_drawing_area();
 
                 // root_drawing_area
                 //     .fill(&plotters::style::WHITE)
                 //     .unwrap();
-                let fg_color = AppTheme::default().text.base_color.into_rbg8();
+                //
+                let default_theme = AppTheme::default();
+
+                let fg_color = default_theme.text.base_color.into_rbg8();
                 let fg_color = RGBColor(fg_color.0, fg_color.1, fg_color.2);
 
+                let series_color = default_theme.blue.weak_color().into_rbg8();
+                let series_color = RGBColor(series_color.0, series_color.1, series_color.2);
+
                 let mut chart = ChartBuilder::on(&root_drawing_area)
-                    .margin_top(15)
-                    .margin_right(15)
-                    .x_label_area_size(30)
-                    .y_label_area_size(30)
+                    .margin_top(150)
+                    .margin_right(150)
+                    .x_label_area_size(300)
+                    .y_label_area_size(300)
                     .build_cartesian_2d(0.0..(a.len() as f64), -1.2..1.2)
                     .unwrap();
 
@@ -106,8 +112,14 @@ impl SeriesVis {
                     .configure_mesh()
                     .disable_x_mesh()
                     .disable_y_mesh()
-                    .label_style(("sans-serif", 14, &fg_color))
-                    .axis_style(&fg_color)
+                    .label_style(("sans-serif", 140, &fg_color))
+                    .x_label_formatter(&|x| format!("{:.0}", x))
+                    .set_all_tick_mark_size(20)
+                    .axis_style(ShapeStyle {
+                        color: fg_color.into(),
+                        filled: true,
+                        stroke_width: 10,
+                    })
                     .draw()
                     .unwrap();
 
@@ -115,9 +127,9 @@ impl SeriesVis {
                     .draw_series(LineSeries::new(
                         a.iter().enumerate().map(|(i, x)| (i as f64, *x)),
                         ShapeStyle {
-                            color: RGBAColor(255, 127, 127, 1.0),
+                            color: series_color.into(),
                             filled: false,
-                            stroke_width: 2,
+                            stroke_width: 20,
                         },
                     ))
                     .unwrap();
@@ -132,7 +144,6 @@ impl SeriesVis {
                 return None;
             }
         };
-        println!("{}", svg_buffer);
         let dynamic_svg = iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(
             svg_buffer.into_bytes(),
         ));

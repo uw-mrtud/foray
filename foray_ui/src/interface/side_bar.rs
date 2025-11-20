@@ -64,7 +64,7 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
         !app.network.redo_stack.is_empty(),
         WorkspaceMessage::Redo,
     );
-    let action_commands = row![horizontal_space(), undo, redo].spacing(4.0);
+    let action_commands = row![space::horizontal(), undo, redo].spacing(4.0);
 
     //// Config
     let config: Element<WorkspaceMessage> =
@@ -82,13 +82,13 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
             //};
             column![
                 container(text(node.template.name().clone()).size(20.)).center_x(Fill),
-                horizontal_rule(0),
+                rule::horizontal(0),
                 node_status_widget(&node.status),
-                vertical_space().height(10.),
+                space::vertical().height(10.),
                 config_view(node, *selected_id, input_data).unwrap_or(text("...").into()),
                 // node.config_view(*selected_id, input_data)
                 //     .unwrap_or(text("...").into()),
-                vertical_space(),
+                space::vertical(),
                 //scrollable(out_port_display),
                 row![button(text("delete node"))
                     .style(button::danger)
@@ -108,12 +108,12 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
             row![
                 //// File
                 file_commands.align_y(Alignment::Center),
-                horizontal_space(),
+                space::horizontal(),
                 //// Actions
                 action_commands.align_y(Alignment::Center),
             ]
             .padding([2., 4.]),
-            horizontal_rule(SEPERATOR),
+            rule::horizontal(SEPERATOR),
             //// Config
             config
         ]
@@ -159,7 +159,7 @@ pub fn config_view<'a>(
                         let widget: Element<WorkspaceMessage> = match widget_type {
                             UIParameter::CheckBox(_initial_v) => {
                                 row![
-                                    horizontal_space(),
+                                    space::horizontal(),
                                     toggler(
                                         match node_instance
                                             .parameters_values
@@ -185,7 +185,7 @@ pub fn config_view<'a>(
                                         _ => panic!("slider should be a float"),
                                     };
                                 row![
-                                    horizontal_space(),
+                                    space::horizontal(),
                                     row![numeric_input::numeric_input(
                                         current_value as f32,
                                         numeric_input::PartialUIValue::Complete,
@@ -208,30 +208,33 @@ pub fn config_view<'a>(
 
                                 row![
                                     row![
-                                        iced_aw::typed_input::TypedInput::new(
-                                            "Placeholder",
-                                            &current_value
-                                        )
-                                        .on_input(
-                                            move |new_v| WorkspaceMessage::UpdateNodeParameter(
-                                                id,
-                                                name_2.clone(),
-                                                PortData::Float(new_v),
-                                            )
-                                        ) // iced_aw::typed_input(&current_value, move |new_v| {
-                                          //     Message::UpdateNodeParameter(
-                                          //         id,
-                                          //         name.clone(),
-                                          //         PortData::Float(new_v as f64),
-                                          //     )
-                                          // }),
-                                          // numeric_input::numeric_input(
-                                          // current_value,
-                                          // numeric_input::PartialUIValue::Complete,
-                                          // move |new_v, pv| {
-                                          //     message(PortData::Float(new_v as f64))
-                                          //     // UIParameter::Slider(start, stop, new_v as f64))
-                                          // },
+                                        text_input("Placeholder", &current_value.to_string())
+                                            // iced_aw::typed_input::TypedInput::new(
+                                            //     "Placeholder",
+                                            //     &current_value
+                                            // )
+                                            .on_input(move |new_v| {
+                                                WorkspaceMessage::UpdateNodeParameter(
+                                                    id,
+                                                    name_2.clone(),
+                                                    PortData::Float(
+                                                        new_v.parse().unwrap_or_default(),
+                                                    ),
+                                                )
+                                            }) // iced_aw::typed_input(&current_value, move |new_v| {
+                                               //     Message::UpdateNodeParameter(
+                                               //         id,
+                                               //         name.clone(),
+                                               //         PortData::Float(new_v as f64),
+                                               //     )
+                                               // }),
+                                               // numeric_input::numeric_input(
+                                               // current_value,
+                                               // numeric_input::PartialUIValue::Complete,
+                                               // move |new_v, pv| {
+                                               //     message(PortData::Float(new_v as f64))
+                                               //     // UIParameter::Slider(start, stop, new_v as f64))
+                                               // },
                                     ]
                                     .width(60.0),
                                     slider(start..=stop, current_value, move |new_v| {

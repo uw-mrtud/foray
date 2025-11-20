@@ -21,18 +21,7 @@ foray_data_model = { path = "../foray_data_model/" }
 foray_graph = { path = "../foray_graph/" }
 foray_py = { path = "../foray_py/" }
 
-iced = { version = "0.13.1", default-features = false, features = [
-	"wgpu",
-	"auto-detect-theme",
-	"debug",
-	"lazy",
-	"image-without-codecs",
-	"advanced",
-	"canvas",
-	"async-std",
-	"markdown",
-	"svg",
-] }
+iced.workspace = true
 
 pyo3.workspace = true
 numpy.workspace = true
@@ -46,8 +35,8 @@ strum.workspace = true
 derive_more.workspace = true
 
 float-cmp = "0.10.0"
-notify = { version = "8.0.0", features = ["serde"] }
-notify-debouncer-full = "0.5.0"
+notify = { version = "8.2.0", features = ["serde"] }
+notify-debouncer-full = "0.6.0"
 
 env_logger = "0.11.6"
 log.workspace = true                                         # = "0.4.22"
@@ -60,7 +49,11 @@ directories = "6.0.0"
 toml = "0.8.20"
 rfd = "0.15.3"
 relative-path.workspace = true
-iced_aw = { version = "0.12.2", features = ["typed_input"] }
+# iced_widget = { git = "https://github.com/iced-rs/iced",version = "0.14.0-dev" }
+# iced_core = { git = "https://github.com/iced-rs/iced",version = "0.14.0-dev" }
+# iced_aw = { git = "https://github.com/iced-rs/iced_aw",version = "0.13.0-dev", features = ["typed_input"] }
+# iced_aw = { version = "0.13.0", features = ["typed_input"] }
 clap = { version = "4.5.45", features = ["derive"] }
 open = "5.3.2"
 plotters = "0.3.7"
+tokio = "1.48.0"

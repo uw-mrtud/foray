@@ -1,12 +1,12 @@
 use iced::{
-    event,
     keyboard::{self, Modifiers},
     mouse::{self, Cursor, ScrollDelta},
+    widget::Action,
     Element, Length, Rectangle, Renderer, Theme, Transformation, Vector,
 };
 
 use iced::widget::canvas;
-use iced::widget::canvas::event::Event;
+use iced::Event;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
@@ -141,10 +141,10 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
     fn update(
         &self,
         state: &mut Self::State,
-        event: Event,
+        event: &Event,
         bounds: Rectangle,
         cursor: mouse::Cursor,
-    ) -> (event::Status, Option<WorkspaceMessage>) {
+    ) -> Option<Action<WorkspaceMessage>> {
         let world_cursor_position = match cursor.position() {
             Some(p) => self.camera.cursor_to_world(p.into()),
             None => self.workspace.cursor_position, //return (event::Status::Ignored, None),
@@ -213,9 +213,8 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                             scroll_amount.1 / self.camera.zoom,
                         ))
                     }
-                    return (
-                        event::Status::Captured,
-                        Some(WorkspaceMessage::UpdateCamera(new_camera)),
+                    return Some(
+                        Action::publish(WorkspaceMessage::UpdateCamera(new_camera)).and_capture(),
                     );
                 }
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
@@ -226,9 +225,9 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
 
                         // Node Collision
                         if node.node_bounding_rect().contains(node_cursor_position) {
-                            return (
-                                event::Status::Captured,
-                                Some(WorkspaceMessage::OnCanvasDown(Some(*node_id))),
+                            return Some(
+                                Action::publish(WorkspaceMessage::OnCanvasDown(Some(*node_id)))
+                                    .and_capture(),
                             );
                         }
                         // Port Collision
@@ -236,16 +235,15 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                         for (port_rect, port_ref, _) in input_ports.into_iter().chain(output_ports)
                         {
                             if port_rect.contains(node_cursor_position) {
-                                return (
-                                    event::Status::Captured,
-                                    Some(WorkspaceMessage::PortPress(port_ref)),
+                                return Some(
+                                    Action::publish(WorkspaceMessage::PortPress(port_ref))
+                                        .and_capture(),
                                 );
                             }
                         }
                     }
-                    return (
-                        event::Status::Captured,
-                        Some(WorkspaceMessage::OnCanvasDown(None)),
+                    return Some(
+                        Action::publish(WorkspaceMessage::OnCanvasDown(None)).and_capture(),
                     );
                 }
                 mouse::Event::ButtonPressed(mouse::Button::Right) => {
@@ -259,9 +257,9 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                         for (port_rect, port_ref, _) in input_ports.into_iter().chain(output_ports)
                         {
                             if port_rect.contains(node_cursor_position) {
-                                return (
-                                    event::Status::Captured,
-                                    Some(WorkspaceMessage::PortDelete(port_ref)),
+                                return Some(
+                                    Action::publish(WorkspaceMessage::PortDelete(port_ref))
+                                        .and_capture(),
                                 );
                             }
                         }
@@ -278,41 +276,42 @@ impl<'a> canvas::Program<WorkspaceMessage> for NodeCanvas<'a> {
                         for (port_rect, port_ref, _) in input_ports.into_iter().chain(output_ports)
                         {
                             if port_rect.contains(node_cursor_position) {
-                                return (
-                                    event::Status::Captured,
-                                    Some(WorkspaceMessage::PortMouseUp(port_ref)),
+                                return Some(
+                                    Action::publish(WorkspaceMessage::PortMouseUp(port_ref))
+                                        .and_capture(),
                                 );
                             }
                         }
                     }
-                    return (event::Status::Captured, Some(WorkspaceMessage::OnCanvasUp));
+                    return Some(Action::publish(WorkspaceMessage::OnCanvasUp).and_capture());
                 }
                 mouse::Event::CursorMoved { position } => {
-                    return (
-                        event::Status::Captured,
-                        Some(WorkspaceMessage::OnMove(position.into())),
+                    return Some(
+                        Action::publish(WorkspaceMessage::OnMove((*position).into())).and_capture(),
                     )
                 }
                 _ => {}
             },
             Event::Touch(_event) => {}
             Event::Keyboard(event) => match event {
-                keyboard::Event::ModifiersChanged(modifiers) => state.modifiers = modifiers,
+                keyboard::Event::ModifiersChanged(modifiers) => state.modifiers = *modifiers,
                 _ => {}
             },
+            Event::Window(_) => {}
+            Event::InputMethod(_) => {}
         }
 
         if self.camera.bounds_size != bounds.size() {
-            return (
-                event::Status::Captured,
-                Some(WorkspaceMessage::UpdateCamera(Camera {
+            return Some(
+                Action::publish(WorkspaceMessage::UpdateCamera(Camera {
                     bounds_size: bounds.size(),
                     ..self.camera
-                })),
+                }))
+                .and_capture(),
             );
         }
 
-        (event::Status::Ignored, None)
+        None
     }
 }
 

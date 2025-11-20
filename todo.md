@@ -246,11 +246,11 @@
 - [x] display node
 
 ## 25/10/13
-- [ ] color bar
+- [x] color bar
 - [x] available color map options adjusts to current port type (hide complex only variants)
-- [ ] executing node status color
-- [ ] wire fire animation
-- [ ] error node status color
+- [x] executing node status color
+- [x] wire fire animation
+- [x] error node status color
 - [ ] bugs when deleting nodes? port/edge data cleanup?
 - [ ] UI for actions that currently only have keyboard shortcuts
   - [ ] add node
@@ -258,5 +258,12 @@
   - [ ] zoom
 - [ ] node reload don't re-run all nodes
 - [ ] don't re-run nodes on click
-- [ ] plot node
+- [~] plot node
+
+## 25/11/18
+numpy issue when using a virtual environment that differs from the python version of the development or executable version?
+Fixed by pinning the venv to 3.14...
+ 
+Need to test combinations of versions to make sure multiple versions of python are supported.
+
 

@@ -42,7 +42,7 @@ impl ForayNodeInstance {
             ) => match &self.visualization {
                 Some(vis) => match vis {
                     Visualization::NDimVis(ndim_vis) => ndim_vis.parameters.image_bounds(200.0),
-                    Visualization::Series(series_vis) => {
+                    Visualization::Series(_series_vis) => {
                         Rectangle::new((0.0, 0.0).into(), (300.0, 300.0).into())
                     }
                 },
@@ -179,6 +179,7 @@ pub fn draw_node(
         .with_width(2.0 * scale);
 
     let node_bounding = node.node_bounding_rect();
+    let node_background = app_theme.background.base_color.iced_color();
 
     match node.template {
         // Draw Display Node
@@ -195,7 +196,7 @@ pub fn draw_node(
                 (image_width, image_height).into(),
             );
 
-            draw_node_border(frame, node_bounding, 1.0, stroke, node_border_color);
+            draw_node_border(frame, node_bounding, 1.0, stroke, node_background);
             match &node.visualization {
                 Some(vis) => match vis {
                     Visualization::NDimVis(ndim_vis) => {
@@ -212,13 +213,7 @@ pub fn draw_node(
         // Draw Default Node
         _ => {
             draw_node_text(frame, app_theme, node_bounding, node.template.name());
-            draw_node_border(
-                frame,
-                node_bounding,
-                NODE_RADIUS,
-                stroke,
-                app_theme.background.base_color.iced_color(),
-            );
+            draw_node_border(frame, node_bounding, NODE_RADIUS, stroke, node_background);
             match &node.visualization {
                 Some(vis) => match vis {
                     Visualization::NDimVis(ndim_vis) => {
@@ -227,7 +222,7 @@ pub fn draw_node(
                             Rectangle::new((node_bounding.width, 0.0).into(), image_size);
                         draw_node_image(frame, ndim_vis, image_bounds);
                     }
-                    Visualization::Series(series_vis) => {}
+                    Visualization::Series(_series_vis) => {}
                 },
                 None => {}
             };
@@ -252,8 +247,8 @@ pub fn draw_node_text(
             family: Family::Name("Courier New"),
             ..Font::default()
         },
-        horizontal_alignment: iced::alignment::Horizontal::Center,
-        vertical_alignment: iced::alignment::Vertical::Center,
+        align_x: text::Alignment::Center,
+        align_y: iced::alignment::Vertical::Center,
         shaping: text::Shaping::Basic,
         ..Default::default()
     };
@@ -293,7 +288,7 @@ pub fn draw_node_border(
     );
 
     frame.stroke(&node_border, stroke);
-    // frame.fill(&node_border, fill);
+    frame.fill(&node_border, fill);
 }
 pub fn draw_node_ports(
     // Draw directly into frame

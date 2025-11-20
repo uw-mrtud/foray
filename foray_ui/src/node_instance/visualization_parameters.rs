@@ -246,9 +246,9 @@ impl VisualizationParameters {
 
         column![
             value_mapping_widgets,
-            vertical_space().height(10.0),
+            space::vertical().height(10.0),
             row!["Dimensions"],
-            horizontal_rule(1.0),
+            rule::horizontal(1.0),
             row!["Size: ", size_dim_display],
             row!["Slice: ", slice_dim_display],
             slice_widget,

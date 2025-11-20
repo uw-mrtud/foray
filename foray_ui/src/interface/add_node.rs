@@ -29,7 +29,7 @@ pub fn add_node_tree_panel<'b>(
         container(text("Add Node").size(16.))
             .center_x(Fill)
             .padding(5.),
-        horizontal_rule(3.0),
+        rule::horizontal(3.0),
         // Contents
         container(scrollable(node_list).spacing(2.)).padding(2.0)
     ])
@@ -48,7 +48,12 @@ pub fn node_tree<'b>(
     let tree_row = |name, message| {
         row![
             // Vertical bar seperators
-            row((0..tree_path.len()).map(|_| row![vertical_rule(10.0)].height(ROW_HEIGHT).into())),
+            row((0..tree_path.len()).map(|_| row![
+                rule::vertical(1.0),
+                space::horizontal().width(4.0)
+            ]
+            .height(ROW_HEIGHT)
+            .into())),
             button(container(name).padding(left(4.0)))
                 .padding(0.)
                 .on_press(message)

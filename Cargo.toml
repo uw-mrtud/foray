@@ -33,15 +33,17 @@ pyo3 = "0.25.0"
 numpy = "0.25.0"
 
 
-iced = { version = "0.13.1", default-features = false, features = [
+iced = { git="https://github.com/iced-rs/iced",version="0.14.0-dev", default-features = false, features = [
 	"wgpu",
-	"auto-detect-theme",
+	# "auto-detect-theme",
+	"smol",
+	# "tokio",
+	# "crisp",
 	"debug",
 	"lazy",
 	"image-without-codecs",
 	"advanced",
 	"canvas",
-	"async-std",
 	"markdown",
 	"svg",
 ] }
