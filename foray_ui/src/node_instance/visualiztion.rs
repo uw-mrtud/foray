@@ -88,10 +88,6 @@ impl SeriesVis {
                     plotters::backend::SVGBackend::with_string(&mut svg_buffer, (3000, 3000))
                         .into_drawing_area();
 
-                // root_drawing_area
-                //     .fill(&plotters::style::WHITE)
-                //     .unwrap();
-                //
                 let default_theme = AppTheme::default();
 
                 let fg_color = default_theme.text.base_color.into_rbg8();

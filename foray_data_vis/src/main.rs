@@ -1,0 +1,97 @@
+use derive_more::Display;
+use foray_data_vis::{
+    image_vis::ImageVis,
+    series_vis::{SeriesVis, SeriesVisOptions},
+};
+use iced::{
+    Alignment::Center,
+    Element,
+    Length::Fill,
+    widget::{column, container, image, pick_list, row, space, svg},
+};
+use ndarray::Array2;
+
+fn main() {
+    let _ = iced::application(|| State::default(), update, view).run();
+}
+
+#[derive(Debug, Clone)]
+enum Message {
+    UpdateSeriesVis(SeriesVisOptions),
+    ChangeScreen(CurrentScreen),
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, Display)]
+enum CurrentScreen {
+    Image,
+    Series,
+}
+
+struct State {
+    image_vis: ImageVis,
+    series_vis: SeriesVis,
+    screen: CurrentScreen,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        let mut image_data = Array2::default((16, 16));
+        image_data.iter_mut().enumerate().for_each(|(i, v)| {
+            *v = i as f64;
+        });
+
+        let series_data = (0..100).map(|x| (x as f64 / 10.0).sin()).collect();
+
+        Self {
+            image_vis: ImageVis::new(image_data),
+            series_vis: SeriesVis::new(
+                series_data,
+                SeriesVisOptions::new(Some("sin(x)".to_string())),
+            ),
+            screen: CurrentScreen::Series,
+        }
+    }
+}
+
+fn update(state: &mut State, message: Message) {
+    match message {
+        Message::UpdateSeriesVis(updated_options) => {
+            state.series_vis.update_options(updated_options)
+        }
+        Message::ChangeScreen(current_screen) => state.screen = current_screen,
+    }
+}
+
+fn view(state: &'_ State) -> Element<'_, Message> {
+    let vis_size = 500;
+    column![
+        pick_list(
+            [CurrentScreen::Series, CurrentScreen::Image],
+            Some(state.screen),
+            |v| Message::ChangeScreen(v)
+        ),
+        match state.screen {
+            CurrentScreen::Image => row![
+                image(&state.image_vis.image_handle)
+                    .width(vis_size)
+                    .height(vis_size),
+                space::vertical(),
+            ]
+            .height(Fill)
+            .align_y(Center),
+            CurrentScreen::Series => row![
+                container(state.series_vis.config_view(Message::UpdateSeriesVis)).width(200),
+                svg(state.series_vis.svg().handle.clone())
+                    // .content_fit(iced::ContentFit::None)
+                    .width(vis_size)
+                    .height(vis_size)
+            ]
+            .height(Fill)
+            .align_y(Center),
+        },
+    ]
+    .width(Fill)
+    .align_x(Center)
+    .padding(10)
+    .into()
+}

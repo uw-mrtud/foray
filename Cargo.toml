@@ -2,7 +2,14 @@ cargo-features = ["codegen-backend"]
 
 [workspace]
 resolver = "3"
-members = ["foray_data_model", "foray_graph", "foray_py", "foray_ui", "node_canvas"]
+members = [
+	"foray_data_model",
+	"foray_data_vis",
+	"foray_graph",
+	"foray_py",
+	"foray_ui",
+	"node_canvas",
+]
 default-members = ["foray_ui"]
 
 
@@ -33,9 +40,10 @@ pyo3 = "0.25.0"
 numpy = "0.25.0"
 
 
-iced = { git="https://github.com/iced-rs/iced",version="0.14.0-dev", default-features = false, features = [
+iced = { git = "https://github.com/iced-rs/iced", version = "0.14.0-dev", default-features = false, features = [
 	"wgpu",
 	# "auto-detect-theme",
+	"linux-theme-detection",
 	"smol",
 	# "tokio",
 	# "crisp",
@@ -47,6 +55,7 @@ iced = { git="https://github.com/iced-rs/iced",version="0.14.0-dev", default-fea
 	"markdown",
 	"svg",
 ] }
+plotters = "0.3.7"
 
 [profile.dev]
 debug = 0

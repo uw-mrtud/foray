@@ -1,0 +1,11 @@
+[package]
+name = "foray_data_vis"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iced.workspace = true
+plotters.workspace = true
+ndarray.workspace = true
+itertools.workspace = true
+derive_more.workspace = true

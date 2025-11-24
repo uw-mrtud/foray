@@ -22,10 +22,11 @@ foray_graph = { path = "../foray_graph/" }
 foray_py = { path = "../foray_py/" }
 
 iced.workspace = true
+plotters.workspace = true
+ndarray.workspace = true
 
 pyo3.workspace = true
 numpy.workspace = true
-ndarray = "0.16.1"
 
 ron.workspace = true
 indexmap = { version = "2.7.0", features = ["serde"] }
@@ -39,10 +40,10 @@ notify = { version = "8.2.0", features = ["serde"] }
 notify-debouncer-full = "0.6.0"
 
 env_logger = "0.11.6"
-log.workspace = true                                         # = "0.4.22"
+log.workspace = true           # = "0.4.22"
 palette = "0.7.6"
 glob = "0.3.2"
-itertools.workspace = true                                   # = "0.14.0"
+itertools.workspace = true     # = "0.14.0"
 glam = "0.29.2"
 colorgrad = "0.7.0"
 directories = "6.0.0"
@@ -55,5 +56,4 @@ relative-path.workspace = true
 # iced_aw = { version = "0.13.0", features = ["typed_input"] }
 clap = { version = "4.5.45", features = ["derive"] }
 open = "5.3.2"
-plotters = "0.3.7"
 tokio = "1.48.0"
