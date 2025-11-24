@@ -24,16 +24,9 @@ pub struct AxisOptions {
     pub(crate) grid: bool,
 }
 impl AxisOptions {
-    pub(crate) fn range(&self, data: &[f64]) -> Range<f64> {
+    pub(crate) fn range(&self, data_range: Range<f64>) -> Range<f64> {
         match self.extent {
-            Extent::Auto => {
-                let min = data.iter().copied().reduce(f64::min).unwrap_or_default();
-                let max = data.iter().copied().reduce(f64::max).unwrap_or_default();
-                let extent = max - min;
-                let padding = extent * 0.0; //0.01;
-
-                (min - padding)..(max + padding)
-            }
+            Extent::Auto => data_range,
             Extent::Fixed(min, max) => min..max,
         }
     }
@@ -57,29 +50,52 @@ impl SeriesVisOptions {
 }
 
 pub struct SeriesVis {
-    pub(crate) data: Array1<f64>,
+    pub(crate) x_data: Array1<f64>,
+    pub(crate) y_data: Vec<Array1<f64>>,
     pub(crate) svg: Svg,
     pub(crate) vis_options: SeriesVisOptions,
 }
 
 impl SeriesVis {
-    pub fn new(data: Array1<f64>, vis_options: SeriesVisOptions) -> Self {
-        Self {
-            svg: Self::compute_svg(&data, &vis_options),
-            data,
+    pub fn new(
+        x_data: Array1<f64>,
+        y_data: Vec<Array1<f64>>,
+        vis_options: SeriesVisOptions,
+    ) -> Self {
+        let mut s = Self {
+            svg: iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(&[])),
+            x_data,
+            y_data,
             vis_options,
-        }
+        };
+        s.compute_svg();
+        s
     }
     pub fn update_options(&mut self, options: SeriesVisOptions) {
         self.vis_options = options;
-        self.svg = Self::compute_svg(&self.data, &self.vis_options)
+        self.compute_svg();
     }
 
     pub fn svg(&self) -> &Svg {
         &self.svg
     }
-    fn compute_svg(y_data: &Array1<f64>, vis_options: &SeriesVisOptions) -> Svg {
-        let x_data: Vec<f64> = (0..(y_data.len())).map(|x| x as f64).collect();
+    fn data_range<'a, T: Iterator<Item = &'a f64>>(data: T) -> std::ops::Range<f64> {
+        let minmax = data.minmax();
+        match minmax {
+            itertools::MinMaxResult::NoElements => 0.0..0.0,
+            itertools::MinMaxResult::OneElement(a) => *a..*a,
+            itertools::MinMaxResult::MinMax(a, b) => *a..*b,
+        }
+    }
+
+    pub(crate) fn x_data_range(&self) -> std::ops::Range<f64> {
+        Self::data_range(self.x_data.iter())
+    }
+    pub(crate) fn y_data_range(&self) -> std::ops::Range<f64> {
+        Self::data_range(self.y_data.iter().flatten())
+    }
+
+    fn compute_svg(&mut self) {
         let mut svg_buffer = String::new();
         {
             let scale = 20;
@@ -92,18 +108,23 @@ impl SeriesVis {
             let fg_color = WHITE;
             let mesh_line_color = RGBAColor(70, 70, 70, 1.0);
 
-            let series_color = RGBColor(250, 120, 120);
+            let series_palette = vec![
+                RGBColor(250, 120, 120),
+                RGBColor(120, 250, 120),
+                RGBColor(120, 120, 250),
+            ];
+
             let label_style = ("sans-serif", 15 * scale, &fg_color);
             let title_style = ("sans-serif", 24 * scale, &fg_color);
 
-            let x_range = vis_options.x.range(&x_data);
-            let y_range = vis_options.y.range(y_data.as_slice().unwrap_or_default());
+            let x_range = self.vis_options.x.range(self.x_data_range());
+            let y_range = self.vis_options.y.range(self.y_data_range());
 
             //// Chart Context
             let mut chart = {
                 let mut partial = ChartBuilder::on(&root_drawing_area);
 
-                if let Some(title) = &vis_options.title {
+                if let Some(title) = &self.vis_options.title {
                     partial.caption(title, title_style);
                 }
 
@@ -120,11 +141,11 @@ impl SeriesVis {
             {
                 let mut mesh_style = chart.configure_mesh();
 
-                if !vis_options.x.grid {
+                if !self.vis_options.x.grid {
                     mesh_style.disable_x_mesh();
                 };
 
-                if !vis_options.y.grid {
+                if !self.vis_options.y.grid {
                     mesh_style.disable_y_mesh();
                 };
 
@@ -137,8 +158,8 @@ impl SeriesVis {
                         stroke_width: 1 * scale,
                     })
                     .x_label_formatter(&|x| format!("{:.0}", x))
-                    .x_desc(vis_options.x.label.clone().unwrap_or_default())
-                    .y_desc(vis_options.y.label.clone().unwrap_or_default())
+                    .x_desc(self.vis_options.x.label.clone().unwrap_or_default())
+                    .y_desc(self.vis_options.y.label.clone().unwrap_or_default())
                     .set_all_tick_mark_size(2 * scale)
                     .axis_style(ShapeStyle {
                         color: fg_color.into(),
@@ -150,34 +171,34 @@ impl SeriesVis {
             };
 
             //// Chart Series
-            let data_coord = x_data.iter().zip(y_data).map(|(x, y)| (*x, *y));
+            for (i, y_series) in self.y_data.iter().enumerate() {
+                let series_style = ShapeStyle {
+                    color: series_palette[i % series_palette.len()].into(),
+                    filled: false,
+                    stroke_width: 2 * scale,
+                };
+                let data_coord = self.x_data.iter().zip(y_series).map(|(x, y)| (*x, *y));
 
-            let delta = 0.0000000001;
-            // break data into line segments that fall inside the bounding box
-            data_coord
-                .chunk_by(move |(x, y)| {
-                    (*x >= (x_range.start - delta))
-                        && (*x <= (x_range.end + delta))
-                        && (*y >= (y_range.start - delta))
-                        && (*y <= (y_range.end + delta))
-                })
-                .into_iter()
-                .filter_map(|(io, segment)| match io {
-                    true => Some(segment),
-                    false => None,
-                })
-                .for_each(|segment| {
-                    chart
-                        .draw_series(LineSeries::new(
-                            segment,
-                            ShapeStyle {
-                                color: series_color.into(),
-                                filled: false,
-                                stroke_width: 2 * scale,
-                            },
-                        ))
-                        .unwrap();
-                });
+                let delta = 0.0000000001;
+                // break data into line segments that fall inside the bounding box
+                data_coord
+                    .chunk_by(move |(x, y)| {
+                        (*x >= (x_range.start - delta))
+                            && (*x <= (x_range.end + delta))
+                            && (*y >= (y_range.start - delta))
+                            && (*y <= (y_range.end + delta))
+                    })
+                    .into_iter()
+                    .filter_map(|(io, segment)| match io {
+                        true => Some(segment),
+                        false => None,
+                    })
+                    .for_each(|segment| {
+                        chart
+                            .draw_series(LineSeries::new(segment, series_style))
+                            .unwrap();
+                    });
+            }
 
             // let segments = data_coord
             //     .scan((false, 0), move |(past_io, segment), (x, y)| {
@@ -191,17 +212,6 @@ impl SeriesVis {
             //     })
             //     .groupby();
 
-            // chart
-            //     .draw_series(LineSeries::new(
-            //         x_data.iter().zip(y_data).map(|(x, y)| (*x, *y)),
-            //         ShapeStyle {
-            //             color: series_color.into(),
-            //             filled: false,
-            //             stroke_width: 20,
-            //         },
-            //     ))
-            //     .unwrap();
-
             //// Chart Labels
             chart
                 .configure_series_labels()
@@ -210,8 +220,8 @@ impl SeriesVis {
                 .unwrap();
         }
 
-        iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(
+        self.svg = iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(
             svg_buffer.into_bytes(),
-        ))
+        ));
     }
 }

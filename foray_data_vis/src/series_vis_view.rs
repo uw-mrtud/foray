@@ -110,15 +110,8 @@ impl SeriesVis {
     where
         U: Fn(SeriesVisOptions) -> T + Clone,
     {
-        //TODO: Avoid creating this array...
-        //Store x_data in SeriesVis?
-        let x_data: Vec<f64> = (0..(self.data.len())).map(|x| x as f64).collect();
-        let x_range = self.vis_options.x.range(&x_data);
-
-        let y_range = self
-            .vis_options
-            .y
-            .range(&self.data.as_slice().unwrap_or_default());
+        let x_range = self.vis_options.x.range(self.x_data_range());
+        let y_range = self.vis_options.y.range(self.y_data_range());
 
         let update_1 = update.clone();
         let update_2 = update.clone();

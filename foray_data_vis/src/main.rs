@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use derive_more::Display;
 use foray_data_vis::{
     image_vis::ImageVis,
@@ -9,7 +11,7 @@ use iced::{
     Length::Fill,
     widget::{column, container, image, pick_list, row, space, svg},
 };
-use ndarray::Array2;
+use ndarray::{Array1, Array2};
 
 fn main() {
     let _ = iced::application(|| State::default(), update, view).run();
@@ -40,12 +42,18 @@ impl Default for State {
             *v = i as f64;
         });
 
-        let series_data = (0..100).map(|x| (x as f64 / 10.0).sin()).collect();
+        let x_data: Array1<f64> = (0..100).map(|x| x as f64).collect();
+        let y_data = vec![
+            x_data.iter().map(|x| (x / 10.0).sin()).collect(),
+            x_data.iter().map(|x| (x / 10.0 - PI / 6.0).sin()).collect(),
+            x_data.iter().map(|x| (x / 10.0 - PI / 3.0).sin()).collect(),
+        ];
 
         Self {
             image_vis: ImageVis::new(image_data),
             series_vis: SeriesVis::new(
-                series_data,
+                x_data,
+                y_data,
                 SeriesVisOptions::new(Some("sin(x)".to_string())),
             ),
             screen: CurrentScreen::Series,
