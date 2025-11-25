@@ -33,35 +33,39 @@ impl Visualization {
         let input_data = graph.get_input_data(&nx);
         let node = graph.get_node(nx);
 
-        let port_data = match input_data.get(node.inputs().iter().next().unwrap().0) {
-            Some(data) => Some(&*data.read().unwrap()),
-            None => None,
-        };
-
-        let y_data = match port_data {
-            None => Default::default(),
-            Some(port_data) => match port_data {
-                PortData::Array(foray_array) => match foray_array {
-                    ForayArray::Integer(array_base) => todo!(),
-                    ForayArray::Float(array_base) => {
-                        if array_base.ndim() == 1 {
-                            array_base
-                                .clone()
-                                .into_shape_with_order(array_base.len())
-                                .unwrap()
-                        } else {
-                            Default::default()
+        let y_data: Vec<_> = node
+            .inputs()
+            .iter()
+            .filter_map(|p| match input_data.get(p.0) {
+                Some(data) => match &*data.read().unwrap() {
+                    PortData::Array(foray_array) => match foray_array {
+                        ForayArray::Integer(array_base) => todo!(),
+                        ForayArray::Float(array_base) => {
+                            if array_base.ndim() == 1 {
+                                Some(
+                                    array_base
+                                        .clone()
+                                        .into_shape_with_order(array_base.len())
+                                        .unwrap(),
+                                )
+                            } else {
+                                Default::default()
+                            }
                         }
-                    }
-                    ForayArray::Complex(array_base) => todo!(),
+                        ForayArray::Complex(array_base) => todo!(),
+                        _ => Default::default(),
+                    },
                     _ => Default::default(),
                 },
-                _ => Default::default(),
-            },
-        };
-        let x_data = (0..(y_data.len())).map(|x| x as f64).collect();
+                None => Default::default(),
+            })
+            .collect();
 
-        Visualization::Series(SeriesVis::new(x_data, vec![y_data], parameters))
+        let y_max_length = y_data.iter().map(|y| y.len()).max().unwrap_or_default();
+
+        let x_data = (0..y_max_length).map(|x| x as f64).collect();
+
+        Visualization::Series(SeriesVis::new(x_data, y_data, parameters))
     }
 }
 

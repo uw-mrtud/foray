@@ -139,7 +139,13 @@ impl GraphNode<PortType, PortData> for RustNodeTemplate {
 
         match &self {
             RustNodeTemplate::Display => [("in".to_string(), prim_float)].into(),
-            RustNodeTemplate::DisplaySeries => [("in".to_string(), prim_float)].into(),
+            RustNodeTemplate::DisplaySeries => [
+                ("a".to_string(), prim_float.clone()),
+                ("b".to_string(), prim_float.clone()),
+                ("c".to_string(), prim_float.clone()),
+                ("d".to_string(), prim_float.clone()),
+            ]
+            .into(),
             // RustNodeTemplate::Identity => [("a".to_string(), prim_float)].into(),
             // RustNodeTemplate::Constant(_constant_node) => [].into(),
             // RustNodeTemplate::Add => binary_in,

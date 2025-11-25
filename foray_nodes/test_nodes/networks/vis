@@ -1,0 +1,182 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: RustNode(DisplaySeries),
+                parameters_values: {},
+                visualization: Some(Series((
+                    vis_options: (
+                        title: None,
+                        x: (
+                            extent: Auto,
+                            label: None,
+                            grid: false,
+                        ),
+                        y: (
+                            extent: Auto,
+                            label: None,
+                            grid: false,
+                        ),
+                    ),
+                ))),
+            ),
+            4: (
+                template: PyNode((
+                    name: "sin",
+                    py_path: "test_nodes.foray.examples.sin",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None]),
+                        }),
+                        parameters: Ok({
+                            "freq": NumberField(2.0),
+                            "length": NumberField(100.0),
+                            "phase": Slider(0.0, 6.28, 18.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "freq": Float(2.0),
+                    "length": Float(100.0),
+                    "phase": Float(0.0),
+                },
+                visualization: None,
+            ),
+            5: (
+                template: PyNode((
+                    name: "sin",
+                    py_path: "test_nodes.foray.examples.sin",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None]),
+                        }),
+                        parameters: Ok({
+                            "freq": NumberField(2.0),
+                            "length": NumberField(100.0),
+                            "phase": Slider(0.0, 6.28, 18.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "freq": Float(2.0),
+                    "length": Float(100.0),
+                    "phase": Float(1.09),
+                },
+                visualization: None,
+            ),
+            6: (
+                template: PyNode((
+                    name: "sin",
+                    py_path: "test_nodes.foray.examples.sin",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None]),
+                        }),
+                        parameters: Ok({
+                            "freq": NumberField(2.0),
+                            "length": NumberField(100.0),
+                            "phase": Slider(0.0, 6.28, 18.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "freq": Float(2.0),
+                    "length": Float(100.0),
+                    "phase": Float(2.59),
+                },
+                visualization: None,
+            ),
+            7: (
+                template: PyNode((
+                    name: "sin",
+                    py_path: "test_nodes.foray.examples.sin",
+                    config: Ok((
+                        inputs: Ok({}),
+                        outputs: Ok({
+                            "out": Array(Float, [None]),
+                        }),
+                        parameters: Ok({
+                            "freq": NumberField(2.0),
+                            "length": NumberField(100.0),
+                            "phase": Slider(0.0, 6.28, 18.0),
+                        }),
+                    )),
+                )),
+                parameters_values: {
+                    "freq": Float(2.0),
+                    "length": Float(100.0),
+                    "phase": Float(3.64),
+                },
+                visualization: None,
+            ),
+        },
+        edges: [((
+            node: 4,
+            name: "out",
+            io: Out,
+        ), (
+            node: 0,
+            name: "a",
+            io: In,
+        )), ((
+            node: 5,
+            name: "out",
+            io: Out,
+        ), (
+            node: 0,
+            name: "b",
+            io: In,
+        )), ((
+            node: 6,
+            name: "out",
+            io: Out,
+        ), (
+            node: 0,
+            name: "c",
+            io: In,
+        )), ((
+            node: 7,
+            name: "out",
+            io: Out,
+        ), (
+            node: 0,
+            name: "d",
+            io: In,
+        ))],
+        next_id: 8,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: -54.322063,
+                y: -48.00369,
+            ),
+            zoom: 0.72713476,
+        ),
+        shape_positions: {
+            7: (
+                x: 82.262726,
+                y: -257.38184,
+            ),
+            6: (
+                x: -18.59732,
+                y: -255.26013,
+            ),
+            5: (
+                x: -111.69763,
+                y: -255.05278,
+            ),
+            4: (
+                x: -195.22455,
+                y: -250.86786,
+            ),
+            0: (
+                x: -70.00357,
+                y: -36.21985,
+            ),
+        },
+    ),
+)

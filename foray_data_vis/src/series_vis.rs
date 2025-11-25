@@ -121,10 +121,29 @@ impl SeriesVis {
             let fg_color = WHITE;
             let mesh_line_color = RGBAColor(70, 70, 70, 1.0);
 
+            //tablue10
+            // blue: #5778a4,
+            // orange: #e49444,
+            // red: #d1615d,
+            // teal: #85b6b2,
+            // green: #6a9f58,
+            // yellow: #e7ca60,
+            // purple: #a87c9f,
+            // pink: #f1a2a9,
+            // brown: #967662,
+            // grey: #b8b0ac,
+            //
             let series_palette = vec![
-                RGBColor(250, 120, 120),
-                RGBColor(120, 250, 120),
-                RGBColor(120, 120, 250),
+                RGBColor(87, 120, 164),
+                RGBColor(228, 148, 68),
+                RGBColor(209, 97, 93),
+                RGBColor(133, 182, 178),
+                RGBColor(106, 159, 88),
+                RGBColor(231, 202, 96),
+                RGBColor(168, 124, 159),
+                RGBColor(241, 162, 169),
+                RGBColor(150, 118, 98),
+                RGBColor(184, 176, 172),
             ];
 
             let label_style = ("sans-serif", 15 * scale, &fg_color);
