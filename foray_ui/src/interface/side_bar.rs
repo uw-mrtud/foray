@@ -135,7 +135,10 @@ pub fn config_view<'a>(
             match &node_instance.visualization {
                 Some(vis) => match vis {
                     Visualization::NDimVis(ndim_vis) => Some(ndim_vis.parameters.view(id)),
-                    Visualization::Series(series_vis) => Some(text("series params...").into()),
+                    Visualization::Series(series_vis) => Some(
+                        series_vis
+                            .config_view(move |opts| WorkspaceMessage::SeriesVisUpdate(id, opts)),
+                    ),
                 },
                 None => None,
             }

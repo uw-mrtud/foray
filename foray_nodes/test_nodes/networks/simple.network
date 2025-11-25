@@ -1,49 +1,26 @@
 (
     graph: (
         nodes: {
-            1: (
-                template: RustNode(Display),
+            0: (
+                template: RustNode(DisplaySeries),
                 parameters_values: {},
-                visualization: Some(NDimVis((
-                    parameters: (
-                        ndim_mapping: [(Y, 100), (X, 100)],
-                        value_mapping: (
-                            floor: 0.008801573,
-                            ceil: 0.99559474,
-                            color_map: Real(Color),
+                visualization: Some(Series((
+                    vis_options: (
+                        title: None,
+                        x: (
+                            extent: Auto,
+                            label: Some("x"),
+                            grid: false,
+                        ),
+                        y: (
+                            extent: Auto,
+                            label: Some("y"),
+                            grid: false,
                         ),
                     ),
                 ))),
             ),
-            2: (
-                template: PyNode((
-                    name: "gaussian",
-                    py_path: "test_nodes.foray.examples.gaussian",
-                    config: Ok((
-                        inputs: Ok({}),
-                        outputs: Ok({
-                            "out": Array(Float, [None, None]),
-                        }),
-                        parameters: Ok({
-                            "fwhm": Slider(0.1, 100.0, 1.0),
-                            "size": NumberField(10.0),
-                        }),
-                    )),
-                )),
-                parameters_values: {
-                    "fwhm": Float(38.56),
-                    "size": Float(100.0),
-                },
-                visualization: None,
-            ),
-            3: (
-                template: RustNode(DisplaySeries),
-                parameters_values: {},
-                visualization: Some(Series((
-                    parameters: (),
-                ))),
-            ),
-            4: (
+            1: (
                 template: PyNode((
                     name: "sin",
                     py_path: "test_nodes.foray.examples.sin",
@@ -59,55 +36,39 @@
                     )),
                 )),
                 parameters_values: {
-                    "freq": Float(10.0),
+                    "freq": Float(6.0),
                     "length": Float(100.0),
                 },
                 visualization: None,
             ),
         },
         edges: [((
-            node: 2,
-            name: "out",
-            io: Out,
-        ), (
             node: 1,
-            name: "in",
-            io: In,
-        )), ((
-            node: 4,
             name: "out",
             io: Out,
         ), (
-            node: 3,
+            node: 0,
             name: "in",
             io: In,
         ))],
-        next_id: 5,
+        next_id: 2,
     ),
     shapes: (
         camera: (
             position: (
-                x: 100.55664,
-                y: 0.0,
+                x: -216.55762,
+                y: -186.55133,
             ),
-            zoom: 1.0,
+            zoom: 0.8433076,
         ),
         shape_positions: {
-            3: (
-                x: 9.402344,
-                y: 146.90234,
-            ),
-            4: (
-                x: 138.70117,
-                y: -231.85938,
-            ),
-            2: (
-                x: -179.5586,
-                y: -257.64844,
+            0: (
+                x: -63.498962,
+                y: -91.26068,
             ),
             1: (
-                x: -207.3711,
-                y: -78.57031,
+                x: -176.93398,
+                y: -277.8888,
             ),
         },
     ),

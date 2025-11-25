@@ -2,7 +2,7 @@ use std::f32::consts::TAU;
 use std::time::Instant;
 
 use crate::interface::port::port_color_pair;
-use crate::node_instance::visualiztion::{NDimVis, SeriesVis, Visualization};
+use crate::node_instance::visualiztion::{NDimVis, Visualization};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate};
 use crate::rust_nodes::RustNodeTemplate;
 use crate::style::theme::AppTheme;
@@ -10,6 +10,7 @@ use crate::workspace::{Action, WorkspaceMessage};
 use crate::StableMap;
 use foray_data_model::node::{Dict, PortData, PortType};
 use foray_data_model::WireDataContainer;
+use foray_data_vis::series_vis::SeriesVis;
 use foray_graph::graph::{GraphNode, PortRef, IO};
 
 use iced::font::Family;
@@ -356,11 +357,7 @@ pub fn draw_node_svg(
     series_vis: &SeriesVis,
     svg_bounds: Rectangle,
 ) {
-    if let Some(svg) = &series_vis.svg {
-        // dbg!(svg);
-        //TODO: Do I have to clone?
-        frame.draw_svg(svg_bounds, &svg.handle);
-    };
+    frame.draw_svg(svg_bounds, &series_vis.svg().handle);
 }
 
 // fn _path_bounding_rect(path: Path) -> iced::Rectangle {

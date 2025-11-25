@@ -1,18 +1,12 @@
 use foray_data_model::node::{ForayArray, PortData, PortType};
+use foray_data_vis::series_vis::{SeriesVis, SeriesVisOptions};
 use foray_graph::graph::{Graph, GraphNode};
 use iced::widget::image::Handle;
 
-use plotters::{
-    chart::ChartBuilder,
-    prelude::IntoDrawingArea,
-    series::LineSeries,
-    style::{RGBColor, ShapeStyle, WHITE},
-};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     node_instance::visualization_parameters::VisualizationParameters, rust_nodes::RustNodeTemplate,
-    style::theme::AppTheme,
 };
 
 use super::ForayNodeInstance;
@@ -27,128 +21,49 @@ impl Visualization {
     pub(crate) fn clear(&mut self) {
         match self {
             Visualization::NDimVis(ndim_vis) => ndim_vis.image_handle = None,
-            Visualization::Series(series_vis) => series_vis.svg = None,
+            Visualization::Series(series_vis) => todo!(), //series_vis.svg = None,
         }
     }
-}
 
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct SeriesVis {
-    #[serde(skip)]
-    pub svg: Option<iced::advanced::svg::Svg>,
-    pub parameters: SeriesParameters,
-}
-impl SeriesVis {
-    pub(crate) fn new(
+    pub fn new_series(
         nx: u32,
         graph: &Graph<ForayNodeInstance, PortType, PortData>,
-        parameters: SeriesParameters,
+        parameters: SeriesVisOptions,
     ) -> Self {
-        let mut vis = Self {
-            svg: None,
-            parameters,
-        };
-        vis.create_cached_data(nx, graph);
-        vis
-    }
-
-    fn create_cached_data(
-        &mut self,
-        node_id: u32,
-        graph: &Graph<ForayNodeInstance, PortType, PortData>,
-    ) {
-        let input_data = graph.get_input_data(&node_id);
-        let node = graph.get_node(node_id);
+        let input_data = graph.get_input_data(&nx);
+        let node = graph.get_node(nx);
 
         let port_data = match input_data.get(node.inputs().iter().next().unwrap().0) {
             Some(data) => Some(&*data.read().unwrap()),
             None => None,
         };
-        // dbg!(port_data);
 
-        // Enforce constraints on visualization given a new port_data, wich may have a different
-        // type
-        //
-        // This is a bit messy, but I don't currently have a better approach in mind.
-        match port_data {
-            None => {
-                self.svg = None;
-            }
-            Some(port_data) => {
-                self.svg = Self::port_data_to_svg(port_data);
-            }
-        }
-    }
-
-    fn port_data_to_svg(port_data: &PortData) -> Option<iced::advanced::svg::Svg> {
-        let mut svg_buffer = String::new();
-        match port_data {
-            PortData::Array(ForayArray::Float(a)) => {
-                let root_drawing_area =
-                    plotters::backend::SVGBackend::with_string(&mut svg_buffer, (3000, 3000))
-                        .into_drawing_area();
-
-                let default_theme = AppTheme::default();
-
-                let fg_color = default_theme.text.base_color.into_rbg8();
-                let fg_color = RGBColor(fg_color.0, fg_color.1, fg_color.2);
-
-                let series_color = default_theme.blue.weak_color().into_rbg8();
-                let series_color = RGBColor(series_color.0, series_color.1, series_color.2);
-
-                let mut chart = ChartBuilder::on(&root_drawing_area)
-                    .margin_top(150)
-                    .margin_right(150)
-                    .x_label_area_size(300)
-                    .y_label_area_size(300)
-                    .build_cartesian_2d(0.0..(a.len() as f64), -1.2..1.2)
-                    .unwrap();
-
-                chart
-                    .configure_mesh()
-                    .disable_x_mesh()
-                    .disable_y_mesh()
-                    .label_style(("sans-serif", 140, &fg_color))
-                    .x_label_formatter(&|x| format!("{:.0}", x))
-                    .set_all_tick_mark_size(20)
-                    .axis_style(ShapeStyle {
-                        color: fg_color.into(),
-                        filled: true,
-                        stroke_width: 10,
-                    })
-                    .draw()
-                    .unwrap();
-
-                chart
-                    .draw_series(LineSeries::new(
-                        a.iter().enumerate().map(|(i, x)| (i as f64, *x)),
-                        ShapeStyle {
-                            color: series_color.into(),
-                            filled: false,
-                            stroke_width: 20,
-                        },
-                    ))
-                    .unwrap();
-
-                chart
-                    .configure_series_labels()
-                    .label_font(("sans-serif", 20, &WHITE))
-                    .draw()
-                    .unwrap();
-            }
-            _ => {
-                return None;
-            }
+        let y_data = match port_data {
+            None => Default::default(),
+            Some(port_data) => match port_data {
+                PortData::Array(foray_array) => match foray_array {
+                    ForayArray::Integer(array_base) => todo!(),
+                    ForayArray::Float(array_base) => {
+                        if array_base.ndim() == 1 {
+                            array_base
+                                .clone()
+                                .into_shape_with_order(array_base.len())
+                                .unwrap()
+                        } else {
+                            Default::default()
+                        }
+                    }
+                    ForayArray::Complex(array_base) => todo!(),
+                    _ => Default::default(),
+                },
+                _ => Default::default(),
+            },
         };
-        let dynamic_svg = iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(
-            svg_buffer.into_bytes(),
-        ));
-        Some(dynamic_svg)
+        let x_data = (0..(y_data.len())).map(|x| x as f64).collect();
+
+        Visualization::Series(SeriesVis::new(x_data, vec![y_data], parameters))
     }
 }
-
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct SeriesParameters {}
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct NDimVis {

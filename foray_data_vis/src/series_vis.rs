@@ -9,15 +9,16 @@ use plotters::{
     series::LineSeries,
     style::{RGBAColor, RGBColor, ShapeStyle, WHITE},
 };
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Extent {
     #[default]
     Auto,
     Fixed(f64, f64),
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AxisOptions {
     pub(crate) extent: Extent,
     pub(crate) label: Option<String>,
@@ -32,7 +33,7 @@ impl AxisOptions {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SeriesVisOptions {
     pub(crate) title: Option<String>,
     pub(crate) x: AxisOptions,
@@ -49,11 +50,19 @@ impl SeriesVisOptions {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SeriesVis {
+    #[serde(skip)]
     pub(crate) x_data: Array1<f64>,
+    #[serde(skip)]
     pub(crate) y_data: Vec<Array1<f64>>,
+    #[serde(skip, default = "default_svg")]
     pub(crate) svg: Svg,
     pub(crate) vis_options: SeriesVisOptions,
+}
+
+fn default_svg() -> Svg {
+    iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(&[]))
 }
 
 impl SeriesVis {
@@ -78,6 +87,10 @@ impl SeriesVis {
 
     pub fn svg(&self) -> &Svg {
         &self.svg
+    }
+
+    pub fn vis_options(&self) -> &SeriesVisOptions {
+        &self.vis_options
     }
     fn data_range<'a, T: Iterator<Item = &'a f64>>(data: T) -> std::ops::Range<f64> {
         let minmax = data.minmax();

@@ -1362,6 +1362,7 @@ dependencies = [
  "itertools",
  "ndarray",
  "plotters",
+ "serde",
 ]
 
 [[package]]
@@ -1401,6 +1402,7 @@ dependencies = [
  "env_logger",
  "float-cmp 0.10.0",
  "foray_data_model",
+ "foray_data_vis",
  "foray_graph",
  "foray_py",
  "glam 0.29.3",

@@ -9,3 +9,4 @@ plotters.workspace = true
 ndarray.workspace = true
 itertools.workspace = true
 derive_more.workspace = true
+serde.workspace = true

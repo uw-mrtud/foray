@@ -7,7 +7,7 @@ use crate::interface::{side_bar::side_bar, SEPERATOR};
 use crate::math::{Point, Vector};
 use crate::network::Network;
 use crate::node_instance::visualization_parameters::VisualizationParameters;
-use crate::node_instance::visualiztion::{NDimVis, SeriesVis, Visualization};
+use crate::node_instance::visualiztion::{NDimVis, Visualization};
 use crate::node_instance::{ForayNodeInstance, ForayNodeTemplate, NodeStatus};
 use crate::project::{read_python_projects, rust_project, Project};
 use crate::python_env;
@@ -16,6 +16,7 @@ use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 
 use foray_data_model::node::{Dict, PortData};
+use foray_data_vis::series_vis::SeriesVisOptions;
 use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
 
 use foray_py::err::PyNodeConfigError;
@@ -86,6 +87,7 @@ pub enum WorkspaceMessage {
     UpdateNodeTemplate(u32, ForayNodeTemplate),
     UpdateNodeParameter(u32, String, PortData),
     UpdateVisualization(u32, VisualizationParameters),
+    SeriesVisUpdate(u32, SeriesVisOptions),
     StartWidgetFilePicker(u32, String),
     DeleteSelectedNodes,
 
@@ -272,6 +274,17 @@ impl Workspace {
                     ..node.clone()
                 };
                 self.network.graph.set_node_data(id, new_node);
+            }
+            WorkspaceMessage::SeriesVisUpdate(id, visualization_parameters) => {
+                self.network.stash_state();
+                let node = self.network.graph.get_mut_node(id);
+                match &mut node.visualization {
+                    Some(Visualization::Series(series_vis)) => {
+                        series_vis.update_options(visualization_parameters)
+                    }
+                    Some(_) => todo!(),
+                    None => todo!(),
+                }
             }
             WorkspaceMessage::StartWidgetFilePicker(id, param_name) => {
                 return Task::perform(file_dialog(self.workspace_dir.clone()), move |maybe_path| {
@@ -584,17 +597,17 @@ impl Workspace {
                                 RustNodeTemplate::DisplaySeries => match old_vis {
                                     Some(Visualization::NDimVis(_ndim_vis)) => todo!(),
                                     Some(Visualization::Series(series_vis)) => {
-                                        Some(Visualization::Series(SeriesVis::new(
+                                        Some(Visualization::new_series(
                                             nx,
                                             &self.network.graph,
-                                            series_vis.parameters,
-                                        )))
+                                            series_vis.vis_options().clone(),
+                                        ))
                                     }
-                                    None => Some(Visualization::Series(SeriesVis::new(
+                                    None => Some(Visualization::new_series(
                                         nx,
                                         &self.network.graph,
                                         Default::default(),
-                                    ))),
+                                    )),
                                 },
                             },
                             ForayNodeTemplate::PyNode(_pt) => None,

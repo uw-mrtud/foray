@@ -20,6 +20,7 @@ path = "src/main.rs"
 foray_data_model = { path = "../foray_data_model/" }
 foray_graph = { path = "../foray_graph/" }
 foray_py = { path = "../foray_py/" }
+foray_data_vis = { path = "../foray_data_vis/" }
 
 iced.workspace = true
 plotters.workspace = true
