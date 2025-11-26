@@ -901,13 +901,10 @@ impl Workspace {
             self.projects
                 .iter()
                 .filter(|p| !p.absolute_path.to_string_lossy().is_empty())
-                // .take(1)
                 .map(|p| {
-                    make_file_watch_sub(p.absolute_path.clone()).map(|_| {
-                        // dbg!(a);
-                        // WorkspaceMessage::ReloadNodes
-                        WorkspaceMessage::Cancel
-                    })
+                    make_file_watch_sub(p.absolute_path.clone())
+                        //TODO: only reload nodes that changed
+                        .map(|_paths| WorkspaceMessage::ReloadNodes)
                 })
                 .chain([
                     window::resize_events()

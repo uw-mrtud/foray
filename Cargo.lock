@@ -1405,6 +1405,7 @@ dependencies = [
  "foray_data_vis",
  "foray_graph",
  "foray_py",
+ "futures",
  "glam 0.29.3",
  "glob",
  "iced",
@@ -1424,7 +1425,6 @@ dependencies = [
  "ron",
  "serde",
  "strum",
- "tokio",
  "toml",
 ]
 
