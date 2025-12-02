@@ -1360,6 +1360,7 @@ dependencies = [
  "derive_more",
  "iced",
  "itertools",
+ "line-clipping",
  "ndarray",
  "plotters",
  "serde",
@@ -2462,6 +2463,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f67562e5eff6b20553fa9be1c503356768420994e28f67e3eafe6f41910e57ad"
 dependencies = [
  "web-time",
+]
+
+[[package]]
+name = "line-clipping"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9bd35dcd25f8578944c44cd75649d6487d74cf895002f6d86613164f2635b72"
+dependencies = [
+ "bitflags 2.10.0",
 ]
 
 [[package]]

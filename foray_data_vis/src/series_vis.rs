@@ -5,7 +5,7 @@ use itertools::Itertools;
 use ndarray::Array1;
 use plotters::{
     chart::ChartBuilder,
-    prelude::IntoDrawingArea,
+    prelude::{IntoDrawingArea, PathElement},
     series::LineSeries,
     style::{RGBAColor, RGBColor, ShapeStyle, WHITE},
 };
@@ -112,11 +112,18 @@ impl SeriesVis {
         let mut svg_buffer = String::new();
         {
             let scale = 20;
+            let legend_width = 40 * scale;
             let root_drawing_area = plotters::backend::SVGBackend::with_string(
                 &mut svg_buffer,
-                (300 * scale, 300 * scale),
+                (300 * scale + legend_width, 300 * scale),
             )
             .into_drawing_area();
+
+            let (legend_area, chart_area) = root_drawing_area.split_horizontally(legend_width);
+
+            let mut legend_area = ChartBuilder::on(&legend_area)
+                .build_cartesian_2d(0..0, 0..0)
+                .unwrap();
 
             let fg_color = WHITE;
             let mesh_line_color = RGBAColor(70, 70, 70, 1.0);
@@ -146,7 +153,8 @@ impl SeriesVis {
                 RGBColor(184, 176, 172),
             ];
 
-            let label_style = ("sans-serif", 15 * scale, &fg_color);
+            let label_size = 15 * scale;
+            let label_style = ("sans-serif", label_size, &fg_color);
             let title_style = ("sans-serif", 24 * scale, &fg_color);
 
             let x_range = self.vis_options.x.range(self.x_data_range());
@@ -154,7 +162,7 @@ impl SeriesVis {
 
             //// Chart Context
             let mut chart = {
-                let mut partial = ChartBuilder::on(&root_drawing_area);
+                let mut partial = ChartBuilder::on(&chart_area);
 
                 if let Some(title) = &self.vis_options.title {
                     partial.caption(title, title_style);
@@ -209,45 +217,69 @@ impl SeriesVis {
                     filled: false,
                     stroke_width: 2 * scale,
                 };
-                let data_coord = self.x_data.iter().zip(y_series).map(|(x, y)| (*x, *y));
 
-                let delta = 0.0000000001;
-                // break data into line segments that fall inside the bounding box
-                data_coord
-                    .chunk_by(move |(x, y)| {
-                        (*x >= (x_range.start - delta))
-                            && (*x <= (x_range.end + delta))
-                            && (*y >= (y_range.start - delta))
-                            && (*y <= (y_range.end + delta))
+                legend_area
+                    .draw_series(LineSeries::new(vec![(0, 0)], series_style.clone()))
+                    .unwrap()
+                    .label(i.to_string())
+                    .legend(move |(x, y)| {
+                        PathElement::new(
+                            vec![(x, y), (x + 10 * scale as i32, y)],
+                            series_style.clone(),
+                        )
+                    });
+
+                use line_clipping::cohen_sutherland::clip_line;
+                use line_clipping::{LineSegment, Point, Window};
+                let window = Window::new(x_range.start, x_range.end, y_range.start, y_range.end);
+
+                self.x_data
+                    .iter()
+                    .zip(y_series)
+                    .map(|(x, y)| (*x, *y))
+                    .tuple_windows()
+                    .map(|((x1, y1), (x2, y2))| {
+                        let line = LineSegment::new(Point::new(x1, y1), Point::new(x2, y2));
+                        clip_line(line, window)
+                    })
+                    // Split into contigous segments of Some/None
+                    .chunk_by(|maybe_line| match maybe_line {
+                        Some(_line) => true,
+                        None => false,
                     })
                     .into_iter()
                     .filter_map(|(io, segment)| match io {
-                        true => Some(segment),
+                        true => Some(
+                            //TODO: de-duplicate points if needed
+                            segment.flat_map(|mls: Option<LineSegment>| match mls {
+                                Some(ls) => [(ls.p1.x, ls.p1.y), (ls.p2.x, ls.p2.y)],
+                                None => todo!(),
+                            }),
+                        ),
                         false => None,
                     })
                     .for_each(|segment| {
                         chart
-                            .draw_series(LineSeries::new(segment, series_style))
+                            .draw_series(LineSeries::new(segment, series_style.clone()))
                             .unwrap();
                     });
             }
 
-            // let segments = data_coord
-            //     .scan((false, 0), move |(past_io, segment), (x, y)| {
-            //         let current_io = x_range.contains(&x) && y_range.contains(&y);
-            //         //switching from out to in, or in to out
-            //         if current_io != *past_io {
-            //             *segment += 1;
-            //         }
-            //         *past_io = current_io;
-            //         Some(((current_io, *segment), (x, y)))
-            //     })
-            //     .groupby();
+            //// Legend
+            legend_area
+                .configure_series_labels()
+                .position(plotters::chart::SeriesLabelPosition::MiddleLeft)
+                .margin(10 * scale)
+                .legend_area_size(15 * scale)
+                // .background_style(&TRANSPARENT)
+                // .border_style(&WHITE)
+                .label_font(("sans-serif", label_size, &WHITE))
+                .draw()
+                .unwrap();
 
-            //// Chart Labels
             chart
                 .configure_series_labels()
-                .label_font(("sans-serif", 2 * scale, &WHITE))
+                //// Finish
                 .draw()
                 .unwrap();
         }

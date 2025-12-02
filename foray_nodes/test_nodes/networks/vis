@@ -13,7 +13,7 @@
                             grid: false,
                         ),
                         y: (
-                            extent: Auto,
+                            extent: Fixed(0.0, 0.9999975425903931),
                             label: None,
                             grid: false,
                         ),
@@ -38,7 +38,7 @@
                 )),
                 parameters_values: {
                     "freq": Float(2.0),
-                    "length": Float(100.0),
+                    "length": Float(360.0),
                     "phase": Float(0.0),
                 },
                 visualization: None,
@@ -61,7 +61,7 @@
                 )),
                 parameters_values: {
                     "freq": Float(2.0),
-                    "length": Float(100.0),
+                    "length": Float(360.0),
                     "phase": Float(1.09),
                 },
                 visualization: None,
@@ -84,7 +84,7 @@
                 )),
                 parameters_values: {
                     "freq": Float(2.0),
-                    "length": Float(100.0),
+                    "length": Float(360.0),
                     "phase": Float(2.59),
                 },
                 visualization: None,
@@ -107,7 +107,7 @@
                 )),
                 parameters_values: {
                     "freq": Float(2.0),
-                    "length": Float(100.0),
+                    "length": Float(360.0),
                     "phase": Float(3.64),
                 },
                 visualization: None,
@@ -151,12 +151,16 @@
     shapes: (
         camera: (
             position: (
-                x: -54.322063,
-                y: -48.00369,
+                x: 34.26696,
+                y: 8.73951,
             ),
-            zoom: 0.72713476,
+            zoom: 1.5568204,
         ),
         shape_positions: {
+            0: (
+                x: -70.40001,
+                y: -35.828426,
+            ),
             7: (
                 x: 82.262726,
                 y: -257.38184,
@@ -172,10 +176,6 @@
             4: (
                 x: -195.22455,
                 y: -250.86786,
-            ),
-            0: (
-                x: -70.00357,
-                y: -36.21985,
             ),
         },
     ),

@@ -44,7 +44,7 @@ impl ForayNodeInstance {
                 Some(vis) => match vis {
                     Visualization::NDimVis(ndim_vis) => ndim_vis.parameters.image_bounds(200.0),
                     Visualization::Series(_series_vis) => {
-                        Rectangle::new((0.0, 0.0).into(), (500.0, 500.0).into())
+                        Rectangle::new((0.0, 0.0).into(), (340.0, 300.0).into())
                     }
                 },
                 None => Rectangle::new(

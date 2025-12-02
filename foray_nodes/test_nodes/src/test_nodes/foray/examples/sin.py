@@ -13,7 +13,7 @@ def config():
         .parameters(
             {
                 "freq": NumberField(2),
-                "phase": Slider(0.0, 6.28, 18),
+                "phase": Slider(0.0, 6.28, 360),
                 "length": NumberField(100),
             }
         )
@@ -26,6 +26,6 @@ def compute(_, p):
     ph = int(p["phase"])
 
     x = np.linspace(0, 6.28, n)
-    y = np.sin(x * f - ph)
+    y = np.sin(x * f - ph) * 1.0
 
     return {"out": y}
