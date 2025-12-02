@@ -30,39 +30,35 @@
 //!     }
 //! }
 //! ```
+mod editor;
+mod value;
 
-use crate::text_input::cursor::Cursor;
-use crate::text_input::editor::Editor;
-use crate::text_input::{Value, cursor};
-use iced::advanced::graphics::core::{InputMethod, input_method};
-// #[cfg(target_os = "macos")]
-// use iced::widget::text_editor;
+pub mod cursor;
 
-// use crate::text_input::Editor;
+pub use cursor::Cursor;
+pub use value::Value;
 
-use iced::advanced::{Clipboard, clipboard, layout};
-use iced::alignment;
-// use iced::input_method;
-use iced::keyboard;
-use iced::keyboard::key;
-// use iced::layout;
-// use iced::advanced::InputMethod;
-use iced::advanced::Layout;
-use iced::advanced::Shell;
-use iced::advanced::Widget;
-use iced::advanced::mouse::{self, click};
-use iced::advanced::renderer;
-use iced::advanced::text::paragraph::{self, Paragraph as _};
-use iced::advanced::text::{self, Text};
-use iced::advanced::widget::operation::{self, Operation};
-use iced::advanced::widget::tree::{self, Tree};
-use iced::time::{Duration, Instant};
-use iced::touch;
-use iced::widget;
-use iced::window;
-use iced::{
-    Alignment, Background, Border, Color, Element, Event, Length, Padding, Pixels, Point,
-    Rectangle, Size, Theme, Vector,
+use editor::Editor;
+
+use crate::core::alignment;
+use crate::core::clipboard::{self, Clipboard};
+use crate::core::input_method;
+use crate::core::keyboard;
+use crate::core::keyboard::key;
+use crate::core::layout;
+use crate::core::mouse::{self, click};
+use crate::core::renderer;
+use crate::core::text::paragraph::{self, Paragraph as _};
+use crate::core::text::{self, Text};
+use crate::core::time::{Duration, Instant};
+use crate::core::touch;
+use crate::core::widget;
+use crate::core::widget::operation::{self, Operation};
+use crate::core::widget::tree::{self, Tree};
+use crate::core::window;
+use crate::core::{
+    Alignment, Background, Border, Color, Element, Event, InputMethod, Layout, Length, Padding,
+    Pixels, Point, Rectangle, Shell, Size, Theme, Vector, Widget,
 };
 
 /// A field that can be filled with text.
@@ -97,7 +93,7 @@ use iced::{
 ///     }
 /// }
 /// ```
-pub struct NumericInput<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
+pub struct TextInput<'a, Message, Theme = crate::Theme, Renderer = crate::Renderer>
 where
     Theme: Catalog,
     Renderer: text::Renderer,
@@ -112,8 +108,8 @@ where
     size: Option<Pixels>,
     line_height: text::LineHeight,
     alignment: alignment::Horizontal,
-    on_input: Option<Box<dyn Fn(f32) -> Message + 'a>>,
-    on_paste: Option<Box<dyn Fn(f32) -> Message + 'a>>,
+    on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
+    on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
     icon: Option<Icon<Renderer::Font>>,
     class: Theme::Class<'a>,
@@ -123,7 +119,7 @@ where
 /// The default [`Padding`] of a [`TextInput`].
 pub const DEFAULT_PADDING: Padding = Padding::new(5.0);
 
-impl<'a, Message, Theme, Renderer> NumericInput<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> TextInput<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Theme: Catalog,
@@ -131,12 +127,11 @@ where
 {
     /// Creates a new [`TextInput`] with the given placeholder and
     /// its current value.
-    pub fn new(value: f32) -> Self {
-        NumericInput {
+    pub fn new(placeholder: &str, value: &str) -> Self {
+        TextInput {
             id: None,
-            placeholder: String::from("placeholder..."),
-            //TODO: formating
-            value: Value::new(&value.to_string()),
+            placeholder: String::from(placeholder),
+            value: Value::new(value),
             is_secure: false,
             font: None,
             width: Length::Fill,
@@ -169,7 +164,7 @@ where
     /// the [`TextInput`].
     ///
     /// If this method is not called, the [`TextInput`] will be disabled.
-    pub fn on_input(mut self, on_input: impl Fn(f32) -> Message + 'a) -> Self {
+    pub fn on_input(mut self, on_input: impl Fn(String) -> Message + 'a) -> Self {
         self.on_input = Some(Box::new(on_input));
         self
     }
@@ -178,7 +173,7 @@ where
     /// the [`TextInput`], if `Some`.
     ///
     /// If `None`, the [`TextInput`] will be disabled.
-    pub fn on_input_maybe(mut self, on_input: Option<impl Fn(f32) -> Message + 'a>) -> Self {
+    pub fn on_input_maybe(mut self, on_input: Option<impl Fn(String) -> Message + 'a>) -> Self {
         self.on_input = on_input.map(|f| Box::new(f) as _);
         self
     }
@@ -199,14 +194,14 @@ where
 
     /// Sets the message that should be produced when some text is pasted into
     /// the [`TextInput`].
-    pub fn on_paste(mut self, on_paste: impl Fn(f32) -> Message + 'a) -> Self {
+    pub fn on_paste(mut self, on_paste: impl Fn(String) -> Message + 'a) -> Self {
         self.on_paste = Some(Box::new(on_paste));
         self
     }
 
     /// Sets the message that should be produced when some text is pasted into
     /// the [`TextInput`], if `Some`.
-    pub fn on_paste_maybe(mut self, on_paste: Option<impl Fn(f32) -> Message + 'a>) -> Self {
+    pub fn on_paste_maybe(mut self, on_paste: Option<impl Fn(String) -> Message + 'a>) -> Self {
         self.on_paste = on_paste.map(|f| Box::new(f) as _);
         self
     }
@@ -395,7 +390,10 @@ where
         let x = (text_bounds.x + cursor_x).floor() - scroll_offset + alignment_offset;
 
         InputMethod::Enabled {
-            position: Point::new(x, text_bounds.y),
+            cursor: Rectangle::new(
+                Point::new(x, text_bounds.y),
+                Size::new(1.0, text_bounds.height),
+            ),
             purpose: if self.is_secure {
                 input_method::Purpose::Secure
             } else {
@@ -582,7 +580,7 @@ where
 }
 
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for NumericInput<'_, Message, Theme, Renderer>
+    for TextInput<'_, Message, Theme, Renderer>
 where
     Message: Clone,
     Theme: Catalog,
@@ -867,8 +865,7 @@ where
                             let mut editor = Editor::new(&mut self.value, &mut state.cursor);
                             editor.delete();
 
-                            //TODO: parse
-                            let message = (on_input)(editor.contents().parse().unwrap_or_default());
+                            let message = (on_input)(editor.contents());
                             shell.publish(message);
                             shell.capture_event();
 
@@ -901,11 +898,10 @@ where
                             let mut editor = Editor::new(&mut self.value, &mut state.cursor);
                             editor.paste(content.clone());
 
-                            //TODO: Parse
                             let message = if let Some(paste) = &self.on_paste {
-                                (paste)(editor.contents().parse().unwrap_or_default())
+                                (paste)(editor.contents())
                             } else {
-                                (on_input)(editor.contents().parse().unwrap_or_default())
+                                (on_input)(editor.contents())
                             };
                             shell.publish(message);
                             shell.capture_event();
@@ -954,11 +950,11 @@ where
                         }
                     }
 
-                    // #[cfg(target_os = "macos")]
-                    // let macos_shortcut = text_editor::convert_macos_shortcut(key, modifiers);
+                    #[cfg(target_os = "macos")]
+                    let macos_shortcut = crate::text_editor::convert_macos_shortcut(key, modifiers);
 
-                    // #[cfg(target_os = "macos")]
-                    // let modified_key = macos_shortcut.as_ref().unwrap_or(modified_key);
+                    #[cfg(target_os = "macos")]
+                    let modified_key = macos_shortcut.as_ref().unwrap_or(modified_key);
 
                     match modified_key.as_ref() {
                         keyboard::Key::Named(key::Named::Enter) => {
@@ -1189,8 +1185,7 @@ where
                         focus.updated_at = Instant::now();
                         state.is_pasting = None;
 
-                        // TODO: Parsing
-                        let message = (on_input)(editor.contents().parse().unwrap_or_default());
+                        let message = (on_input)(editor.contents());
                         shell.publish(message);
                         shell.capture_event();
 
@@ -1296,7 +1291,7 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<NumericInput<'a, Message, Theme, Renderer>>
+impl<'a, Message, Theme, Renderer> From<TextInput<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: Clone + 'a,
@@ -1304,7 +1299,7 @@ where
     Renderer: text::Renderer + 'a,
 {
     fn from(
-        text_input: NumericInput<'a, Message, Theme, Renderer>,
+        text_input: TextInput<'a, Message, Theme, Renderer>,
     ) -> Element<'a, Message, Theme, Renderer> {
         Element::new(text_input)
     }
@@ -1466,9 +1461,9 @@ impl<P: text::Paragraph> operation::TextInput for State<P> {
         State::select_all(self);
     }
 
-    // fn select_range(&mut self, start: usize, end: usize) {
-    //     State::select_range(self, start, end);
-    // }
+    fn select_range(&mut self, start: usize, end: usize) {
+        State::select_range(self, start, end);
+    }
 }
 
 fn offset<P: text::Paragraph>(text_bounds: Rectangle, value: &Value, state: &State<P>) -> f32 {
