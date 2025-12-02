@@ -1430,6 +1430,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "foray_widgets"
+version = "0.1.0"
+dependencies = [
+ "iced",
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "foreign-types"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

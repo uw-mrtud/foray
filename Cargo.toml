@@ -7,7 +7,7 @@ members = [
 	"foray_data_vis",
 	"foray_graph",
 	"foray_py",
-	"foray_ui",
+	"foray_ui", "foray_widgets",
 	"node_canvas",
 ]
 default-members = ["foray_ui"]
