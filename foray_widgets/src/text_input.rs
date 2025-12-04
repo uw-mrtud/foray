@@ -30,35 +30,42 @@
 //!     }
 //! }
 //! ```
-mod editor;
+pub mod editor;
 mod value;
 
 pub mod cursor;
 
 pub use cursor::Cursor;
+use iced::advanced::graphics::core::{InputMethod, input_method};
+// #[cfg(target_os = "macos")]
+// use iced::widget::text_editor;
 pub use value::Value;
 
 use editor::Editor;
 
-use crate::core::alignment;
-use crate::core::clipboard::{self, Clipboard};
-use crate::core::input_method;
-use crate::core::keyboard;
-use crate::core::keyboard::key;
-use crate::core::layout;
-use crate::core::mouse::{self, click};
-use crate::core::renderer;
-use crate::core::text::paragraph::{self, Paragraph as _};
-use crate::core::text::{self, Text};
-use crate::core::time::{Duration, Instant};
-use crate::core::touch;
-use crate::core::widget;
-use crate::core::widget::operation::{self, Operation};
-use crate::core::widget::tree::{self, Tree};
-use crate::core::window;
-use crate::core::{
-    Alignment, Background, Border, Color, Element, Event, InputMethod, Layout, Length, Padding,
-    Pixels, Point, Rectangle, Shell, Size, Theme, Vector, Widget,
+use iced::advanced::{Clipboard, clipboard, layout};
+use iced::alignment;
+// use iced::input_method;
+use iced::keyboard;
+use iced::keyboard::key;
+// use iced::layout;
+// use iced::advanced::InputMethod;
+use iced::advanced::Layout;
+use iced::advanced::Shell;
+use iced::advanced::Widget;
+use iced::advanced::mouse::{self, click};
+use iced::advanced::renderer;
+use iced::advanced::text::paragraph::{self, Paragraph as _};
+use iced::advanced::text::{self, Text};
+use iced::advanced::widget::operation::{self, Operation};
+use iced::advanced::widget::tree::{self, Tree};
+use iced::time::{Duration, Instant};
+use iced::touch;
+use iced::widget;
+use iced::window;
+use iced::{
+    Alignment, Background, Border, Color, Element, Event, Length, Padding, Pixels, Point,
+    Rectangle, Size, Theme, Vector,
 };
 
 /// A field that can be filled with text.
@@ -93,7 +100,7 @@ use crate::core::{
 ///     }
 /// }
 /// ```
-pub struct TextInput<'a, Message, Theme = crate::Theme, Renderer = crate::Renderer>
+pub struct TextInput<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Theme: Catalog,
     Renderer: text::Renderer,
@@ -390,10 +397,7 @@ where
         let x = (text_bounds.x + cursor_x).floor() - scroll_offset + alignment_offset;
 
         InputMethod::Enabled {
-            cursor: Rectangle::new(
-                Point::new(x, text_bounds.y),
-                Size::new(1.0, text_bounds.height),
-            ),
+            position: Point::new(x, text_bounds.y),
             purpose: if self.is_secure {
                 input_method::Purpose::Secure
             } else {
@@ -950,11 +954,11 @@ where
                         }
                     }
 
-                    #[cfg(target_os = "macos")]
-                    let macos_shortcut = crate::text_editor::convert_macos_shortcut(key, modifiers);
+                    // #[cfg(target_os = "macos")]
+                    // let macos_shortcut = text_editor::convert_macos_shortcut(key, modifiers);
 
-                    #[cfg(target_os = "macos")]
-                    let modified_key = macos_shortcut.as_ref().unwrap_or(modified_key);
+                    // #[cfg(target_os = "macos")]
+                    // let modified_key = macos_shortcut.as_ref().unwrap_or(modified_key);
 
                     match modified_key.as_ref() {
                         keyboard::Key::Named(key::Named::Enter) => {
@@ -1461,9 +1465,9 @@ impl<P: text::Paragraph> operation::TextInput for State<P> {
         State::select_all(self);
     }
 
-    fn select_range(&mut self, start: usize, end: usize) {
-        State::select_range(self, start, end);
-    }
+    // fn select_range(&mut self, start: usize, end: usize) {
+    //     State::select_range(self, start, end);
+    // }
 }
 
 fn offset<P: text::Paragraph>(text_bounds: Rectangle, value: &Value, state: &State<P>) -> f32 {
