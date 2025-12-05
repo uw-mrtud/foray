@@ -20,5 +20,9 @@ def config():
 
 
 def compute(inputs, p):
+    out = inputs.get("in")
+    if out is None:
+        out = False
+
     time.sleep(4.0)
-    return {"out": inputs["in"]}
+    return {"out": out}

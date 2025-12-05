@@ -34,7 +34,7 @@ use std::fs::{self, read_to_string};
 use std::iter::once;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 #[derive(Default, Clone, PartialEq)]
 pub enum Action {
@@ -929,8 +929,6 @@ impl Workspace {
                     // Refresh for animation while nodes are actively running
                     if self.network.any_nodes_running_or_recently_completed() {
                         window::frames().map(|_| WorkspaceMessage::AnimationTick)
-                        // iced::time::every(Duration::from_micros(1_000_000 / 16))
-                        //     .map(|_| WorkspaceMessage::AnimationTick)
                     } else {
                         Subscription::none()
                     },

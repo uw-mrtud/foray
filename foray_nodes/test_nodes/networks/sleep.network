@@ -1,0 +1,98 @@
+(
+    graph: (
+        nodes: {
+            0: (
+                template: PyNode((
+                    name: "sleep",
+                    py_path: "test_nodes.foray.examples.sleep",
+                    config: Ok((
+                        inputs: Ok({
+                            "in": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: None,
+            ),
+            1: (
+                template: PyNode((
+                    name: "sleep",
+                    py_path: "test_nodes.foray.examples.sleep",
+                    config: Ok((
+                        inputs: Ok({
+                            "in": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: None,
+            ),
+            2: (
+                template: PyNode((
+                    name: "sleep",
+                    py_path: "test_nodes.foray.examples.sleep",
+                    config: Ok((
+                        inputs: Ok({
+                            "in": Array(Float, [None, None]),
+                        }),
+                        outputs: Ok({
+                            "out": Array(Float, [None, None]),
+                        }),
+                        parameters: Ok({}),
+                    )),
+                )),
+                parameters_values: {},
+                visualization: None,
+            ),
+        },
+        edges: [((
+            node: 0,
+            name: "out",
+            io: Out,
+        ), (
+            node: 1,
+            name: "in",
+            io: In,
+        )), ((
+            node: 1,
+            name: "out",
+            io: Out,
+        ), (
+            node: 2,
+            name: "in",
+            io: In,
+        ))],
+        next_id: 3,
+    ),
+    shapes: (
+        camera: (
+            position: (
+                x: 0.0,
+                y: 0.0,
+            ),
+            zoom: 1.0,
+        ),
+        shape_positions: {
+            1: (
+                x: -42.640625,
+                y: -106.63281,
+            ),
+            0: (
+                x: -35.960938,
+                y: -190.78906,
+            ),
+            2: (
+                x: -19.21875,
+                y: 61.76953,
+            ),
+        },
+    ),
+)
