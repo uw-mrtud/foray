@@ -3,7 +3,6 @@ use std::fmt::Display;
 pub mod add_node;
 pub mod node;
 pub mod node_canvas;
-pub mod numeric_input;
 pub mod port;
 pub mod side_bar;
 pub mod status;

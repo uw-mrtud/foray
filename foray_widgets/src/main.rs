@@ -3,23 +3,27 @@ use iced::{
     Element,
     Length::{Fill, Shrink},
     Size,
-    widget::{column, container, row, text, text_input},
+    widget::{button, column, container, row, text, text_input},
+    window,
 };
 
 fn main() {
     iced::application(|| 10.0, update, view)
         .window_size(Size::new(350.0, 300.0))
+        .subscription(|_| window::frames().map(|_| Message::Tick))
         .run()
         .unwrap();
 }
 #[derive(Debug, Clone)]
 enum Message {
     UpdateValue(f32),
+    Tick,
 }
 
 fn update(state: &mut f32, message: Message) {
     match message {
         Message::UpdateValue(val) => *state = val,
+        Message::Tick => {}
     }
 }
 
@@ -50,7 +54,8 @@ fn view(state: &'_ f32) -> Element<'_, Message> {
                     .width(100)
             ]
             .align_y(Center)
-            .spacing(4.0)
+            .spacing(4.0),
+            button("tick").on_press(Message::Tick)
         ]
         .spacing(4.0)
         .width(Shrink)

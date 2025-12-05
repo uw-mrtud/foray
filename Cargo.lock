@@ -1358,6 +1358,7 @@ name = "foray_data_vis"
 version = "0.1.0"
 dependencies = [
  "derive_more",
+ "foray_widgets",
  "iced",
  "itertools",
  "line-clipping",
@@ -1406,6 +1407,7 @@ dependencies = [
  "foray_data_vis",
  "foray_graph",
  "foray_py",
+ "foray_widgets",
  "futures",
  "glam 0.29.3",
  "glob",

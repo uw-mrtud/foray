@@ -928,8 +928,9 @@ impl Workspace {
                     }),
                     // Refresh for animation while nodes are actively running
                     if self.network.any_nodes_running_or_recently_completed() {
-                        iced::time::every(Duration::from_micros(1_000_000 / 16))
-                            .map(|_| WorkspaceMessage::AnimationTick)
+                        window::frames().map(|_| WorkspaceMessage::AnimationTick)
+                        // iced::time::every(Duration::from_micros(1_000_000 / 16))
+                        //     .map(|_| WorkspaceMessage::AnimationTick)
                     } else {
                         Subscription::none()
                     },

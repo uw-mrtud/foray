@@ -1,52 +1,13 @@
-//! Text inputs display fields that can be filled with text.
-//!
-//! # Example
-//! ```no_run
-//! # mod iced { pub mod widget { pub use iced_widget::*; } pub use iced_widget::Renderer; pub use iced_widget::core::*; }
-//! # pub type Element<'a, Message> = iced_widget::core::Element<'a, Message, iced_widget::Theme, iced_widget::Renderer>;
-//! #
-//! use iced::widget::text_input;
-//!
-//! struct State {
-//!    content: String,
-//! }
-//!
-//! #[derive(Debug, Clone)]
-//! enum Message {
-//!     ContentChanged(String)
-//! }
-//!
-//! fn view(state: &State) -> Element<'_, Message> {
-//!     text_input("Type something here...", &state.content)
-//!         .on_input(Message::ContentChanged)
-//!         .into()
-//! }
-//!
-//! fn update(state: &mut State, message: Message) {
-//!     match message {
-//!         Message::ContentChanged(content) => {
-//!             state.content = content;
-//!         }
-//!     }
-//! }
-//! ```
-
+use crate::numeric_input;
 use crate::text_input::cursor::Cursor;
 use crate::text_input::editor::Editor;
 use crate::text_input::{Value, cursor};
 use iced::advanced::graphics::core::{InputMethod, input_method};
-// #[cfg(target_os = "macos")]
-// use iced::widget::text_editor;
-
-// use crate::text_input::Editor;
 
 use iced::advanced::{Clipboard, clipboard, layout};
 use iced::alignment;
-// use iced::input_method;
 use iced::keyboard;
 use iced::keyboard::key;
-// use iced::layout;
-// use iced::advanced::InputMethod;
 use iced::advanced::Layout;
 use iced::advanced::Shell;
 use iced::advanced::Widget;
@@ -65,38 +26,17 @@ use iced::{
     Rectangle, Size, Theme, Vector,
 };
 
-/// A field that can be filled with text.
-///
-/// # Example
-/// ```no_run
-/// # mod iced { pub mod widget { pub use iced_widget::*; } pub use iced_widget::Renderer; pub use iced_widget::core::*; }
-/// # pub type Element<'a, Message> = iced_widget::core::Element<'a, Message, iced_widget::Theme, iced_widget::Renderer>;
-/// #
-/// use iced::widget::text_input;
-///
-/// struct State {
-///    content: String,
-/// }
-///
-/// #[derive(Debug, Clone)]
-/// enum Message {
-///     ContentChanged(String)
-/// }
-///
-/// fn view(state: &State) -> Element<'_, Message> {
-///     text_input("Type something here...", &state.content)
-///         .on_input(Message::ContentChanged)
-///         .into()
-/// }
-///
-/// fn update(state: &mut State, message: Message) {
-///     match message {
-///         Message::ContentChanged(content) => {
-///             state.content = content;
-///         }
-///     }
-/// }
-/// ```
+pub fn numeric_input<'a, Message, Theme, Renderer>(
+    value: f32,
+) -> NumericInput<'a, Message, Theme, Renderer>
+where
+    Message: Clone,
+    Theme: numeric_input::Catalog + 'a,
+    Renderer: iced::advanced::text::Renderer,
+{
+    NumericInput::new(value)
+}
+
 pub struct NumericInput<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Theme: Catalog,
@@ -133,11 +73,9 @@ where
     /// Creates a new [`TextInput`] with the given placeholder and
     /// its current value.
     pub fn new(value: f32) -> Self {
-        // dbg!("creating new widget");
         NumericInput {
             id: None,
             placeholder: value.to_string(),
-            //TODO: formating
             text_value: Value::new(&value.to_string()),
             float_value: value,
             is_secure: false,
@@ -285,23 +223,33 @@ where
         limits: &layout::Limits,
         value: Option<&Value>,
     ) -> layout::Node {
+        // dbg!("layout");
+        // dbg!(value);
         let state = tree.state.downcast_mut::<State<Renderer::Paragraph>>();
         let value = value.unwrap_or(&self.text_value);
-        // dbg!("layout");
         // dbg!(&state.value.content());
         // dbg!(&value.to_string());
-        // dbg!(state.cursor);
-        //TODO: Sketchy, seems to work though!
-        let value = if Self::parse_string_to_float(state.value.content())
+
+        // Enforce numeric input constraints
+        // Sketchy to do this in layout... but seems to work for now
+        let value = 
+        // If the existing string (held in `state`) is a valid float, but not in the canoncial form, i.e. "2.00"
+        // And it doesn't numerically differ from the current value
+        // Hold on to the in progress value, to avoid cursor jumping
+        if Self::parse_string_to_float(state.value.content())
             == Self::parse_string_to_float(&value.to_string())
         {
             self.text_value = Value::new(state.value.content());
+            &self.text_value
+        // If the textbox is currently empty, make sure to just render the current value as the place holder, 
+        } else if state.empty {
+            self.text_value = Value::new("");
             &self.text_value
         } else {
             value
         };
         // dbg!(&value.to_string());
-
+        //
         let font = self.font.unwrap_or_else(|| renderer.default_font());
         let text_size = self.size.unwrap_or_else(|| renderer.default_size());
         let padding = self.padding.fit(Size::ZERO, limits.max());
@@ -600,56 +548,36 @@ where
         }
     }
 
-    // fn parsed_value(s: &str, default_value: f32) -> f32 {}
+    /// A kind of messy way of enforcing constraints for the numeric input
+    /// These changes, coupled with the changes in `layout`, and addition to `state`, 
+    /// were edited from the base text input widget
+    fn update_content(&self, old_text_value: &str) -> (Option<Message>, f32, String) {
+        let binding = self.text_value.to_string();
+        let current_text_value = binding.as_str();
 
-    fn update_content(&self, old_text_value: &str) -> (Option<Message>, f32, String)
-    where
-        Message: std::fmt::Debug,
-    {
-        // dbg!("update content");
-        // dbg!(&old_text_value);
-        // dbg!(&self.text_value.to_string());
-        match self.text_value.to_string().as_str() {
-            "" => {
-                return (None, self.float_value, "".into());
+        let (new_float_value,new_text_value) = match  current_text_value{
+            "" =>(self.float_value,""),
+            _=> match Self::parse_string_to_float(current_text_value){
+                Some(f) => (f,current_text_value),
+                None => (self.float_value,old_text_value),
             }
-            // },
-            "." => {
-                if let Some(on_input) = &self.on_input {
-                    return (Some((on_input)(0.0)), 0.0, ".".to_string());
-                } else {
-                    return (None, 0.0, ".".to_string());
-                }
-            }
-            "-" => {
-                if let Some(on_input) = &self.on_input {
-                    return (Some((on_input)(0.0)), 0.0, "-".to_string());
-                } else {
-                    return (None, 0.0, "-".to_string());
-                }
-            }
-            _ => match self.text_value.to_string().parse() {
-                Ok(v) => {
-                    //TODO: this needs to be updated everywhere...
-                    if self.float_value != v {
-                        if let Some(on_input) = &self.on_input {
-                            return (Some((on_input)(v)), v, self.text_value.to_string());
-                        } else {
-                            return (None, v, self.float_value.to_string());
-                        }
-                    } else {
-                        //TODO: What to do here?
-                        return (None, v, self.text_value.to_string());
-                    }
-                }
-                Err(_) => return (None, self.float_value, old_text_value.to_string()),
-            },
-        }
+        };
+
+        let message  =if let Some(on_input) = &self.on_input {
+            if new_float_value != self.float_value{
+            Some((on_input)(new_float_value))
+            }else{None}
+        }else{None};
+
+        return (message, new_float_value, new_text_value.to_string());
     }
+
     fn parse_string_to_float(s: &str) -> Option<f32> {
         match s {
+            // Specific edge cases we want to be valid numeric inputs
             "." => Some(0.0),
             "-" => Some(0.0),
+            "-." => Some(0.0),
             _ => match s.parse::<f32>() {
                 Ok(v) => Some(v),
                 Err(_) => None,
@@ -661,7 +589,7 @@ where
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for NumericInput<'_, Message, Theme, Renderer>
 where
-    Message: Clone + std::fmt::Debug,
+    Message: Clone,
     Theme: Catalog,
     Renderer: text::Renderer,
 {
@@ -722,7 +650,12 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
-        let update_cache = |state, value| {
+        let update_cache = |state: &mut State<Renderer::Paragraph>, value: &Value| {
+            if value.to_string() == "" {
+                state.empty = true;
+            } else {
+                state.empty = false;
+            }
             replace_paragraph(
                 renderer,
                 state,
@@ -734,8 +667,6 @@ where
             );
         };
 
-        // let old_state = tree.state.downcast_mut::<State<Renderer::Paragraph>>();
-        // update_cache(old_state, &Value::new(&self.text_value.to_string()));
         match &event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
@@ -947,7 +878,6 @@ where
                             let mut editor = Editor::new(&mut self.text_value, &mut state.cursor);
                             editor.delete();
 
-                            //TODO: parse
                             let (message, float_value, text_value) =
                                 self.update_content(&old_text_value);
                             if let Some(message) = message {
@@ -991,7 +921,6 @@ where
                             let mut editor = Editor::new(&mut self.text_value, &mut state.cursor);
                             editor.paste(content.clone());
 
-                            //TODO: parse
                             let (message, float_value, text_value) =
                                 self.update_content(&old_text_value);
                             if let Some(message) = message {
@@ -1035,17 +964,19 @@ where
 
                         if let Some(c) = text.chars().next().filter(|c| !c.is_control()) {
                             let old_text_value = self.text_value.to_string();
+                            let cursor_before = state.cursor;
+
                             let mut editor = Editor::new(&mut self.text_value, &mut state.cursor);
 
                             editor.insert(c);
 
-                            //TODO: parse
                             let (message, float_value, text_value) =
                                 self.update_content(&old_text_value);
                             if let Some(message) = message {
                                 shell.publish(message);
                                 shell.capture_event();
-                            } else if old_text_value != text_value {
+                            } else if old_text_value != text_value || cursor_before != state.cursor
+                            {
                                 shell.request_redraw();
                             }
 
@@ -1091,7 +1022,7 @@ where
                             let old_text_value = self.text_value.to_string();
                             let mut editor = Editor::new(&mut self.text_value, &mut state.cursor);
                             editor.backspace();
-                            //TODO: parse
+
                             let (message, float_value, text_value) =
                                 self.update_content(&old_text_value);
                             if let Some(message) = message {
@@ -1128,7 +1059,6 @@ where
                             let mut editor = Editor::new(&mut self.text_value, &mut state.cursor);
                             editor.delete();
 
-                            //TODO: parse
                             let (message, float_value, text_value) =
                                 self.update_content(&old_text_value);
                             if let Some(message) = message {
@@ -1310,7 +1240,6 @@ where
                         let mut editor = Editor::new(&mut self.text_value, &mut state.cursor);
                         editor.paste(Value::new(text));
 
-                        //TODO: parse
                         let (message, float_value, text_value) =
                             self.update_content(&old_text_value);
                         if let Some(message) = message {
@@ -1434,7 +1363,7 @@ where
 impl<'a, Message, Theme, Renderer> From<NumericInput<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
-    Message: Clone + 'a + std::fmt::Debug,
+    Message: Clone + 'a,
     Theme: Catalog + 'a,
     Renderer: text::Renderer + 'a,
 {
@@ -1482,7 +1411,9 @@ pub struct State<P: text::Paragraph> {
     last_click: Option<mouse::Click>,
     cursor: Cursor,
     keyboard_modifiers: keyboard::Modifiers,
-    // TODO: Add stateful horizontal scrolling offset
+    // Keep track of when the text box is empty, but still implicitly holds the pre-existing value
+    // This means the user's model doesn't need to be an Option<f32>
+    empty: bool,
 }
 
 fn state<Renderer: text::Renderer>(tree: &mut Tree) -> &mut State<Renderer::Paragraph> {

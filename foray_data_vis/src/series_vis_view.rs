@@ -1,5 +1,6 @@
 use crate::series_vis::{AxisOptions, Extent, SeriesVis, SeriesVisOptions};
 
+use foray_widgets::numeric_input::numeric_input;
 use iced::{
     Alignment::Center,
     Element,
@@ -53,17 +54,15 @@ impl AxisOptions {
                     if !is_auto {
                         row![
                             //// Min
-                            text_input("...", &extent_min.to_string()).on_input(move |val| {
+                            numeric_input(extent_min as f32).on_input(move |val| {
                                 let mut new_axis_options = self.clone();
-                                new_axis_options.extent =
-                                    Extent::Fixed(val.parse().unwrap_or_default(), extent_max);
+                                new_axis_options.extent = Extent::Fixed(val as f64, extent_max);
                                 update_4(new_axis_options)
                             }),
                             //// Max
-                            text_input("...", &extent_max.to_string()).on_input(move |val| {
+                            numeric_input(extent_max as f32).on_input(move |val| {
                                 let mut new_axis_options = self.clone();
-                                new_axis_options.extent =
-                                    Extent::Fixed(extent_min, val.parse().unwrap_or_default());
+                                new_axis_options.extent = Extent::Fixed(extent_min, val as f64);
                                 update_5(new_axis_options)
                             })
                         ]

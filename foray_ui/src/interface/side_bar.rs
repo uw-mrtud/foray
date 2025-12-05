@@ -8,11 +8,10 @@ use crate::style::icon::icon;
 use crate::workspace::{Workspace, WorkspaceMessage};
 use foray_data_model::node::{Dict, PortData, UIParameter};
 use foray_data_model::WireDataContainer;
+use foray_widgets::numeric_input::numeric_input;
 use iced::widget::container::background;
 use iced::*;
 use widget::{column, *};
-
-use super::numeric_input::{self, PartialUIValue};
 
 const PRECISION: f64 = 100.0;
 /// Create the sidebar view
@@ -189,13 +188,8 @@ pub fn config_view<'a>(
                                     };
                                 row![
                                     space::horizontal(),
-                                    row![numeric_input::numeric_input(
-                                        current_value as f32,
-                                        numeric_input::PartialUIValue::Complete,
-                                        move |new_v, _in_progress: PartialUIValue| {
-                                            message(PortData::Float(new_v as f64))
-                                            //, in_progress))
-                                        },
+                                    row![numeric_input(current_value as f32).on_input(
+                                        move |new_v| { message(PortData::Float(new_v as f64)) },
                                     )]
                                     .width(60.0)
                                 ]
@@ -211,7 +205,7 @@ pub fn config_view<'a>(
 
                                 row![
                                     row![
-                                        text_input("Placeholder", &current_value.to_string())
+                                        numeric_input(current_value as f32)
                                             // iced_aw::typed_input::TypedInput::new(
                                             //     "Placeholder",
                                             //     &current_value
@@ -220,9 +214,7 @@ pub fn config_view<'a>(
                                                 WorkspaceMessage::UpdateNodeParameter(
                                                     id,
                                                     name_2.clone(),
-                                                    PortData::Float(
-                                                        new_v.parse().unwrap_or_default(),
-                                                    ),
+                                                    PortData::Float(new_v as f64),
                                                 )
                                             }) // iced_aw::typed_input(&current_value, move |new_v| {
                                                //     Message::UpdateNodeParameter(

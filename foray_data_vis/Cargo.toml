@@ -11,3 +11,5 @@ itertools.workspace = true
 derive_more.workspace = true
 serde.workspace = true
 line-clipping = "0.3.4"
+
+foray_widgets = { path = "../foray_widgets/" }
