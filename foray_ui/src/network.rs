@@ -79,31 +79,32 @@ impl Network {
     /// Stash current app state, reset the redo stack, and mark unsaved changes
     pub fn stash_state(&mut self) {
         self.unsaved_changes = true;
-        let mut graph_snap_shot = self.graph.clone();
-        // We don't want to stash any node.status "running" values
-        let running_nodes: Vec<_> = graph_snap_shot
-            .nodes_ref()
-            .into_iter()
-            .filter(|nx| {
-                matches!(
-                    graph_snap_shot.get_node(*nx).status,
-                    NodeStatus::Running { .. }
-                )
-            })
-            .collect();
-        for nx in running_nodes {
-            graph_snap_shot.get_mut_node(nx).status = NodeStatus::Idle {
-                last_finished: None,
-            };
-        }
-
-        self.undo_stack
-            .push((graph_snap_shot, self.shapes.shape_positions.clone()));
-
-        // Don't let the stack get too big
-        self.undo_stack.truncate(10);
-
-        self.redo_stack.clear();
+        //
+        // let mut graph_snap_shot = self.graph.clone();
+        // // We don't want to stash any node.status "running" values
+        // let running_nodes: Vec<_> = graph_snap_shot
+        //     .nodes_ref()
+        //     .into_iter()
+        //     .filter(|nx| {
+        //         matches!(
+        //             graph_snap_shot.get_node(*nx).status,
+        //             NodeStatus::Running { .. }
+        //         )
+        //     })
+        //     .collect();
+        // for nx in running_nodes {
+        //     graph_snap_shot.get_mut_node(nx).status = NodeStatus::Idle {
+        //         last_finished: None,
+        //     };
+        // }
+        //
+        // self.undo_stack
+        //     .push((graph_snap_shot, self.shapes.shape_positions.clone()));
+        //
+        // // Don't let the stack get too big
+        // self.undo_stack.truncate(10);
+        //
+        // self.redo_stack.clear();
     }
 
     pub fn remove_edge(&mut self, port: PortRef) {

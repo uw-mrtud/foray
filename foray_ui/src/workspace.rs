@@ -904,6 +904,9 @@ impl Workspace {
                 let mut new_node_instance: ForayNodeInstance =
                     ForayNodeTemplate::PyNode(new_py_node_template).into();
 
+                // Copy forward status
+                new_node_instance.status = node.status;
+
                 // Merge parameters
                 node.parameters_values.into_iter().for_each(|(key, value)| {
                     new_node_instance

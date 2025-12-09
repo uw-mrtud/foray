@@ -51,19 +51,19 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
     ]
     .spacing(3.0);
 
-    let undo = undo_button(
-        '',
-        //debug_format(&app.debug, '', app.network.undo_stack.len()),
-        !app.network.undo_stack.is_empty(),
-        WorkspaceMessage::Undo,
-    );
-    let redo = undo_button(
-        //debug_format(&app.debug, '', app.network.redo_stack.len()),
-        '',
-        !app.network.redo_stack.is_empty(),
-        WorkspaceMessage::Redo,
-    );
-    let action_commands = row![space::horizontal(), undo, redo].spacing(4.0);
+    // let undo = undo_button(
+    //     '',
+    //     //debug_format(&app.debug, '', app.network.undo_stack.len()),
+    //     !app.network.undo_stack.is_empty(),
+    //     WorkspaceMessage::Undo,
+    // );
+    // let redo = undo_button(
+    //     //debug_format(&app.debug, '', app.network.redo_stack.len()),
+    //     '',
+    //     !app.network.redo_stack.is_empty(),
+    //     WorkspaceMessage::Redo,
+    // );
+    // let action_commands = row![space::horizontal(), undo, redo].spacing(4.0);
 
     //// Config
     let config: Element<WorkspaceMessage> =
@@ -109,7 +109,7 @@ pub fn side_bar(app: &Workspace) -> Element<'_, WorkspaceMessage> {
                 file_commands.align_y(Alignment::Center),
                 space::horizontal(),
                 //// Actions
-                action_commands.align_y(Alignment::Center),
+                // action_commands.align_y(Alignment::Center),
             ]
             .padding([2., 4.]),
             rule::horizontal(SEPERATOR),
