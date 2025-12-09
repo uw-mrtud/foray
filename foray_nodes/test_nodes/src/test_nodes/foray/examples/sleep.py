@@ -24,5 +24,11 @@ def compute(inputs, p):
     if out is None:
         out = False
 
-    time.sleep(4.0)
+    print(0)
+    time.sleep(1.0)
+    print(1)
+    time.sleep(1.0)
+    print(2)
+    time.sleep(1.0)
+    print(3)
     return {"out": out}

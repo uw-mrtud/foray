@@ -16,6 +16,7 @@ use crate::style::theme::AppTheme;
 use crate::user_data::UserData;
 
 use foray_data_model::node::{Dict, PortData};
+use foray_data_model::WireDataContainer;
 use foray_data_vis::series_vis::SeriesVisOptions;
 use foray_graph::graph::{ForayNodeError, Graph, PortRef, IO};
 
@@ -34,7 +35,7 @@ use std::fs::{self, read_to_string};
 use std::iter::once;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 #[derive(Default, Clone, PartialEq)]
 pub enum Action {
@@ -64,6 +65,7 @@ pub struct Workspace {
     //// UI
     pub action: Action,
     pub cursor_position: Point,
+    running_node_task_handles: Dict<u32, iced::task::Handle>,
 }
 
 #[derive(Clone, Debug)]
@@ -120,6 +122,7 @@ impl Workspace {
     ) -> Task<WorkspaceMessage> {
         match message {
             WorkspaceMessage::OnMove(_) => {}
+            WorkspaceMessage::AnimationTick => {}
             _ => info!("---Message--- {message:?} {:?}", Instant::now()),
         }
         match message {
@@ -341,12 +344,17 @@ impl Workspace {
                 if !self.network.selected_shapes.is_empty() {
                     self.network.stash_state();
                     self.network.selected_shapes.iter().for_each(|id| {
+                        info!("Deleting node {id}");
+                        if let Some(handle) = self.running_node_task_handles.get(id) {
+                            info!("Aborting compute task for {id}");
+                            handle.abort();
+                        }
                         self.network.graph.delete_node(*id);
                         self.network.shapes.shape_positions.swap_remove(id);
                     });
                     self.network.selected_shapes = [].into();
-                    //PERF: ideally, we should only execute affected nodes
-                    return Task::done(WorkspaceMessage::ComputeAll);
+
+                    return Task::none();
                 }
             }
 
@@ -524,14 +532,30 @@ impl Workspace {
                     trace!("Beginning compute: {:?} #{nx}", node.template,);
                 }
 
+                async fn abortable_compute(
+                    nx: u32,
+                    node: ForayNodeInstance,
+                    input_guarded: Dict<String, WireDataContainer<PortData>>,
+                ) -> (u32, Result<Dict<String, PortData>, ForayNodeError>) {
+                    let results = Graph::async_compute(nx, node.clone(), input_guarded).await;
+                    // Give the async runtime something to catch on if the task is cancelled
+                    tokio::time::sleep(Duration::from_nanos(1)).await;
+                    results
+                }
                 //// Queue compute
                 let node = self.network.graph.get_node(nx);
-                return Task::perform(
-                    Graph::async_compute(nx, node.clone(), self.network.graph.get_input_data(&nx)),
+                let (task, handle) = Task::perform(
+                    abortable_compute(nx, node.clone(), self.network.graph.get_input_data(&nx)),
                     move |(nx, res)| WorkspaceMessage::ComputeComplete(nx, res),
-                );
+                )
+                .abortable();
+                self.running_node_task_handles.insert(nx, handle);
+                return task;
             }
             WorkspaceMessage::ComputeComplete(nx, result) => {
+                // Remove handle from list of running tasks
+                self.running_node_task_handles.remove(&nx);
+
                 //TODO: move into Network
                 let node = self.network.graph.get_node(nx);
                 match result {
@@ -800,6 +824,7 @@ impl Workspace {
             main_window_id,
             action: Default::default(),
             cursor_position: Default::default(),
+            running_node_task_handles: Default::default(),
         };
         workspace.reload_nodes();
         Ok(workspace)
