@@ -61,7 +61,7 @@ pub struct SeriesVis {
     pub(crate) vis_options: SeriesVisOptions,
 }
 
-fn default_svg() -> Svg {
+pub(crate) fn default_svg() -> Svg {
     iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(&[]))
 }
 
@@ -284,6 +284,8 @@ impl SeriesVis {
                 .unwrap();
         }
 
+        // svg_buffer.insert_str(5, r#" shape-rendering="geometricPrecision" "#);
+        // println!("{}", &svg_buffer);
         self.svg = iced::advanced::svg::Svg::new(iced::advanced::svg::Handle::from_memory(
             svg_buffer.into_bytes(),
         ));
