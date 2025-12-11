@@ -397,7 +397,10 @@ where
         let x = (text_bounds.x + cursor_x).floor() - scroll_offset + alignment_offset;
 
         InputMethod::Enabled {
-            position: Point::new(x, text_bounds.y),
+            cursor: Rectangle::new(
+                Point::new(x, text_bounds.y),
+                Size::new(1.0, text_bounds.height),
+            ),
             purpose: if self.is_secure {
                 input_method::Purpose::Secure
             } else {
@@ -1465,9 +1468,9 @@ impl<P: text::Paragraph> operation::TextInput for State<P> {
         State::select_all(self);
     }
 
-    // fn select_range(&mut self, start: usize, end: usize) {
-    //     State::select_range(self, start, end);
-    // }
+    fn select_range(&mut self, start: usize, end: usize) {
+        State::select_range(self, start, end);
+    }
 }
 
 fn offset<P: text::Paragraph>(text_bounds: Rectangle, value: &Value, state: &State<P>) -> f32 {

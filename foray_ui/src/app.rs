@@ -65,7 +65,7 @@ pub enum Message {
     EndWorkspaceSelect(Option<PathBuf>),
     StartNetworkSelect,
     EndNetworkSelect(Option<PathBuf>),
-    LinkClicked(markdown::Url),
+    LinkClicked(markdown::Uri),
 
     ThemeValueChange(AppThemeMessage, GuiColorMessage),
     ToggleDebug,
