@@ -17,7 +17,6 @@ use notify_debouncer_full::DebounceEventResult;
 fn worker(root_dir: &PathBuf) -> impl Stream<Item = Vec<PathBuf>> {
     let root_dir = root_dir.clone();
     stream::channel(0, |mut output: mpsc::Sender<_>| async move {
-        dbg!("initializing stream");
         trace!("Starting file watch subscription stream: {root_dir:?}");
 
         let (mut tx, mut rx) = iced::futures::channel::mpsc::channel(1);

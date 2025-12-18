@@ -9,8 +9,12 @@ cd ../../
 cargo bundle --release
 
 # Sign
-codesign -s "University of Wisconsin-Madison" --deep -f -v -o runtime --entitlements ./foray_ui/deploy_scripts/entitlements.plist ./target/release/bundle/osx/Foray.app
-
+#
+codesign -s "University of Wisconsin-Madison" --strict --deep -f -v -o runtime --entitlements ./foray_ui/deploy_scripts/entitlements.plist ./target/release/bundle/osx/Foray.app/Contents/Macos/foray
+#
+codesign -s "University of Wisconsin-Madison" --strict --deep -f -v -o runtime --entitlements ./foray_ui/deploy_scripts/entitlements.plist ./target/release/bundle/osx/Foray.app
+# Staple
+xcrun stapler staple "./target/release/bundle/osx/Foray.app"
 # Compress
 cd ./target/release/bundle/osx
 rm ./Foray*.zip
